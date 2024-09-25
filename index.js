@@ -1,4 +1,4 @@
-const AhBot = require('./TPM-bot/index.js');
+const AhBot = require('./TPM-bot/AhBot.js');
 const { config, updateConfig } = require('./config.js');
 const prompt = require('prompt-sync')();
 

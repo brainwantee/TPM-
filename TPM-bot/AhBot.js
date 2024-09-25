@@ -17,7 +17,7 @@ class AhBot {
 
         bot.on('message', async (message, type) => {
             let text = message.getText(null);
-            if (type === 'chat') console.log(message.toAnsi())
+            if (type === 'chat') console.log(`${ign}: ${message.toAnsi()}`)
         })
 
     }
