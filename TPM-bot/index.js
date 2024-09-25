@@ -4,20 +4,33 @@ class AhBot {
 
     constructor(ign) {
         this.ign = ign;
+        this.bot;
     }
 
     async startBot() {
-        const bot = createBot({
-            username: this.ign,
-            auth: 'microsoft',
-            version: '1.8.9',
-            host: 'play.hypixel.net',
-        });
+        const {ign, bot} = this;
 
-        bot.once("login", () => {
-            console.log(`${this.ign} logged in!`);
-        });
+        
+    }
 
+    async createBot(){
+        return new Promise((resolve, reject) => {
+            console.log(`Trying to log into ${this.ign}`);
+
+            this.bot = createBot({
+                username: this.ign,
+                auth: 'microsoft',
+                version: '1.8.9',
+                host: 'play.hypixel.net',
+            });
+            
+            this.bot.once("login", () => {
+                console.log(`${this.ign} logged in!`);
+                this.startBot();
+                resolve();
+            });
+
+        })
     }
 
 }

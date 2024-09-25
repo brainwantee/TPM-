@@ -22,9 +22,9 @@ testIgn();
 (async () => {
     let bots = {};
 
-    igns.forEach(ign => {
+    for(const ign of igns){
         bots[ign] = new AhBot(ign);
-        bots[ign].startBot();
-    })
+        await bots[ign].createBot();
+    }
 
 })();
