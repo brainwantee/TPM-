@@ -1,35 +1,32 @@
-const { createBot } = require("mineflayer");
+const { makeBot } = require("./bot.js");
+const { getPackets, makePackets } = require("./packets.js");
+//const { getReady, listItem } = require('./relistHandler.js'); For the future
 
 class AhBot {
 
     constructor(ign) {
-        this.ign = ign;
-        this.bot;
+        this.ign = ign,
+        this.bot = null;
     }
 
     async startBot() {
-        const {ign, bot} = this;
+        const { bot, ign } = this //screw "this"
 
-        
+        makePackets(ign, bot._client);
+        let packets = getPackets(ign);
+
+        bot.on('message', async (message, type) => {
+            let text = message.getText(null);
+            if (type === 'chat') console.log(message.toAnsi())
+        })
+
     }
 
-    async createBot(){
-        return new Promise((resolve, reject) => {
-            console.log(`Trying to log into ${this.ign}`);
-
-            this.bot = createBot({
-                username: this.ign,
-                auth: 'microsoft',
-                version: '1.8.9',
-                host: 'play.hypixel.net',
-            });
-            
-            this.bot.once("login", () => {
-                console.log(`${this.ign} logged in!`);
-                this.startBot();
-                resolve();
-            });
-
+    async createBot() {
+        return new Promise(async (resolve) =>{
+            this.bot = await makeBot(this.ign);
+            this.startBot();
+            resolve();
         })
     }
 
