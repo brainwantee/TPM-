@@ -4,8 +4,16 @@ const JSON5 = require("json5");
 
 const defaultConfig = `{
 
-    //Put your minecraft IGN here. To use multiple, follow this format: ["account1", "account2"];
-    "igns": [""]
+    //Put your minecraft IGN here. To use multiple, follow this format: ["account1", "account2"],
+    "igns": [""],
+
+    "discordID": "",
+
+    "usInstance": true, 
+    
+    "useBafSocket": true,
+
+    "session": ""
 
 }`;
 
