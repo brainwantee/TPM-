@@ -22,7 +22,7 @@ class CoflWs {
         }
 
         this.websocket = new WebSocket(link);
-        const { websocket, ws } = this;//screw "this"
+        const { websocket, ws } = this;//screw "this" 
 
         websocket.on('open', (message) => {
             console.log(`Started cofl connection!`);
