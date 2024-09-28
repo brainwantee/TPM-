@@ -5,6 +5,7 @@ const os = require('os');
 const path = require('path');
 const exePath = process.cwd();
 const fs = require('fs');
+const { spawn } = require('child_process');
 
 let osName = os.platform();
 
@@ -35,6 +36,18 @@ async function downloadExe(latestVer) {
 
 }
 
+function runExecutable(executablePath) {
+    const child = spawn(executablePath, { stdio: 'inherit', shell: true });
+
+    child.on('error', (error) => {
+        console.error('Failed to start process:', error);
+    });
+
+    child.on('exit', (code) => {
+        console.log(`Child process exited with code ${code}`);
+    });
+}
+
 (async () => {
     const latestVer = (await axios.get('https://api.github.com/repos/IcyHenryT/TPM-rewrite/releases/latest'))?.data?.tag_name;
 
@@ -46,6 +59,7 @@ async function downloadExe(latestVer) {
 
     if (latestVer !== version) {
         await downloadExe(latestVer);
+        runExecutable(exePath);
     } else {
         console.log(`TPM up to date! Launching bot`);
         startBot();
