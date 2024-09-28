@@ -19,7 +19,7 @@ function testIgn() {
 
 testIgn();
 
-(async () => {
+async function startBot(){
     let bots = {};
 
     for(const ign of igns){
@@ -27,4 +27,6 @@ testIgn();
         await bots[ign].createBot();
     }
 
-})();
+}
+
+module.exports = startBot;
