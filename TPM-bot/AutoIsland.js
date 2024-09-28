@@ -18,10 +18,7 @@ class AutoIsland {
     }
 
     async checkLocraw(confirm = false) {
-        if (this.currentlyConfirming && !confirm) {
-            console.log(`Currently confirming`);
-            return;
-        }
+        if (this.currentlyConfirming && !confirm) return
         await sleep(15000);
         this.currentlyConfirming = false;
         this.bot.chat('/locraw');
@@ -31,7 +28,6 @@ class AutoIsland {
 
             try {
                 const locraw = JSON.parse(message);
-                console.log(locraw)
                 this.bot.off('message', check);
                 if (locraw.lobbyname) {
                     this.move('/skyblock');
@@ -42,7 +38,7 @@ class AutoIsland {
                     } else {
                         this.move('/hub');
                     }
-                } else if (otherIsland.trim() !== "") {
+                } else if (otherIsland  && otherIsland.trim() !== "") {
                     let scoreboard = this.bot?.scoreboard?.sidebar?.items?.map(item => item?.displayName?.getText(null)?.replace(item?.name, ''));
                     let guests = scoreboard.find(line => line.includes('✌'));
                     let ownIsland = scoreboard.find(line => line.includes('Your Island'));
@@ -51,7 +47,12 @@ class AutoIsland {
                         await betterOnce(this.bot, 'windowOpen');
                         await sleep(150);
                         const lore = this.bot.currentWindow?.slots[11]?.nbt?.value?.display?.value?.Lore?.value?.value;
-                        console.log(lore);
+                        //console.log(lore);
+                        if(lore.includes('§cIsland disallows guests!')){
+                            otherIsland = false;
+                            console.log(`Hey so this person has invites off :(`);
+                            this.checkLocraw();
+                        }
                         this.bot.betterClick(11, 0, 0);
                     } else {
                         console.log('Made it to the island!');

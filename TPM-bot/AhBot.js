@@ -4,6 +4,7 @@ const { logmc, customIGNColor } = require("../logger.js");
 const CoflWs = require("./CoflWs.js");
 const StateManager = require("./StateManager.js");
 const AutoIsland = require('./AutoIsland.js');
+const WebhookManager = require('./WebhookManager.js');
 //const { getReady, listItem } = require('./relistHandler.js'); For the future
 
 class AhBot {
