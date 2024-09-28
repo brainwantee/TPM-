@@ -12,10 +12,14 @@ let osName = os.platform();
 if (osName == 'win32') osName = 'win.exe';
 else if (osName == 'darwin') osName = 'macos';
 
+if (__filename.includes(`TPM-rewrite-temp-${osName}`)) {
+    fs.renameSync(__filename, path.resolve(exePath, `TPM-rewrite-${osName}`));
+}
+
 async function downloadExe(latestVer) {
 
     console.log('starting to download');
-    const tempPath = path.resolve(exePath, `TPM-rewrite-${osName}`);
+    const tempPath = path.resolve(exePath, `TPM-rewrite-temp-${osName}`)
     console.log('hey')
     const writer = fs.createWriteStream(tempPath);
 
@@ -37,14 +41,10 @@ async function downloadExe(latestVer) {
 }
 
 function runExecutable(executablePath) {
-    const child = spawn(executablePath, { stdio: 'inherit', shell: true });
+    const child = spawn('"' + executablePath + '"', { stdio: 'inherit', shell: true });
 
     child.on('error', (error) => {
-        console.error('Failed to start process:', error);
-    });
-
-    child.on('exit', (code) => {
-        console.log(`Child process exited with code ${code}`);
+        console.error('tpm died :( ', error);
     });
 }
 
@@ -59,7 +59,7 @@ function runExecutable(executablePath) {
 
     if (latestVer !== version) {
         await downloadExe(latestVer);
-        runExecutable(exePath);
+        runExecutable(path.resolve(exePath, `TPM-rewrite-temp-${osName}`));
     } else {
         console.log(`TPM up to date! Launching bot`);
         startBot();

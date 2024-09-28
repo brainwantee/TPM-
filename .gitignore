@@ -2,3 +2,4 @@ config.json5
 TPM-rewrite-linux
 TPM-rewrite-macos
 TPM-rewrite-win.exe
+*.exe
