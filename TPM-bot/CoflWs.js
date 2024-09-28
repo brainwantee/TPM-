@@ -1,8 +1,11 @@
 const axios = require('axios');
 const WebSocket = require('ws');
-const { config, updateConfig } = require('../config.js');
 const EventEmitter = require('events');
+
+const { config, updateConfig } = require('../config.js');
+const { logmc, customIGNColor } = require('../logger.js');
 const { DISCORD_PING, formatNumber } = require('./Utils.js');
+const { getPackets } = require('./packets.js');
 
 const { useBafSocket, usInstance } = config;
 
@@ -14,6 +17,8 @@ class CoflWs {
         this.link = null;
         this.ign = ign;
         this.bot = bot;
+
+        this.startWs();
     }
 
     startWs(link = null) {
@@ -33,7 +38,7 @@ class CoflWs {
 
         websocket.on('message', (message) => {
             const msg = this.parseMessage(message);
-            console.log(msg);
+            logmc(msg);
         })
 
     }
@@ -46,14 +51,14 @@ class CoflWs {
 
     parseMessage(message) {
         const msg = JSON.parse(message);
-        if (!msg || !msg.type) return  "no";
+        if (!msg || !msg.type) return "no";
         let data = JSON.parse(msg.data)
         let text;
         switch (msg.type) {
             case "flip":
                 this.ws.emit("flip", data);
                 if (useBafSocket) {
-                    text = `§6[§bTPM§6] §eTrying to purchase ${data.itemName}§e for ${formatNumber(data.startingBid)} §7(target ${formatNumber(data.target)})`
+                    text = `§6[§bTPM§6] ${customIGNColor(this.ign)}${this.ign} is trying to purchase ${data.itemName}${customIGNColor(this.ign)} for ${formatNumber(data.startingBid)} §7(target ${formatNumber(data.target)})`
                 } else {
                     text = smallMessageParse(data);
                 }
@@ -62,7 +67,6 @@ class CoflWs {
             case "chatMessage":
                 this.ws.emit("message", msg)
                 text = smallMessageParse(data);
-                console.log(text);
                 this.ws.emit("messageText", text);
                 break;
             case "loggedIn":
@@ -78,19 +82,42 @@ class CoflWs {
                 this.ws.emit('getInventory', msg);
                 break;
             case "privacySettings":
-                this.ws.emit('settings', fr);
+                this.ws.emit('settings', msg);
                 break;
             case "execute":
-                /*if (data.includes('/cofl')) {
+                if (data.includes('/cofl')) {
                     handleCommand(data);
                 } else {
-                    const packets = getPackets();
+                    const packets = getPackets(this.ign);
                     if (!packets) return;
                     packets.sendMessage(data);
-                }*/
+                }
                 break;
         }
         return text;
+    }
+
+    handleCommand(command) {
+        const args = command.split(' ');
+        const first = args[1];
+        args.shift();
+        args.shift();
+        const joined = JSON.stringify(args.join(' '));
+        this.send(
+            JSON.stringify({
+                type: first,
+                data: joined
+            })
+        );
+    }
+
+    send(msg, type = true) {
+        if (this.websocket?.readyState !== WebSocket.OPEN) {
+            if (type) logmc(`§6[§bTPM§6] §cCan't send to websocket because not connected`);
+            return;
+        }
+        this.websocket.send(msg);
+        console.log(msg)
     }
 
 }

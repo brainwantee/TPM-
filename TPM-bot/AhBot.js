@@ -1,6 +1,8 @@
 const { makeBot } = require("./bot.js");
 const { getPackets, makePackets } = require("./packets.js");
+const { logmc, customIGNColor } = require("../logger.js");
 const CoflWs = require("./CoflWs.js");
+const StateManager = require("./StateManager.js");
 //const { getReady, listItem } = require('./relistHandler.js'); For the future
 
 class AhBot {
@@ -16,18 +18,16 @@ class AhBot {
         makePackets(ign, bot._client);
         let packets = getPackets(ign);
 
+        const state = new StateManager();
+
         bot.on('message', async (message, type) => {
             let text = message.getText(null);
-            if (type === 'chat') console.log(`${ign}: ${message.toAnsi()}`)
+            if (type === 'chat') logmc(`${customIGNColor(ign)}${ign}: ${message.toAnsi()}`);
         })
 
         const coflSocket = new CoflWs(ign, bot);
-        coflSocket.startWs();
         const ws = coflSocket.getWs();
 
-        ws.on('open', () => {
-            console.log('Got open in AhBot.js :)');
-        })
     }
 
     async createBot() {
