@@ -2,6 +2,8 @@ const { config } = require('../config.js');
 
 const DISCORD_PING = config.discordID == "" ? "" : `<@${config.discordID}>`;
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 function formatNumber(num) {
     let negative = num < 0;
     num = Math.abs(num);
@@ -18,4 +20,21 @@ function formatNumber(num) {
     return `${negative ? '-' : ''}${thingy}`;
 }
 
-module.exports = { DISCORD_PING, formatNumber };
+async function betterOnce(listener, event, timeframe = 5000) {
+    return new Promise((resolve, reject) => {
+
+        const listen = (msg) => {
+            listener.off(event, listen);
+            resolve(msg);
+        };
+
+        setTimeout(() => {
+            listener.off(event, listen);
+            reject(`Didn't find in time!`);
+        }, timeframe);
+
+        listener.on(event, listen);
+    });
+}
+
+module.exports = { DISCORD_PING, formatNumber, sleep, betterOnce };

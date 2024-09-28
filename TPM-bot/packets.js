@@ -14,12 +14,12 @@ function makePackets(ign, client) {
                 mouseButton: 2,
                 mode: 3,
                 item: { "blockId": itemID },
-                action: 1
+                action: this.actionID
             })
-            actionID++
+            this.actionID++;
         },
         bump: function () {
-            actionID++
+            this.actionID++;
         },
         confirmClick: function (windowID) {
             client.write('transaction', {
@@ -27,11 +27,12 @@ function makePackets(ign, client) {
                 action: actionID,
                 accepted: true
             })
-        }
+        },
+        actionID: 1
     }
 }
 
-function getPackets(ign){
+function getPackets(ign) {
     const packets = packetsObject[ign];
     if (packets) return packets;
     console.error(`No packets made for ${ign}`);

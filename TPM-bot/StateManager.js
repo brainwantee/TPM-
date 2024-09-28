@@ -6,11 +6,11 @@ class StateManager {
         this.state = 'moving';
     }
 
-    setState(newState) {
+    set(newState) {
         this.state = newState;
     }
 
-    getState() {
+    get() {
         return this.state;
     }
 

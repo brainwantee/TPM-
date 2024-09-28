@@ -13,7 +13,11 @@ const defaultConfig = `{
     
     "useBafSocket": true,
 
-    "session": ""
+    "session": "",
+
+    "visitFriend": "",
+
+    "useCookie": true
 
 }`;
 
