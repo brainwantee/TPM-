@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { startBot } = require('./index.js');
-const version = '0.0.0';
+const version = '0.0.2';
 const os = require('os');
 const path = require('path');
 const exePath = process.cwd();
