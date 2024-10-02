@@ -37,4 +37,18 @@ async function betterOnce(listener, event, timeframe = 5000) {
     });
 }
 
-module.exports = { DISCORD_PING, formatNumber, sleep, betterOnce };
+function stripItemName(name) {
+    return name.replace(/!|-us|\.|\b(?:[1-9]|[1-5][0-9]|6[0-4])x\b/g, "");
+}
+
+function IHATETAXES(price) {
+    if (price < 10000000) {
+        return price * .98
+    } else if (price < 100000000) {
+        return price * .97
+    } else {
+        return price * .965
+    }
+}
+
+module.exports = { DISCORD_PING, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES };

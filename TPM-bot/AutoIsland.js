@@ -32,7 +32,7 @@ class AutoIsland {
                 if (locraw.lobbyname) {
                     this.move('/skyblock');
                 } else if (locraw.map !== baseMessage) {
-                    console.log(`Base different`);
+                    //console.log(`Base different`);
                     if (useCookie) {
                         this.move('/is');
                     } else {
@@ -55,11 +55,11 @@ class AutoIsland {
                         }
                         this.bot.betterClick(11, 0, 0);
                     } else {
-                        console.log('Made it to the island!');
+                        //console.log('Made it to the island!');
                         this.state.set(null);
                     }
                 } else if (this.state.get() === 'moving') {
-                    console.log('Made it to the island!');
+                    //console.log('Made it to the island!');
                     this.state.set(null);
                 }
             } catch (e) {

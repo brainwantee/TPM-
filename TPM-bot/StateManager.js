@@ -4,6 +4,7 @@ class StateManager {
 
     constructor() {
         this.state = 'moving';
+        this.lastaction = Date.now();
     }
 
     set(newState) {
@@ -12,6 +13,14 @@ class StateManager {
 
     get() {
         return this.state;
+    }
+
+    setAction(time) {
+        this.lastaction = time; 
+    }
+
+    getTime() {
+        return this.lastaction;
     }
 
     getHighest() {

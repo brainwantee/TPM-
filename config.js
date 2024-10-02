@@ -17,7 +17,9 @@ const defaultConfig = `{
 
     "visitFriend": "",
 
-    "useCookie": true
+    "useCookie": true,
+
+    "delay": 250
 
 }`;
 
