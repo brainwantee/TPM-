@@ -24,7 +24,7 @@ function makePackets(ign, client) {
         confirmClick: function (windowID) {
             client.write('transaction', {
                 windowId: windowID,
-                action: actionID,
+                action: this.actionID,
                 accepted: true
             })
         },

@@ -1,6 +1,7 @@
 const AhBot = require('./TPM-bot/AhBot.js');
 const { config, updateConfig } = require('./config.js');
 const prompt = require('prompt-sync')();
+const { randomUUID } = require('crypto');
 
 let igns = config.igns;
 
@@ -21,6 +22,11 @@ testIgn();
 
 (async () => {
     let bots = {};
+
+    if (!config.session) {
+        config.session = randomUUID();
+        updateConfig(config);
+    }
 
     for (const ign of igns) {
         bots[ign] = new AhBot(ign);

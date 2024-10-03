@@ -10,8 +10,6 @@ const defaultConfig = `{
     "discordID": "",
 
     "usInstance": true, 
-    
-    "useBafSocket": true,
 
     "session": "",
 
@@ -19,7 +17,25 @@ const defaultConfig = `{
 
     "useCookie": true,
 
-    "delay": 250
+    "delay": 250,
+
+    "waittime": 15,
+
+    "clickDelay": 125,
+
+    "bedSpam": false,
+
+    "skip": {
+
+        "always": false,
+
+        "minProfit": 5000000,
+
+        "userFinder": true,
+
+        "skins": true
+
+    }
 
 }`;
 

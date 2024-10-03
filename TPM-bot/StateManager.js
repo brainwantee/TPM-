@@ -8,6 +8,7 @@ class StateManager {
     }
 
     set(newState) {
+        console.log(`Set state to ${newState}`);
         this.state = newState;
     }
 

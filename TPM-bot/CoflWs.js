@@ -4,10 +4,12 @@ const EventEmitter = require('events');
 
 const { config, updateConfig } = require('../config.js');
 const { logmc, customIGNColor } = require('../logger.js');
-const { DISCORD_PING, formatNumber } = require('./Utils.js');
+const { DISCORD_PING, formatNumber, noColorCodes } = require('./Utils.js');
 const { getPackets } = require('./packets.js');
 
-const { useBafSocket, usInstance } = config;
+const { usInstance } = config;
+
+const connectionRegex = /\[Coflnet\]:  Your connection id is ([a-f0-9]{32}), copy that if you encounter an error/;
 
 class CoflWs {
 
@@ -24,9 +26,9 @@ class CoflWs {
     startWs(link = null) {
 
         if (link === null) {
-            link = `${usInstance ? 'ws://sky-us.' : 'wss://sky.'}coflnet.com/modsocket?version=${useBafSocket ? '1.5.1-af' : '1.5.6-Alpha'}&player=${this.ign}&SId=${config.session}`;
+            link = `${usInstance ? 'ws://sky-us.' : 'wss://sky.'}coflnet.com/modsocket?version=1.5.1-af&player=${this.ign}&SId=${config.session}`;
             this.link = link;
-        }
+        }//There's no option to use regular socket because it's slower
 
         this.websocket = new WebSocket(link);
         const { websocket, ws } = this;//screw "this" 
@@ -38,7 +40,9 @@ class CoflWs {
 
         websocket.on('message', (message) => {
             const msg = this.parseMessage(message);
-            logmc(msg);
+            if(this.testMessage(msg)){
+                logmc(msg);
+            }
         })
 
     }
@@ -57,11 +61,7 @@ class CoflWs {
         switch (msg.type) {
             case "flip":
                 this.ws.emit("flip", data);
-                if (useBafSocket) {
-                    text = `§6[§bTPM§6] ${customIGNColor(this.ign)}${this.ign} is trying to purchase ${data.itemName}${customIGNColor(this.ign)} for ${formatNumber(data.startingBid)} §7(target ${formatNumber(data.target)})`
-                } else {
-                    text = smallMessageParse(data);
-                }
+                text = `§6[§bTPM§6] ${customIGNColor(this.ign)}${this.ign} is trying to purchase ${data.itemName}${customIGNColor(this.ign)} for ${formatNumber(data.startingBid)} §7(target ${formatNumber(data.target)})`
                 break;
             case "writeToChat":
             case "chatMessage":
@@ -86,7 +86,7 @@ class CoflWs {
                 break;
             case "execute":
                 if (data.includes('/cofl')) {
-                    handleCommand(data);
+                    this.handleCommand(data);
                 } else {
                     const packets = getPackets(this.ign);
                     if (!packets) return;
@@ -103,12 +103,12 @@ class CoflWs {
         args.shift();
         args.shift();
         const joined = JSON.stringify(args.join(' '));
-        this.send(
-            JSON.stringify({
-                type: first,
-                data: joined
-            })
-        );
+        const send = JSON.stringify({
+            type: first,
+            data: joined
+        })
+        logmc(send);
+        this.send(send);
     }
 
     send(msg, type = true) {
@@ -117,7 +117,25 @@ class CoflWs {
             return;
         }
         this.websocket.send(msg);
-        console.log(msg)
+         if(type) console.log(msg)
+    }
+
+    testMessage(msg){
+        if(!msg) return false;
+        msg = noColorCodes(msg);
+        if(msg.includes('[Chat]')) return true;//Don't try and use cofl chat to trigger other things :(
+
+        const connectionMatch = msg.match(connectionRegex);
+        if(connectionMatch){
+            console.log(`Got connection ID ${connectionMatch[1]}`);
+        }
+
+        if(msg.includes(`Until you do you are using the free version which will make less profit and your settings won't be saved`)) {//logged out
+            this.handleCommand('/cofl s maxItemsInInventory 1');
+            //TODO add webhook here
+        }
+
+        return true;
     }
 
 }

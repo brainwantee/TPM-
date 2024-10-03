@@ -51,4 +51,49 @@ function IHATETAXES(price) {
     }
 }
 
-module.exports = { DISCORD_PING, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES };
+function normalizeDate(dateString) {
+    try {
+        const isoFormatWithoutMillisUTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+        const isoFormatWithMillisUTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,3}Z$/;
+        const isoFormatWithoutMillisOffset = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2})$/;
+        const isoFormatWithMillisOffset = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{1,3}(?:[+-]\d{2}:\d{2})$/;
+
+        if (isoFormatWithoutMillisUTC.test(dateString)) {
+            // If the date string does not have milliseconds and ends with 'Z', add them
+            return dateString.replace('Z', '.000Z');
+        } else if (isoFormatWithMillisUTC.test(dateString)) {
+            // Normalize milliseconds to three digits for 'Z'
+            return dateString.replace(/(\.\d{1,2})Z$/, (match) => match.slice(0, -1).padEnd(4, '0') + 'Z');
+        } else if (isoFormatWithoutMillisOffset.test(dateString)) {
+            // If the date string does not have milliseconds and ends with offset, add them
+            return dateString.replace(/([+-]\d{2}:\d{2})$/, '.000$1');
+        } else if (isoFormatWithMillisOffset.test(dateString)) {
+            // Normalize milliseconds to three digits for offset
+            return dateString.replace(/(\.\d{1,2})([+-]\d{2}:\d{2})$/, (match, p1, p2) => p1.padEnd(4, '0') + p2);
+        } else {
+            throw new Error('Invalid date format');
+        }
+    } catch (error) {
+        console.error(`Date normalization error: ${error.message} for ${dateString}`);
+        return dateString; // Fallback to the original string
+    }
+}
+
+function getWindowName(window) {
+    if (!window) return null;
+    try {
+        return JSON.parse(window.title).extra[0].text;
+    } catch (e) {
+        return null;
+    }
+}
+
+function isSkin(item){
+    return item?.includes('✦') || item?.toLowerCase()?.includes('skin') || !item?.includes('✿');
+}
+
+function noColorCodes(text) {
+    return text?.replace(/§./g, '')?.replace('§', '')//cofl sometimes sends messages that are cut off so I need the second one aswell
+}
+
+module.exports = { DISCORD_PING, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes };
