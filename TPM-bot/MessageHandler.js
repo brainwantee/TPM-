@@ -1,5 +1,6 @@
 const { logmc, customIGNColor } = require("../logger.js");
-let { config } = require('../config.js');
+const { config } = require('../config.js');
+const { igns } = config;
 
 const axios = require('axios');
 
@@ -17,7 +18,7 @@ class MessageHandler {
         this.webhookObject = {};//"itemName:pricePaid"
         this.relistObject = {};//auctionID
         this.soldObject = {};//"itemName:target"
-        this.ignPrefix = config.igns.length == 0 ? "" : `${customIGNColor(ign)}${ign}: `;
+        this.ignPrefix = igns.length == 1 ? "" : `${customIGNColor(ign)}${ign}: `;
         this.firstGui = null;
         this.privacySettings = /no regex yet but I don't want it to crash so I'm putting regex /;
         this.messageListener();
@@ -33,7 +34,7 @@ class MessageHandler {
             if (type !== 'chat') return;
             let sentMessage = false;
             let text = message.getText(null);
-            if(text.trim() === '') sentMessage = true;
+            if (text.trim() === '') sentMessage = true;
             this.sendChatBatch(text);
             switch (text) {
                 case 'Putting coins in escrow...':

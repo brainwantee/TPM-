@@ -4,7 +4,7 @@ const EventEmitter = require('events');
 
 const { config, updateConfig } = require('../config.js');
 const { logmc, customIGNColor } = require('../logger.js');
-const { DISCORD_PING, formatNumber, noColorCodes } = require('./Utils.js');
+const { DISCORD_PING, formatNumber, noColorCodes, sleep } = require('./Utils.js');
 const { getPackets } = require('./packets.js');
 
 const { usInstance } = config;
@@ -36,6 +36,12 @@ class CoflWs {
         websocket.on('open', (message) => {
             console.log(`Started cofl connection!`);
             ws.emit("open", message);
+        })
+
+        websocket.on('close', async () => {
+            await sleep(5000);
+            this.startWs(link);
+            
         })
 
         websocket.on('message', (message) => {

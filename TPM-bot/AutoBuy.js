@@ -141,7 +141,7 @@ class AutoBuy {
 
             setTimeout(() => {
                 clearInterval(interval);
-                reject(new Error(`Item didn't load in time :(`));
+                resolve(null);
             }, 5000);
         });
     }
@@ -157,7 +157,7 @@ class AutoBuy {
         for (let i = 0; i < 5; i++) {
             if (getWindowName(this.bot.currentWindow)?.includes('BIN Auction View') && this.currentOpen === currentID) {
                 this.bot.betterClick(31, 0, 0);
-                console.log(`Bed click`)
+                console.log(`Bed click`);
                 await sleep(3);
             } else {
                 break;
@@ -176,11 +176,14 @@ class AutoBuy {
     initBedSpam() {
         const bedSpam = setInterval(async () => {
             const window = this.bot.currentWindow;
-            if ((!this.bedFailed && !config.bedSpam) || getWindowName(window) !== 'BIN Auction View' || await this.itemLoad(31) !== 'bed') {
+            const item = (await this.itemLoad(31))?.name
+            if ((!this.bedFailed && !config.bedSpam) || getWindowName(window) !== 'BIN Auction View' || item !== 'bed') {
                 clearInterval(bedSpam);
+                console.log(`Clering  bed spam`,this.bedFailed, config.bedSpam, getWindowName(window), item )
                 return;
             };
             this.bot.betterClick(31, 0, 0);
+            console.log('doing bedspam')
         }, config.clickDelay)
     }
 
