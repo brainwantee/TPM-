@@ -19,7 +19,7 @@ class AutoIsland {
 
     async checkLocraw(confirm = false) {
         if (this.currentlyConfirming && !confirm) return
-        await sleep(30000);
+        await sleep(60000);
         this.currentlyConfirming = false;
         this.bot.chat('/locraw');
 
@@ -75,6 +75,7 @@ class AutoIsland {
     }
 
     move(place) {
+        console.log(`Moving to ${place}`);
         this.bot.chat(place);
         this.state.set('moving');
         this.currentlyConfirming = true;
