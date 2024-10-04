@@ -1,6 +1,7 @@
 const { logmc, customIGNColor } = require('../logger.js');
 const { config } = require('../config.js');
-const { sleep, betterOnce } = require('./Utils.js')
+const { sleep, betterOnce } = require('./Utils.js');
+const { getPackets } = require('./packets.js');
 const useCookie = config.useCookie;
 let otherIsland = useCookie === false ? false : config.visitFriend;
 
@@ -15,11 +16,12 @@ class AutoIsland {
         this.checkLocraw = this.checkLocraw.bind(this);//Idk what this means tbh
         this.bot.on('spawn', this.checkLocraw);
         this.currentlyConfirming = false;
+        this.packets = getPackets(ign);
     }
 
     async checkLocraw(confirm = false) {
         if (this.currentlyConfirming && !confirm) return
-        await sleep(5_000);
+        await sleep(15_000);
         this.currentlyConfirming = false;
         this.bot.chat('/locraw');
 
@@ -78,7 +80,7 @@ class AutoIsland {
 
     move(place) {
         console.log(`Moving to ${place}`);
-        this.bot.chat(place);
+        this.packets.sendMessage(place);
         this.state.set('moving');
         this.currentlyConfirming = true;
         this.checkLocraw(true);//confirm we made it
