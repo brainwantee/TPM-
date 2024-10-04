@@ -19,7 +19,7 @@ class AutoIsland {
 
     async checkLocraw(confirm = false) {
         if (this.currentlyConfirming && !confirm) return
-        await sleep(45_000);
+        await sleep(5_000);
         this.currentlyConfirming = false;
         this.bot.chat('/locraw');
 
