@@ -19,7 +19,7 @@ class AutoIsland {
 
     async checkLocraw(confirm = false) {
         if (this.currentlyConfirming && !confirm) return
-        await sleep(60000);
+        await sleep(45_000);
         this.currentlyConfirming = false;
         this.bot.chat('/locraw');
 
@@ -29,7 +29,9 @@ class AutoIsland {
             try {
                 const locraw = JSON.parse(message);
                 this.bot.off('message', check);
-                if (locraw.lobbyname) {
+                if(locraw.server === 'limbo'){
+                    this.move('/l');
+                } else if (locraw.lobbyname) {
                     this.move('/skyblock');
                 } else if (locraw.map !== baseMessage) {
                     //console.log(`Base different`);
