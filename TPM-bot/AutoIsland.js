@@ -78,7 +78,8 @@ class AutoIsland {
         }, 5000)
     }
 
-    move(place) {
+    async move(place) {
+        await sleep(3000);
         console.log(`Moving to ${place}`);
         this.packets.sendMessage(place);
         this.state.set('moving');
