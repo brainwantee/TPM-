@@ -9,9 +9,11 @@ const defaultConfig = `{
 
     "discordID": "",
 
-    "usInstance": true, 
+    "webhook": "",
 
-    "session": "",
+    "webhookFormat": "You bought {0} for {2} ({1}, {3}) in {4}ms [{5}]",
+
+    "usInstance": true, 
 
     "visitFriend": "",
 
@@ -25,6 +27,8 @@ const defaultConfig = `{
 
     "bedSpam": false,
 
+    "blockUselessMessages": true,
+
     "skip": {
 
         "always": false,
@@ -35,7 +39,10 @@ const defaultConfig = `{
 
         "skins": true
 
-    }
+    },
+    
+    "session": ""
+
 
 }`;
 

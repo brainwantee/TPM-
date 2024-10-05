@@ -48,7 +48,7 @@ function askUser() {
         const args = input.trim().split(/\s+/);
         let bot;
         if (igns.length !== 1) {
-            let prefix = args[0].toLowerCase();
+            let prefix = args[0].toLowerCase().substring(0, 3);
             let askPrefix = askPrefixes[prefix];
             args.shift();
             if(askPrefix){

@@ -1,6 +1,7 @@
 const { createBot } = require("mineflayer");
 const { logmc, customIGNColor } = require("../logger.js");
 const { getPackets, makePackets } = require("./packets.js");
+const axios = require('axios');
 
 async function makeBot(ign) {
     return new Promise((resolve) => {
@@ -42,12 +43,23 @@ async function makeBot(ign) {
 
         makePackets(ign, bot._client);
 
-        bot.once("login", () => {
+        bot.once("login", async () => {
+            bot.uuid = await getUUID(ign);
             logmc(`${customIGNColor(ign)}${ign} logged in!`);
             resolve(bot);
         });
 
     });
+}
+
+async function getUUID(ign, attempt = 0) {
+    if(attempt == 3) return null;
+    try {
+        return (await axios.get(`https://api.mojang.com/users/profiles/minecraft/${ign}`)).data.id;
+    } catch(e) {
+        console.log(e);
+        return getUUID(ign, ++attempt);
+    }
 }
 
 module.exports = { makeBot };

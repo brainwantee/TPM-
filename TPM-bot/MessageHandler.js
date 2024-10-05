@@ -1,11 +1,14 @@
 const { logmc, customIGNColor } = require("../logger.js");
+const { sendDiscord, stripItemName, nicerFinders, formatNumber } = require('./Utils.js');
 const { config } = require('../config.js');
-const { igns } = config;
+const { igns, webhook, webhookFormat, blockUselessMessages } = config;
 
 const axios = require('axios');
 
 const soldRegex = /^\[Auction\] (.+?) bought (.+?) for ([\d,]+) coins CLICK$/;
 const boughtRegex = /^You purchased (.+?) for ([\d,]+) coins!$/;
+
+const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
 
 class MessageHandler {
 
@@ -56,12 +59,50 @@ class MessageHandler {
 
             const boughtMatch = text.match(boughtRegex);
             if (boughtMatch) {
+                const item = boughtMatch[1];
+                const price = boughtMatch[2].replace(/,/g, '');
+                const weirdBought = stripItemName(item);
+                const objectIntance = this.webhookObject[`${weirdBought}:${price}`];
+                console.log(objectIntance);
+                console.log(`${weirdBought}:${price}`);
+                if (objectIntance) {
+                    let { profit, auctionID, target, bed, finder } = objectIntance;
+                    finder = nicerFinders(finder);
+                    target = formatNumber(target);
+                    profit = formatNumber(profit);
+                    sendDiscord({
+                        title: 'Item purchased',
+                        color: 16629250,
+                        fields: [
+                            {
+                                name: '',
+                                value: this.formatString(webhookFormat, item, profit, price, target, buyspeed, bed, finder, auctionID),
+                            }
+                        ],
+                        thumbnail: {
+                            url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                        },
+                        footer: {
+                            text: `TPM Rewrite - Found by ${finder}`,
+                            icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                        }
+                    })
+                }
                 this.sendScoreboard();
             }
 
             const soldMatch = text.match(soldRegex);
             if (soldMatch) {
                 this.sendScoreboard();
+            }
+
+            if (blockUselessMessages) {
+                for(const message of uselessMessages) { 
+                    if(text.includes(message)){
+                        sentMessage = true;
+                        break;
+                    }
+                }
             }
 
             if (!sentMessage) logmc(`${this.ignPrefix}${message.toAnsi()}`);
@@ -71,6 +112,7 @@ class MessageHandler {
 
     coflHandler() {
         this.ws.on('getInventory', this.sendInventory);
+        this.ws.on('open', this.sendScoreboard);
         const settings = msg => {
             this.privacySettings = new RegExp(msg.chatRegex);
             this.ws.off('settings', settings);
@@ -109,10 +151,35 @@ class MessageHandler {
                     JSON.stringify({
                         type: 'uploadScoreboard',
                         data: JSON.stringify(scoreboard)
-                    }), false
+                    }), true
                 );
             }
         }, 5500);
+    }
+
+    objectAdd(weirdItemName, price, target, profit, auctionID, bed, finder) {
+        this.soldObject[`${weirdItemName}:${target}`] = {
+            profit: profit,
+            auctionID: auctionID
+        };
+        this.webhookObject[`${weirdItemName}:${price}`] = {
+            auctionID: auctionID,
+            target: target,
+            profit: profit,
+            bed: bed,
+            finder: finder
+        };
+        this.relistObject[auctionID] = {
+            target: target,
+            profit: profit
+        }
+        //console.log(this.webhookObject);
+    }
+
+    formatString(format, ...args) {
+        return args.reduce((formatted, arg, index) => {
+            return formatted.replace(`{${index}}`, arg);
+        }, format)
     }
 
 }

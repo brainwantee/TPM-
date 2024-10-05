@@ -9,19 +9,22 @@ const baseMessage = useCookie ? "Private Island" : "Hub";
 
 class AutoIsland {
 
-    constructor(ign, state, bot) {
+    constructor(ign, state, bot, webhook) {
         this.ign = ign;
         this.state = state;
         this.bot = bot;
+        this.currentlyConfirming = true;
         this.checkLocraw = this.checkLocraw.bind(this);//Idk what this means tbh
         this.bot.on('spawn', this.checkLocraw);
-        this.currentlyConfirming = false;
+        this.checkLocraw(true);//Sometimes AutoIsland gets made after the bot spawned so we have to make it confirm first
         this.packets = getPackets(ign);
+        this.webhook = webhook;
     }
 
     async checkLocraw(confirm = false) {
+        console.log(`Move check: confirming: ${this.currentlyConfirming}. Instance ${confirm}. Evaluate ${this.currentlyConfirming && !confirm}`)
         if (this.currentlyConfirming && !confirm) return
-        await sleep(15_000);
+        await sleep(20_000);
         this.currentlyConfirming = false;
         this.bot.chat('/locraw');
 
@@ -31,7 +34,7 @@ class AutoIsland {
             try {
                 const locraw = JSON.parse(message);
                 this.bot.off('message', check);
-                if(locraw.server === 'limbo'){
+                if (locraw.server === 'limbo') {
                     this.move('/l');
                 } else if (locraw.lobbyname) {
                     this.move('/skyblock');
@@ -42,7 +45,7 @@ class AutoIsland {
                     } else {
                         this.move('/hub');
                     }
-                } else if (otherIsland  && otherIsland.trim() !== "") {
+                } else if (otherIsland && otherIsland.trim() !== "") {
                     let scoreboard = this.bot?.scoreboard?.sidebar?.items?.map(item => item?.displayName?.getText(null)?.replace(item?.name, ''));
                     let guests = scoreboard.find(line => line.includes('✌'));
                     let ownIsland = scoreboard.find(line => line.includes('Your Island'));
@@ -52,7 +55,7 @@ class AutoIsland {
                         await sleep(150);
                         const lore = this.bot.currentWindow?.slots[11]?.nbt?.value?.display?.value?.Lore?.value?.value;
                         //console.log(lore);
-                        if(lore.includes('§cIsland disallows guests!')){
+                        if (lore.includes('§cIsland disallows guests!')) {
                             otherIsland = false;
                             console.log(`Hey so this person has invites off :(`);
                             this.checkLocraw();
@@ -61,10 +64,12 @@ class AutoIsland {
                     } else {
                         //console.log('Made it to the island!');
                         this.state.set(null);
+                        this.webhook.sendScoreboard();
                     }
                 } else if (this.state.get() === 'moving') {
                     //console.log('Made it to the island!');
                     this.state.set(null);
+                    this.webhook.sendScoreboard();
                 }
             } catch (e) {
                 console.error(e);

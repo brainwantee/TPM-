@@ -48,7 +48,7 @@ class AutoBuy {
                         packets.click(11, nextWindowID, 159);
                         this.recentlySkipped = true;
                         if (useSkip) {
-                            logmc(`§6[§bTPM§6] §8Used skip because you have useSkip enabled in config`);
+                            logmc(`§6[§bTPM§6] §cUsed skip because you have useSkip enabled in config`);
                             return;
                         }
                         let skipReasons = [];
@@ -89,8 +89,9 @@ class AutoBuy {
             let weirdItemName = stripItemName(itemName);
             let profit = IHATETAXES(target) - startingBid;
             let ending = new Date(normalizeDate(purchaseAt)).getTime();
+            let bed = 'NUGGET';
             if (ready) {
-                logmc(`§6[§bTPM§6] §8Opening ${itemName}`);
+                logmc(`§6[§bTPM§6] §6Opening ${itemName}`);
                 this.currentOpen = auctionID;
                 this.recentProfit = profit;
                 this.recentFinder = finder;
@@ -99,7 +100,7 @@ class AutoBuy {
                 state.set('buying');
                 if (currentTime < ending) {
                     this.timeBed(ending, auctionID);
-                    //add webhook here
+                    bed = 'BED';
                 }
             } else if (currentState !== 'moving') {
                 let reasons = [];
@@ -111,13 +112,14 @@ class AutoBuy {
             } else {
                 logmc(`§6[§bTPM§6] §cCan't open flips while moving :(`);
             }
+            webhook.objectAdd(weirdItemName, startingBid, target, profit, auctionID, bed, finder);
             logmc(`Found flip ${auctionID}`);
         })
 
     }
 
     async itemLoad(slot, alreadyLoaded = false) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const { bot } = this;
             let index = 1;
             const first = bot.currentWindow?.slots[slot]?.name;
@@ -157,7 +159,6 @@ class AutoBuy {
         for (let i = 0; i < 5; i++) {
             if (getWindowName(this.bot.currentWindow)?.includes('BIN Auction View') && this.currentOpen === currentID) {
                 this.bot.betterClick(31, 0, 0);
-                console.log(`Bed click`);
                 await sleep(3);
             } else {
                 break;
@@ -174,16 +175,15 @@ class AutoBuy {
     }
 
     initBedSpam() {
-        const bedSpam = setInterval(async () => {
+        const bedSpam = setInterval(() => {
             const window = this.bot.currentWindow;
-            const item = (await this.itemLoad(31))?.name
+            const item = window?.slots[31]?.name;
             if ((!this.bedFailed && !config.bedSpam) || getWindowName(window) !== 'BIN Auction View' || item !== 'bed') {
                 clearInterval(bedSpam);
-                console.log(`Clering  bed spam`,this.bedFailed, config.bedSpam, getWindowName(window), item )
+                console.log('Clearing bed spam');
                 return;
             };
             this.bot.betterClick(31, 0, 0);
-            console.log('doing bedspam')
         }, config.clickDelay)
     }
 

@@ -4,10 +4,10 @@ const EventEmitter = require('events');
 
 const { config, updateConfig } = require('../config.js');
 const { logmc, customIGNColor } = require('../logger.js');
-const { DISCORD_PING, formatNumber, noColorCodes, sleep } = require('./Utils.js');
+const { DISCORD_PING, formatNumber, noColorCodes, sleep, sendDiscord } = require('./Utils.js');
 const { getPackets } = require('./packets.js');
 
-const { usInstance } = config;
+const { usInstance, blockUselessMessages } = config;
 
 const connectionRegex = /\[Coflnet\]:  Your connection id is ([a-f0-9]{32}), copy that if you encounter an error/;
 
@@ -35,18 +35,35 @@ class CoflWs {
 
         websocket.on('open', (message) => {
             console.log(`Started cofl connection!`);
+            sendDiscord({
+                title: 'Started flipping',
+                color: 16629250,
+                fields: [
+                    {
+                        name: '',
+                        value: `Logged in as \`\`${this.ign}\`\``,
+                    }
+                ],
+                thumbnail: {
+                    url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                },
+                footer: {
+                    text: `The "Perfect" Macro Rewrite`,
+                    icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                }
+            })
             ws.emit("open", message);
         })
 
         websocket.on('close', async () => {
             await sleep(5000);
             this.startWs(link);
-            
+
         })
 
         websocket.on('message', (message) => {
             const msg = this.parseMessage(message);
-            if(this.testMessage(msg)){
+            if (this.testMessage(msg)) {
                 logmc(msg);
             }
         })
@@ -113,7 +130,6 @@ class CoflWs {
             type: first,
             data: joined
         })
-        logmc(send);
         this.send(send);
     }
 
@@ -123,22 +139,26 @@ class CoflWs {
             return;
         }
         this.websocket.send(msg);
-         if(type) console.log(msg)
+        if (type) console.log(msg)
     }
 
-    testMessage(msg){
-        if(!msg) return false;
+    testMessage(msg) {
+        if (!msg) return false;
         msg = noColorCodes(msg);
-        if(msg.includes('[Chat]')) return true;//Don't try and use cofl chat to trigger other things :(
+        if (msg.includes('[Chat]')) return true;//Don't try and use cofl chat to trigger other things :(
 
         const connectionMatch = msg.match(connectionRegex);
-        if(connectionMatch){
+        if (connectionMatch) {
             console.log(`Got connection ID ${connectionMatch[1]}`);
         }
 
-        if(msg.includes(`Until you do you are using the free version which will make less profit and your settings won't be saved`)) {//logged out
+        if (msg.includes(`Until you do you are using the free version which will make less profit and your settings won't be saved`)) {//logged out
             this.handleCommand('/cofl s maxItemsInInventory 1');
             //TODO add webhook here
+        }
+
+        if (blockUselessMessages) {
+            if (msg.includes('matched your Whitelist')) return false;
         }
 
         return true;

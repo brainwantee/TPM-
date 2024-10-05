@@ -1,4 +1,6 @@
 const { config } = require('../config.js');
+const { webhook } = config;
+const axios = require('axios');
 
 const DISCORD_PING = config.discordID == "" ? "" : `<@${config.discordID}>`;
 
@@ -38,7 +40,9 @@ async function betterOnce(listener, event, timeframe = 5000) {
 }
 
 function stripItemName(name) {
-    return name.replace(/!|-us|\.|\b(?:[1-9]|[1-5][0-9]|6[0-4])x\b/g, "");
+    const stripped = noColorCodes(name.replace(/!|-us|\.|\b(?:[1-9]|[1-5][0-9]|6[0-4])x\b/g, ""));
+    console.log(`Stripped ${name} => ${stripped}`);
+    return stripped;
 }
 
 function IHATETAXES(price) {
@@ -96,4 +100,56 @@ function noColorCodes(text) {
     return text?.replace(/§./g, '')?.replace('§', '')//cofl sometimes sends messages that are cut off so I need the second one aswell
 }
 
-module.exports = { DISCORD_PING, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes };
+async function sendDiscord(embed, ping = false, attempt = 0) {
+    if (webhook) {
+        try {
+            if (Array.isArray(webhook)) {
+                webhook.forEach(async (hook) => {
+                    await axios.post(hook, {
+                        username: "TPM",
+                        avatar_url: "https://media.discordapp.net/attachments/1235761441986969681/1263290313246773311/latest.png?ex=6699b249&is=669860c9&hm=87264b7ddf4acece9663ce4940a05735aecd8697adf1335de8e4f2dda3dbbf07&=&format=webp&quality=lossless",
+                        content: ping ? DISCORD_PING : "",
+                        embeds: [embed]
+                      });
+                })
+            } else {
+                await axios.post(webhook, {
+                    username: "TPM",
+                    avatar_url: "https://media.discordapp.net/attachments/1235761441986969681/1263290313246773311/latest.png?ex=6699b249&is=669860c9&hm=87264b7ddf4acece9663ce4940a05735aecd8697adf1335de8e4f2dda3dbbf07&=&format=webp&quality=lossless",
+                    content: ping ? DISCORD_PING : "",
+                    embeds: [embed]
+                  });
+            }
+        } catch(e) {
+            console.error(e)
+            if (attempt < 3) {
+                await sleep(5000)
+                await sendDiscord(embed, attempt + 1);
+            }
+        }
+    }
+}
+
+function nicerFinders(finder) {
+    switch (finder) {
+        case "USER":
+            return "User";
+        case "SNIPER_MEDIAN":
+            return 'Median Sniper';
+        case "TFM":
+            return "TFM";
+        case "AI":
+            return 'AI';
+        case "CraftCost":
+            return "Craft Cost";
+        case "SNIPER":
+            return 'Sniper';
+        case "STONKS":
+            return 'Stonks';
+        case "FLIPPER":
+            return 'Flipper'
+    }
+    return finder;
+}
+
+module.exports = { DISCORD_PING, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders };
