@@ -96,6 +96,10 @@ class AhBot {
         return thisPrefix;
     }
 
+    getBot(){
+        return this.bot;
+    }
+
 }
 
 module.exports = AhBot;
