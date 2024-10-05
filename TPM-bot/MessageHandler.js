@@ -60,11 +60,12 @@ class MessageHandler {
             const boughtMatch = text.match(boughtRegex);
             if (boughtMatch) {
                 const item = boughtMatch[1];
-                const price = boughtMatch[2].replace(/,/g, '');
+                const price = boughtMatch[2];
+                const priceNoCommas = price.replace(/,/g, '');
                 const weirdBought = stripItemName(item);
-                const objectIntance = this.webhookObject[`${weirdBought}:${price}`];
+                const objectIntance = this.webhookObject[`${weirdBought}:${priceNoCommas}`];
                 console.log(objectIntance);
-                console.log(`${weirdBought}:${price}`);
+                console.log(`${weirdBought}:${priceNoCommas}`);
                 if (objectIntance) {
                     let { profit, auctionID, target, bed, finder } = objectIntance;
                     finder = nicerFinders(finder);
@@ -72,7 +73,7 @@ class MessageHandler {
                     profit = formatNumber(profit);
                     sendDiscord({
                         title: 'Item purchased',
-                        color: 16629250,
+                        color: 2615974,
                         fields: [
                             {
                                 name: '',
