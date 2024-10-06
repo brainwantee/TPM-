@@ -2,7 +2,7 @@ const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
 const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep } = require('./Utils.js');
 const { logmc } = require('../logger.js');
-const { delay, waittime, skip: skipSettings, clickDelay } = config;
+const { delay, waittime, skip: skipSettings, clickDelay, bedSpam } = config;
 const { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
 
 class AutoBuy {
@@ -63,6 +63,7 @@ class AutoBuy {
                     bot.closeWindow(window);
                     state.set(null);
                 } else {
+                    this.recentlySkipped = false;
                     this.initBedSpam();
                 }
 
@@ -99,7 +100,7 @@ class AutoBuy {
                 this.bedFailed = false;
                 state.set('buying');
                 if (currentTime < ending) {
-                    this.timeBed(ending, auctionID);
+                    if(!bedSpam) this.timeBed(ending, auctionID);
                     bed = 'BED';
                 }
             } else if (currentState !== 'moving') {
@@ -180,11 +181,11 @@ class AutoBuy {
             const item = window?.slots[31]?.name;
             if ((!this.bedFailed && !config.bedSpam) || getWindowName(window) !== 'BIN Auction View' || item !== 'bed') {
                 clearInterval(bedSpam);
-                console.log('Clearing bed spam');
+                console.log('Clearing bed spam', this.bedFailed, config.bedSpam, getWindowName(window), item);
                 return;
             };
             this.bot.betterClick(31, 0, 0);
-        }, config.clickDelay)
+        }, clickDelay)
     }
 
 }
