@@ -7,6 +7,7 @@ const rl = readline.createInterface({
 });
 
 const AhBot = require('./TPM-bot/AhBot.js');
+const TpmSocket = require('./TpmSocket.js');
 const { sendDiscord } = require('./TPM-bot/Utils.js');
 const { config, updateConfig } = require('./config.js');
 
@@ -44,6 +45,8 @@ testIgn();
         askPrefixes[bots[ign].initAskPrefix()?.toLowerCase()] = ign;
         message += `Logged in as \`\`${ign}\`\`\n`;
     }
+
+    const tws = new TpmSocket(bots);
 
     let thumbnail = 'https://images-ext-1.discordapp.net/external/7YiWo1jf2r78hL_2HpVRGNDcx_Nov0aDjtrG7AZ4Hxc/%3Fsize%3D4096/https/cdn.discordapp.com/icons/1261825756615540836/983ecb82e285eee55ef25dd2bfbe9d4d.png?format=webp&quality=lossless&width=889&height=889';
 
