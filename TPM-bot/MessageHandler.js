@@ -1,7 +1,7 @@
 const { logmc, customIGNColor } = require("../logger.js");
 const { sendDiscord, stripItemName, nicerFinders, formatNumber } = require('./Utils.js');
 const { config } = require('../config.js');
-const { igns, webhook, webhookFormat, blockUselessMessages } = config;
+const { igns, webhookFormat, blockUselessMessages } = config;
 
 const axios = require('axios');
 
@@ -24,7 +24,7 @@ class MessageHandler {
         this.soldObject = {};//"itemName:target"
         this.ignPrefix = igns.length == 1 ? "" : `${customIGNColor(ign)}${ign}: `;
         this.firstGui = null;
-        this.privacySettings = /no regex yet but I don't want it to crash so I'm putting regex /;
+        this.privacySettings = /no regex yet but I don't want it to crash so I'm putting regex/;
         this.messageListener();
         this.coflHandler();
     }

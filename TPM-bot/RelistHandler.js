@@ -1,6 +1,9 @@
 const { config } = require('../config.js');
-const { sleep, betterOnce, getWindowName } = require('./Utils.js');
+const { sleep, betterOnce, getWindowName, noColorCodes } = require('./Utils.js');
 const { useCookie, relist } = config;
+
+const coopRegexPlayers = /Co-op with (\d+) players:/;
+const coopRegexSinglePlayer = /Co-op with (?:\[.*\]\s*)?([\w]+)/;
 
 class RelistHandler {
 
@@ -9,7 +12,7 @@ class RelistHandler {
         this.state = state;
         this.useRelist = relist;
         this.currentAuctions = null;
-        this.maxSlots = null;
+        this.maxSlots = 14;
         this.getReady();
     }
 
@@ -30,16 +33,28 @@ class RelistHandler {
                     bot.chat('/profiles');
                     await betterOnce(bot, "windowOpen");
                     const profileLore = bot.currentWindow?.slots?.find(block => block?.name === 'emerald_block').nbt.value.display.value.Lore.value.value;
-                    console.log(profileLore);
-                    profileLore.forEach(line => {
-                        
-                    });
+                    let coopLine = profileLore.find(line => line.includes('Co-op with'));
+                    if (coopLine) {
+                        coopLine = noColorCodes(coopLine);
+                        const singleMatch = coopLine.match(coopRegexSinglePlayer);
+                        const multiMatch = coopLine.match(coopRegexPlayers);
+                        if (multiMatch) {
+                            const numberOfPlayers = parseInt(multiMatch[1]);
+                            this.maxSlots += numberOfPlayers * 3;
+                        } else if (singleMatch) {
+                            this.maxSlots += 3;
+                        } else {
+                            console.error('wtf is your coop', profileLore);
+                        }
+                    }
+
+                    console.log(`max slots set to ${this.maxSlots}`)
 
                 } else {
-                    console.log('not getting ready!!!')
+                    console.log('not getting ready!!!');
                 }
             }
-        } catch(e) {
+        } catch (e) {
             console.error(`Error getting relist ready! Not going to use relist for ${bot.ign}`, e);
             this.useRelist = false;
         }
