@@ -30,6 +30,7 @@ class RelistHandler {
                     bot.chat('/profiles');
                     await betterOnce(bot, "windowOpen");
                     const profileLore = bot.currentWindow?.slots?.find(block => block?.name === 'emerald_block').nbt.value.display.value.Lore.value.value;
+                    console.log(profileLore);
                     profileLore.forEach(line => {
                         
                     });
