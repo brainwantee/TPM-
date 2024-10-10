@@ -2,7 +2,7 @@ const { config } = require('../config.js');
 const { webhook } = config;
 const axios = require('axios');
 
-const DISCORD_PING = config.discordID == "" ? "" : `<@${config.discordID}>`;
+const DISCORD_PING = config.discordID ? "" : `<@${config.discordID}>`;
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -152,4 +152,27 @@ function nicerFinders(finder) {
     return finder;
 }
 
-module.exports = { DISCORD_PING, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders };
+async function betterOnce(listener, uhhh, timeframe = 5000) {
+    return new Promise((resolve) => {
+        let sent = false;
+
+        const listen = () => {
+            if (!sent) {
+                sent = true;
+                listener.off(uhhh, listen);
+                resolve(true);
+            }
+        };
+
+        setTimeout(() => {
+            if (!sent) {
+                listener.off(uhhh, listen);
+                resolve(false);
+            }
+        }, timeframe);
+
+        listener.on(uhhh, listen);
+    });
+}
+
+module.exports = { DISCORD_PING, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };

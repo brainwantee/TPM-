@@ -103,7 +103,7 @@ class AutoBuy {
                     if(!bedSpam) this.timeBed(ending, auctionID);
                     bed = 'BED';
                 }
-            } else if (currentState !== 'moving') {
+            } else if (currentState !== 'moving' &&  currentState !== 'getting ready') {
                 let reasons = [];
                 if (!windowCheck) reasons.push(`${getWindowName(bot.currentWindow)} is open`);
                 if (!stateCheck) reasons.push(`state is ${currentState}`);
@@ -111,7 +111,7 @@ class AutoBuy {
                 state.queueAdd({ finder, profit, tag, itemName }, 'buying', 0);
                 logmc(`§6[§bTPM§6] §3${itemName}§3 added to pipeline because ${reasons.join(' and ')}!`);
             } else {
-                logmc(`§6[§bTPM§6] §cCan't open flips while moving :(`);
+                logmc(`§6[§bTPM§6] §cCan't open flips while ${currentState} :(`);
             }
             webhook.objectAdd(weirdItemName, startingBid, target, profit, auctionID, bed, finder);
             logmc(`Found flip ${auctionID}`);

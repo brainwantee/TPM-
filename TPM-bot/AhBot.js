@@ -7,7 +7,7 @@ const StateManager = require("./StateManager.js");
 const AutoIsland = require('./AutoIsland.js');
 const MessageHandler = require('./MessageHandler.js');
 const AutoBuy = require('./AutoBuy.js');
-//const { getReady, listItem } = require('./relistHandler.js'); For the future
+const RelistHandler = require('./RelistHandler.js');
 const { igns } = config;
 
 
@@ -35,7 +35,9 @@ class AhBot {
         const coflSocket = new CoflWs(ign, bot);
         const ws = coflSocket.getWs();
 
-        const webhook = new MessageHandler(ign, bot, coflSocket, state);
+        const relist = new RelistHandler(bot, state);
+
+        const webhook = new MessageHandler(ign, bot, coflSocket, state, relist);
 
         const island = new AutoIsland(ign, state, bot, webhook);
 

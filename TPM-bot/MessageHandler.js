@@ -12,12 +12,13 @@ const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
 
 class MessageHandler {
 
-    constructor(ign, bot, socket, state) {
+    constructor(ign, bot, socket, state, relist) {
         this.ign = ign;
         this.bot = bot;
         this.coflSocket = socket;
         this.ws = socket.getWs();
         this.state = state;
+        this.relist = relist;
         this.webhookObject = {};//"itemName:pricePaid"
         this.relistObject = {};//auctionID
         this.soldObject = {};//"itemName:target"
@@ -95,6 +96,7 @@ class MessageHandler {
             const soldMatch = text.match(soldRegex);
             if (soldMatch) {
                 this.sendScoreboard();
+                this.relist.declineSoldAuction();
             }
 
             if (blockUselessMessages) {
@@ -179,7 +181,8 @@ class MessageHandler {
 
     formatString(format, ...args) {
         return args.reduce((formatted, arg, index) => {
-            return formatted.replace(`{${index}}`, arg);
+            const regex = new RegExp(`\\{${index}\\}`, 'g')
+            return formatted.replace(regex, arg);
         }, format)
     }
 
