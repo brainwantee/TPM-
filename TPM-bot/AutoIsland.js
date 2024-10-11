@@ -19,6 +19,7 @@ class AutoIsland {
         this.checkLocraw(true);//Sometimes AutoIsland gets made after the bot spawned so we have to make it confirm first
         this.packets = getPackets(ign);
         this.webhook = webhook;
+        this.gottenReady = false;
     }
 
     async checkLocraw(confirm = false) {
@@ -63,12 +64,22 @@ class AutoIsland {
                         this.bot.betterClick(11, 0, 0);
                     } else {
                         //console.log('Made it to the island!');
-                        this.state.set(null);
+                        if (this.gottenReady) {
+                            this.state.set(null);
+                        } else {
+                            this.state.set('getting ready');
+                            this.gottenReady = true;
+                        }
                         this.webhook.sendScoreboard();
                     }
                 } else if (this.state.get() === 'moving') {
                     //console.log('Made it to the island!');
-                    this.state.set(null);
+                    if (this.gottenReady) {
+                        this.state.set(null);
+                    } else {
+                        this.state.set('getting ready');
+                        this.gottenReady = true;
+                    }
                     this.webhook.sendScoreboard();
                 }
             } catch (e) {

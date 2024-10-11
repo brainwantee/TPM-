@@ -7,24 +7,25 @@ const { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: 
 
 class AutoBuy {
 
-    constructor(bot, WebhookManager, ws, ign, state) {
+    constructor(bot, WebhookManager, ws, ign, state, relist) {
         this.bot = bot;
         this.webhook = WebhookManager;
         this.ws = ws;
         this.ign = ign;
         this.state = state;
+        this.relist = relist;
         this.recentProfit = 0;
         this.recentFinder = 0;
         this.recentlySkipped = false;
         this.recentName = null;
         this.bedFailed = false;
         this.currentOpen = null;
+        this.packets = getPackets(ign);
         this.flipHandler();
     }
 
     async flipHandler() {
-        const { webhook, bot, ws, ign, state } = this;
-        const packets = getPackets(ign);
+        const { webhook, bot, ws, ign, state, packets } = this;
         let firstGui;
 
         bot._client.on('open_window', async (window) => {
@@ -59,12 +60,36 @@ class AutoBuy {
                     } else {
                         this.recentlySkipped = false;
                     }
-                } else if (item !== 'bed') {
-                    bot.closeWindow(window);
-                    state.set(null);
                 } else {
                     this.recentlySkipped = false;
-                    this.initBedSpam();
+                }
+
+                switch (item) {
+                    case "bed":
+                        this.initBedSpam();
+                        break;
+                    case "potato":
+                        logmc(`§6[§bTPM§6]§c Potatoed :(`);
+                        bot.betterWindowClose();
+                        state.set(null);
+                    case "feather":
+                        const secondItem = (await this.itemLoad(31, true))?.name;
+                        if (secondItem === 'potato') {
+                            logmc(`§6[§bTPM§6]§c Potatoed :(`)
+                            bot.betterWindowClose();
+                            state.set(null);
+                            break;
+                        } else if (secondItem !== 'gold_block') {
+                            console.error(`Found a weird item on second run through ${secondItem}`);
+                            bot.betterWindowClose();
+                            state.set(null);
+                            break;
+                        }
+                    case "gold_block":
+                        bot.betterClick(31);
+                        state.set(null);
+                        this.relist.declineSoldAuction();
+                        break;
                 }
 
             } else if (windowName === '{"italic":false,"extra":[{"text":"Confirm Purchase"}],"text":""}') {
@@ -100,10 +125,10 @@ class AutoBuy {
                 this.bedFailed = false;
                 state.set('buying');
                 if (currentTime < ending) {
-                    if(!bedSpam) this.timeBed(ending, auctionID);
+                    if (!bedSpam) this.timeBed(ending, auctionID);
                     bed = 'BED';
                 }
-            } else if (currentState !== 'moving' &&  currentState !== 'getting ready') {
+            } else if (currentState !== 'moving' && currentState !== 'getting ready') {
                 let reasons = [];
                 if (!windowCheck) reasons.push(`${getWindowName(bot.currentWindow)} is open`);
                 if (!stateCheck) reasons.push(`state is ${currentState}`);
@@ -149,8 +174,14 @@ class AutoBuy {
         });
     }
 
-    openExternalFlip(ahid, profit) {
-
+    openExternalFlip(ahid, profit, finder, itemname, price = null) {//queue and buy from discord (maybe webpage in future?) ONLY CALL IF READY!!!
+        this.packets.sendMessage(`/viewauction ${ahid}`);
+        this.recentFinder = finder;
+        this.recentProfit = profit;
+        this.bedFailed = true;
+        if (price) {//For queue flips, don't include price
+            this.webhook.objectAdd(stripItemName(itemname), price, null, null, ahid, 'EXTERNAL', finder);
+        }
     }
 
     async timeBed(ending, currentID) {

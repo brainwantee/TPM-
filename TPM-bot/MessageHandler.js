@@ -1,5 +1,5 @@
 const { logmc, customIGNColor } = require("../logger.js");
-const { sendDiscord, stripItemName, nicerFinders, formatNumber } = require('./Utils.js');
+const { sendDiscord, stripItemName, nicerFinders, formatNumber, addCommasToNumber, onlyNumbers } = require('./Utils.js');
 const { config } = require('../config.js');
 const { igns, webhookFormat, blockUselessMessages } = config;
 
@@ -12,15 +12,14 @@ const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
 
 class MessageHandler {
 
-    constructor(ign, bot, socket, state, relist) {
+    constructor(ign, bot, socket, state) {
         this.ign = ign;
         this.bot = bot;
         this.coflSocket = socket;
         this.ws = socket.getWs();
         this.state = state;
-        this.relist = relist;
         this.webhookObject = {};//"itemName:pricePaid"
-        this.relistObject = {};//auctionID
+        this.relistObject = {};//auctionID. Using a different object ensures that it never lists for the wrong price
         this.soldObject = {};//"itemName:target"
         this.ignPrefix = igns.length == 1 ? "" : `${customIGNColor(ign)}${ign}: `;
         this.firstGui = null;
@@ -96,12 +95,31 @@ class MessageHandler {
             const soldMatch = text.match(soldRegex);
             if (soldMatch) {
                 this.sendScoreboard();
-                this.relist.declineSoldAuction();
+                const buyer = soldMatch[1];
+                const item = soldMatch[2];
+                const price = onlyNumbers(soldMatch[3]);
+                sendDiscord({
+                    title: 'Item Sold',
+                    color: 2615974,
+                    fields: [
+                        {
+                            name: '',
+                            value: `Collected \`${addCommasToNumber(price)} coins\` for selling \`${item}\` to \`${buyer}\``,
+                        }
+                    ],
+                    thumbnail: {
+                        url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                    },
+                    footer: {
+                        text: `TPM Rewrite`,
+                        icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                    }
+                })
             }
 
             if (blockUselessMessages) {
-                for(const message of uselessMessages) { 
-                    if(text.includes(message)){
+                for (const message of uselessMessages) {
+                    if (text.includes(message)) {
                         sentMessage = true;
                         break;
                     }
@@ -184,6 +202,10 @@ class MessageHandler {
             const regex = new RegExp(`\\{${index}\\}`, 'g')
             return formatted.replace(regex, arg);
         }, format)
+    }
+
+    getObjects() {
+        return { relist: this.relistObject, webhook: this.webhookObject, sold: this.soldObject };
     }
 
 }

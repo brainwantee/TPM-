@@ -1,5 +1,5 @@
 const { config } = require('../config.js');
-const { sleep, betterOnce, getWindowName, noColorCodes, getSlotLore, sendDiscord, onlyNumbers, formatNumber } = require('./Utils.js');
+const { sleep, betterOnce, getWindowName, noColorCodes, getSlotLore, sendDiscord, onlyNumbers, addCommasToNumber } = require('./Utils.js');
 const { useCookie, relist } = config;
 
 const coopRegexPlayers = /Co-op with (\d+) players:/;
@@ -16,8 +16,8 @@ class RelistHandler {
         this.getReady();
     }
 
-    declineSoldAuction() {
-
+    declineSoldAuction() {//cba to add message listener twice so this will have to do
+        this.currentAuctions--;
     }
 
     getReady() {
@@ -26,8 +26,7 @@ class RelistHandler {
         try {
             var check = async () => {
                 await sleep(20_500);
-                if (state.get() == null) {
-                    state.set('getting ready');
+                if (state.get() == 'getting ready') {
                     console.log('getting ready!')
                     bot.off('spawn', check);
                     bot.chat('/profiles');
@@ -75,7 +74,7 @@ class RelistHandler {
                         }
                         if (slot?.name === 'cauldron') claimAll = slot.slot;
                     });
-                    
+
                     if (claimAll) {
                         bot.betterClick(claimAll);
                     } else if (soldAuctions.length == 1) {
@@ -93,10 +92,10 @@ class RelistHandler {
                         const soldFor = onlyNumbers(soldLine);
                         console.log(soldLine);
                         console.log(soldFor);
-                        webhookMessage += `Sold \`\`${itemName}\`\` for \`\`${formatNumber(soldFor)}\`\` coins!\n`;
+                        webhookMessage += `Collected \`${addCommasToNumber(soldFor)} coins\` for selling \`${itemName}\`\n`;
                     })
 
-                    if(webhookMessage){
+                    if (webhookMessage) {
                         sendDiscord({
                             title: 'Claimed sold items!',
                             color: 16731310,
@@ -129,6 +128,10 @@ class RelistHandler {
         }
 
         bot.on('spawn', check);
+    }
+
+    listAuction(auctionID) {
+        
     }
 
 }

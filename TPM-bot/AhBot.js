@@ -34,14 +34,14 @@ class AhBot {
 
         const coflSocket = new CoflWs(ign, bot);
         const ws = coflSocket.getWs();
+        
+        const webhook = new MessageHandler(ign, bot, coflSocket, state);
 
-        const relist = new RelistHandler(bot, state);
-
-        const webhook = new MessageHandler(ign, bot, coflSocket, state, relist);
+        const relist = new RelistHandler(bot, state, webhook);
 
         const island = new AutoIsland(ign, state, bot, webhook);
 
-        const autoBuy = new AutoBuy(bot, webhook, ws, ign, state);
+        const autoBuy = new AutoBuy(bot, webhook, ws, ign, state, relist);
 
         this.autoBuy = autoBuy;
         this.webhook = webhook;

@@ -183,4 +183,8 @@ function onlyNumbers(text) {
     return parseInt(text.replace(/[^\d,]/g, '').replace(/,/g, ''), 10);
 }
 
-module.exports = { DISCORD_PING, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };
+function addCommasToNumber(number) {
+    return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+module.exports = { DISCORD_PING, addCommasToNumber, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };
