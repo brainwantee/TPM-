@@ -175,4 +175,12 @@ async function betterOnce(listener, uhhh, timeframe = 5000) {
     });
 }
 
-module.exports = { DISCORD_PING, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };
+function getSlotLore(slot) {
+    return slot?.nbt?.value?.display?.value?.Lore?.value?.value;
+}
+
+function onlyNumbers(text) {
+    return parseInt(text.replace(/[^\d,]/g, '').replace(/,/g, ''), 10);
+}
+
+module.exports = { DISCORD_PING, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };
