@@ -99,9 +99,11 @@ class AutoBuy {
                 logmc(`§6[§bTPM§6] §3Confirm at ${confirmAt}ms`);
                 if (!this.recentlySkipped) bot.betterClick(11, 0, 0);
                 state.set(null);
-                setTimeout(() => {
-                    if (getWindowName(bot.currentWindow) === 'Confirm Purchase') bot.betterClick(11, 0, 0);
-                }, 50)
+                await bot.waitForTicks(3);
+                while (getWindowName(bot.currentWindow) === 'Confirm Purchase') {//Sometimes click doesn't register
+                    bot.betterClick(11, 0, 0);
+                    await bot.waitForTicks(5);
+                }
             }
             await sleep(500);
             webhook.sendInventory();
