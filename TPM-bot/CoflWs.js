@@ -7,7 +7,7 @@ const { logmc, customIGNColor } = require('../logger.js');
 const { DISCORD_PING, formatNumber, noColorCodes, sleep, sendDiscord } = require('./Utils.js');
 const { getPackets } = require('./packets.js');
 
-const { usInstance, blockUselessMessages } = config;
+const { blockUselessMessages, session } = config;
 
 const connectionRegex = /\[Coflnet\]:  Your connection id is ([a-f0-9]{32}), copy that if you encounter an error/;
 
@@ -19,16 +19,17 @@ class CoflWs {
         this.link = null;
         this.ign = ign;
         this.bot = bot;
+        this.reconnect = true;
 
         this.startWs();
     }
 
     startWs(link = null) {
-
+        this.reconnect = true;
         if (link === null) {
-            link = `${usInstance ? 'ws://sky-us.' : 'wss://sky.'}coflnet.com/modsocket?version=1.5.1-af&player=${this.ign}&SId=${config.session}`;
+            link = `wss://sky.coflnet.com/modsocket?version=1.5.1-af&player=${this.ign}&SId=${session}`;
             this.link = link;
-        }//There's no option to use regular socket because it's slower
+        }//There's no option to use regular socket because it's slower. 
 
         this.websocket = new WebSocket(link);
         const { websocket, ws } = this;//screw "this" 
@@ -40,8 +41,9 @@ class CoflWs {
 
         websocket.on('close', async () => {
             await sleep(5000);
-            this.startWs(link);
-
+            if (this.reconnect) {
+                this.startWs(link);
+            }
         })
 
         websocket.on('message', (message) => {
@@ -92,7 +94,15 @@ class CoflWs {
                 break;
             case "execute":
                 if (data.includes('/cofl')) {
-                    this.handleCommand(data);
+                    if (data.includes('/cofl connect')) {//switch region stuff
+                        this.closeSocket();
+                        setTimeout(() => {
+                            this.startWs(`${data.split(' ')[2]}?version=1.5.1-af&player=${this.ign}&SId=${session}`);
+                        }, 1500);
+                        break;
+                    } else {
+                        this.handleCommand(data);
+                    }
                 } else {
                     const packets = getPackets(this.ign);
                     if (!packets) return;
@@ -145,6 +155,11 @@ class CoflWs {
         }
 
         return true;
+    }
+
+    closeSocket() {
+        console.log(`Intentional socket close`);
+        this.reconnect = false;
     }
 
 }

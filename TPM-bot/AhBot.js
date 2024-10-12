@@ -30,7 +30,7 @@ class AhBot {
 
         let packets = getPackets(ign);
 
-        const state = new StateManager();
+        const state = new StateManager(bot);
 
         const coflSocket = new CoflWs(ign, bot);
         const ws = coflSocket.getWs();

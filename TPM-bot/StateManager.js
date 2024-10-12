@@ -1,10 +1,14 @@
+const { config } = require('../config.js');
+const { delay } = config;
+
 let queue = [];
 
 class StateManager {
 
-    constructor() {
+    constructor(bot) {
         this.state = 'moving';
         this.lastaction = Date.now();
+        this.bot = bot;
     }
 
     set(newState) {
@@ -17,7 +21,7 @@ class StateManager {
     }
 
     setAction(time) {
-        this.lastaction = time; 
+        this.lastaction = time;
     }
 
     getTime() {
@@ -31,6 +35,11 @@ class StateManager {
     queueAdd(action, state, priority) {
         queue.push({ action: action, state: state, priority: priority });
         queue.sort((a, b) => b.priority - a.priority);
+        console.log(queue);
+    }
+
+    queueRemove(){
+        queue.shift();
     }
 
 }

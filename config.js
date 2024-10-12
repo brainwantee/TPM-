@@ -11,10 +11,8 @@ const defaultConfig = `{
 
     "webhook": "",
 
-    "webhookFormat": "You bought {0} for {2} ({1}, {3}) in {4}ms [{5}]",
-
-    "usInstance": true, 
-
+    "webhookFormat": "You bought [\`\`{0}\`\`](https://sky.coflnet.com/auction/{7}) for \`\`{2}\`\` (\`\`{1}\`\` profit) in \`\`{4}ms\`\`",
+    
     "visitFriend": "",
 
     "useCookie": true,

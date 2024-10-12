@@ -22,6 +22,7 @@ class AutoBuy {
         this.currentOpen = null;
         this.packets = getPackets(ign);
         this.flipHandler();
+        this.initQueue();
     }
 
     async flipHandler() {
@@ -72,6 +73,7 @@ class AutoBuy {
                         logmc(`§6[§bTPM§6]§c Potatoed :(`);
                         bot.betterWindowClose();
                         state.set(null);
+                        break;
                     case "feather":
                         const secondItem = (await this.itemLoad(31, true))?.name;
                         if (secondItem === 'potato') {
@@ -97,6 +99,9 @@ class AutoBuy {
                 logmc(`§6[§bTPM§6] §3Confirm at ${confirmAt}ms`);
                 if (!this.recentlySkipped) bot.betterClick(11, 0, 0);
                 state.set(null);
+                setTimeout(() => {
+                    if (getWindowName(bot.currentWindow) === 'Confirm Purchase') bot.betterClick(11, 0, 0);
+                }, 50)
             }
             await sleep(500);
             webhook.sendInventory();
@@ -124,6 +129,7 @@ class AutoBuy {
                 this.recentName = itemName;
                 this.bedFailed = false;
                 state.set('buying');
+                state.setAction(currentTime);
                 if (currentTime < ending) {
                     if (!bedSpam) this.timeBed(ending, auctionID);
                     bed = 'BED';
@@ -133,7 +139,7 @@ class AutoBuy {
                 if (!windowCheck) reasons.push(`${getWindowName(bot.currentWindow)} is open`);
                 if (!stateCheck) reasons.push(`state is ${currentState}`);
                 if (!lastUpdated) reasons.push(`last action was too recent`);
-                state.queueAdd({ finder, profit, tag, itemName }, 'buying', 0);
+                state.queueAdd({ finder, profit, tag, itemName, auctionID }, 'buying', 0);
                 logmc(`§6[§bTPM§6] §3${itemName}§3 added to pipeline because ${reasons.join(' and ')}!`);
             } else {
                 logmc(`§6[§bTPM§6] §cCan't open flips while ${currentState} :(`);
@@ -170,7 +176,7 @@ class AutoBuy {
             setTimeout(() => {
                 clearInterval(interval);
                 resolve(null);
-            }, 5000);
+            }, 100);
         });
     }
 
@@ -207,9 +213,18 @@ class AutoBuy {
     }
 
     initBedSpam() {
+        let undefinedCount = 0;
         const bedSpam = setInterval(() => {
             const window = this.bot.currentWindow;
             const item = window?.slots[31]?.name;
+            if (item == undefined) {
+                undefinedCount++
+                if (undefinedCount == 5) {
+                    clearInterval(bedSpam);
+                    console.log(`Clearing bed spam because of undefined count`, this.bedFailed, config.bedSpam, getWindowName(window), item);
+                }
+                return;
+            }
             if ((!this.bedFailed && !config.bedSpam) || getWindowName(window) !== 'BIN Auction View' || item !== 'bed') {
                 clearInterval(bedSpam);
                 console.log('Clearing bed spam', this.bedFailed, config.bedSpam, getWindowName(window), item);
@@ -217,6 +232,28 @@ class AutoBuy {
             };
             this.bot.betterClick(31, 0, 0);
         }, clickDelay)
+    }
+
+    initQueue() {
+        setInterval(() => {
+            const current = this.state.getHighest();
+            const currentTime = Date.now();
+            if (!current) return;
+            if (!this.bot.currentWindow && Date.now() > this.state.getTime() + delay && !this.state.get()) {
+                switch (current.state) {
+                    case "buying":
+                        const { finder, profit, tag, itemName, auctionID } = current.action;
+                        this.openExternalFlip(auctionID, profit, finder, itemName);
+                        break;
+                    case "claiming":
+                        this.bot.chat(current.action);
+                        break;
+                }
+                this.state.setAction(currentTime);
+                this.state.set(current.state);
+                this.state.queueRemove();
+            }
+        }, delay)
     }
 
 }

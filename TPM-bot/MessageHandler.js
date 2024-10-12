@@ -98,13 +98,15 @@ class MessageHandler {
                 const buyer = soldMatch[1];
                 const item = soldMatch[2];
                 const price = onlyNumbers(soldMatch[3]);
+                const clickEvent = message?.clickEvent?.value;
+                const auctionID = clickEvent.replace('/viewauction ', '').replace(/-/g, '');
                 sendDiscord({
                     title: 'Item Sold',
-                    color: 2615974,
+                    color: 16731310,
                     fields: [
                         {
                             name: '',
-                            value: `Collected \`${addCommasToNumber(price)} coins\` for selling \`${item}\` to \`${buyer}\``,
+                            value: `Collected \`${addCommasToNumber(price)} coins\` for selling [\`${item}\`](https://sky.coflnet.com/auction/${auctionID}) to \`${buyer}\``,
                         }
                     ],
                     thumbnail: {
@@ -115,6 +117,11 @@ class MessageHandler {
                         icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                     }
                 })
+
+                setTimeout(() => {
+                    this.state.queueAdd(clickEvent, 'claiming', 1);
+                }, 1500)
+
             }
 
             if (blockUselessMessages) {
