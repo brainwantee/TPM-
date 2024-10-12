@@ -162,6 +162,7 @@ class CoflWs {
     closeSocket() {
         console.log(`Intentional socket close`);
         this.reconnect = false;
+        this.websocket.close();
     }
 
 }
