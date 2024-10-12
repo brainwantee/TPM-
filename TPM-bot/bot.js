@@ -41,6 +41,16 @@ async function makeBot(ign) {
 
         };
 
+        bot.editSign = function(line){
+            bot._client.write('update_sign', {
+                location: bot.entity.position.offset(-1, 0, 0),
+                text1: line,
+                text2: '{"italic":false,"extra":["^^^^^^^^^^^^^^^"],"text":""}',
+                text3: '{"italic":false,"extra":["    Auction    "],"text":""}',
+                text4: '{"italic":false,"extra":["     hours     "],"text":""}'
+              });
+        };
+
         makePackets(ign, bot._client);
 
         bot.once("login", async () => {

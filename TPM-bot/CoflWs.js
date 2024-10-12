@@ -25,7 +25,7 @@ class CoflWs {
     }
 
     startWs(link = null) {
-        this.reconnect = true;
+
         if (link === null) {
             link = `wss://sky.coflnet.com/modsocket?version=1.5.1-af&player=${this.ign}&SId=${session}`;
             this.link = link;
@@ -35,14 +35,16 @@ class CoflWs {
         const { websocket, ws } = this;//screw "this" 
 
         websocket.on('open', (message) => {
+            this.reconnect = true;
             console.log(`Started cofl connection!`);
             ws.emit("open", message);
         })
 
         websocket.on('close', async () => {
-            await sleep(5000);
             if (this.reconnect) {
+                await sleep(5000);
                 this.startWs(link);
+                console.log(`Reconnecting`)
             }
         })
 
@@ -98,7 +100,7 @@ class CoflWs {
                         this.closeSocket();
                         setTimeout(() => {
                             this.startWs(`${data.split(' ')[2]}?version=1.5.1-af&player=${this.ign}&SId=${session}`);
-                        }, 1500);
+                        }, 5000);
                         break;
                     } else {
                         this.handleCommand(data);

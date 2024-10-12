@@ -130,8 +130,17 @@ class RelistHandler {
         bot.on('spawn', check);
     }
 
-    listAuction(auctionID) {
-        
+    async listAuction(auctionID, price) {
+        try {
+            const { state, bot } = this;
+            state.set('listing');
+            bot.chat(`/viewauction ${auctionID}`);
+            await betterOnce(bot, 'windowOpen');
+            let itemUuid = bot.currentWindow.slots[31].nbt.value
+            console.log(itemUuid);
+        } catch(e) {
+            console.error(`Error listing`, e);
+        }
     }
 
 }
