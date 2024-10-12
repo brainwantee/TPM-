@@ -27,6 +27,7 @@ class RelistHandler {
             var check = async () => {
                 await sleep(20_500);
                 if (state.get() == 'getting ready') {
+                    bot.getPurse();
                     console.log('getting ready!')
                     bot.off('spawn', check);
                     bot.chat('/profiles');
@@ -85,11 +86,14 @@ class RelistHandler {
 
                     let webhookMessage = "";
 
+                    let totalCollected = 0;
+
                     soldAuctions.forEach(auction => {
                         const lore = getSlotLore(auction);
                         const itemName = noColorCodes(auction.nbt.value.display.value.Name.value);
                         const soldLine = noColorCodes(lore.find(line => line.includes('Sold for:')));
                         const soldFor = onlyNumbers(soldLine);
+                        totalCollected += soldFor;
                         console.log(soldLine);
                         console.log(soldFor);
                         webhookMessage += `Collected \`${addCommasToNumber(soldFor)} coins\` for selling \`${itemName}\`\n`;
@@ -102,21 +106,22 @@ class RelistHandler {
                             fields: [
                                 {
                                     name: '',
-                                    value: webhookMessage,
+                                    value: `${webhookMessage}${soldAuctions.length == 1 ? '' : `\nCollected \`${addCommasToNumber(totalCollected)}\` coins in total!`}`,
                                 }
                             ],
                             thumbnail: {
                                 url: `https://mc-heads.net/head/${bot.uuid}.png`,
                             },
                             footer: {
-                                text: `TPM Rewrite`,
+                                text: `TPM Rewrite - Purse: ${addCommasToNumber(bot.getPurse(true) + totalCollected)}`,
                                 icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                             }
                         })
                     } else {
                         bot.betterWindowClose();
-                        state.set(null);
                     }
+
+                    state.set(null);
 
                 } else {
                     console.log('not getting ready!!!');
@@ -138,7 +143,7 @@ class RelistHandler {
             await betterOnce(bot, 'windowOpen');
             let itemUuid = bot.currentWindow.slots[31].nbt.value
             console.log(itemUuid);
-        } catch(e) {
+        } catch (e) {
             console.error(`Error listing`, e);
         }
     }

@@ -41,15 +41,36 @@ async function makeBot(ign) {
 
         };
 
-        bot.editSign = function(line){
+        bot.editSign = function (line) {
             bot._client.write('update_sign', {
                 location: bot.entity.position.offset(-1, 0, 0),
                 text1: line,
                 text2: '{"italic":false,"extra":["^^^^^^^^^^^^^^^"],"text":""}',
                 text3: '{"italic":false,"extra":["    Auction    "],"text":""}',
                 text4: '{"italic":false,"extra":["     hours     "],"text":""}'
-              });
+            });
         };
+
+        bot.recentPurse = null;
+
+        bot.getPurse = function (recent = null) {
+            let pursey;
+            let scoreboard = bot?.scoreboard?.sidebar?.items?.map(item => item?.displayName?.getText(null)?.replace(item?.name, ''));
+            scoreboard?.forEach(e => {
+                if (e.includes('Purse:') || e.includes('Piggy:')) {
+                    let purseString = e.substring(e.indexOf(':') + 1).trim();
+                    if (purseString.includes('(')) purseString = purseString.split('(')[0];
+                    pursey = parseInt(purseString.replace(/\D/g, ''), 10);
+                }
+            });
+            if (recent) {
+                if (bot.recentPurse * .99 >= pursey || bot.recentPurse * 1.01 <= pursey) {
+                    return bot.recentPurse;
+                }
+            }
+            bot.recentPurse = pursey;
+            return pursey;
+        }
 
         makePackets(ign, bot._client);
 
@@ -63,10 +84,10 @@ async function makeBot(ign) {
 }
 
 async function getUUID(ign, attempt = 0) {
-    if(attempt == 3) return null;
+    if (attempt == 3) return null;
     try {
         return (await axios.get(`https://api.mojang.com/users/profiles/minecraft/${ign}`)).data.id;
-    } catch(e) {
+    } catch (e) {
         console.log(e);
         return getUUID(ign, ++attempt);
     }
