@@ -12,12 +12,13 @@ const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
 
 class MessageHandler {
 
-    constructor(ign, bot, socket, state) {
+    constructor(ign, bot, socket, state, relist) {
         this.ign = ign;
         this.bot = bot;
         this.coflSocket = socket;
         this.ws = socket.getWs();
         this.state = state;
+        this.relist = relist;
         this.webhookObject = {};//"itemName:pricePaid"
         this.relistObject = {};//auctionID. Using a different object ensures that it never lists for the wrong price
         this.soldObject = {};//"itemName:target"
@@ -84,10 +85,21 @@ class MessageHandler {
                             url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
                         },
                         footer: {
-                            text: `TPM Rewrite - Found by ${finder}`,
+                            text: `TPM Rewrite - Found by ${finder} - Purse ${formatNumber(this.bot.getPurse(true)) - parseInt(priceNoCommas)}`,
                             icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                         }
                     })
+
+                    setTimeout(() => this.bot.getPurse(), 5000);
+
+                    const relistObject = this.relistObject[auctionID];
+
+                    const { profit: relistProfit, target: relistTarget } = relistObject;
+
+                    console.log(relistObject);
+
+                    //this.relist.listAuction(auctionID, relistTarget)
+
                 }
                 this.sendScoreboard();
             }
@@ -113,7 +125,7 @@ class MessageHandler {
                         url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
                     },
                     footer: {
-                        text: `TPM Rewrite`,
+                        text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse(true) + price)}`,
                         icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                     }
                 })
@@ -121,6 +133,8 @@ class MessageHandler {
                 setTimeout(() => {
                     this.state.queueAdd(clickEvent, 'claiming', 1);
                 }, 1500)
+
+                setTimeout(() => this.bot.getPurse, 5000);
 
             }
 
