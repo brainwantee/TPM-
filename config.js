@@ -17,11 +17,17 @@ const defaultConfig = `{
 
     "useCookie": true,
 
+    "relist": true,
+
     "delay": 250,
 
     "waittime": 15,
 
+    "percentOfTarget": [0, 10000000000, 97],
+
     "clickDelay": 125,
+
+    "listHours": 48,
 
     "bedSpam": false,
 
@@ -38,9 +44,20 @@ const defaultConfig = `{
         "skins": true
 
     },
+
+    "doNotRelist": {
+
+        "profitOver": "50m",
+
+        "skinned": true,
+
+        "tags": ["HYPERION"],
+
+        "finders": ["USER"]
+
+    },
     
     "session": ""
-
 
 }`;
 
@@ -51,6 +68,9 @@ if (!fs.existsSync('./config.json5')) {
 }
 
 let config = { ...parsedDefaultConfig, ...JSON5.parse(fs.readFileSync('./config.json5', 'utf8')) };
+
+config.doNotRelist = { ...parsedDefaultConfig.doNotRelist, ...config.doNotRelist }
+config.skip = { ...parsedDefaultConfig.skip, ...config.skip };
 
 function updateConfig(data) {//golden-fleece my savior idk how to spell that
     const newConfig = patch(defaultConfig, data);

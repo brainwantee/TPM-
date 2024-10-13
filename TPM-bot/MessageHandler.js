@@ -47,14 +47,17 @@ class MessageHandler {
                     oldBuyspeed = buyspeed;
                     logmc(`§6[§bTPM§6] §3Auction bought in ${buyspeed}ms`);
                     this.bot.betterWindowClose();
+                    this.state.setAction();
                     break;
                 case "This auction wasn't found!":
                     if (this.state.get() === 'buying') this.state.set(null);
+                    this.state.setAction();
                     break;
                 case "The auctioneer has closed this auction!":
                 case "You don't have enough coins to afford this bid!":
                     this.state.set(null);
                     this.bot.betterWindowClose();
+                    this.state.setAction();
                     break;
             }
 
@@ -85,20 +88,25 @@ class MessageHandler {
                             url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
                         },
                         footer: {
-                            text: `TPM Rewrite - Found by ${finder} - Purse ${formatNumber(this.bot.getPurse(true)) - parseInt(priceNoCommas)}`,
+                            text: `TPM Rewrite - Found by ${finder} - Purse ${formatNumber(this.bot.getPurse(true) - parseInt(priceNoCommas, 10))}`,
                             icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                         }
                     })
+
+                    this.state.setAction();
 
                     setTimeout(() => this.bot.getPurse(), 5000);
 
                     const relistObject = this.relistObject[auctionID];
 
-                    const { profit: relistProfit, target: relistTarget } = relistObject;
+                    const { profit: relistProfit, target: relistTarget, itemName, weirdItemName, finder: relistFinder, tag } = relistObject;
 
                     console.log(relistObject);
-
-                    //this.relist.listAuction(auctionID, relistTarget)
+                    setTimeout(() => {
+                        if (this.relist.checkRelist(relistProfit, relistFinder, itemName, tag, auctionID, relistTarget)) {
+                            this.relist.listAuction(auctionID, relistTarget, relistProfit, weirdItemName);
+                        }
+                    }, 10000)//delay to allow for other flips to get bought
 
                 }
                 this.sendScoreboard();
@@ -112,6 +120,7 @@ class MessageHandler {
                 const price = onlyNumbers(soldMatch[3]);
                 const clickEvent = message?.clickEvent?.value;
                 const auctionID = clickEvent.replace('/viewauction ', '').replace(/-/g, '');
+                this.state.setAction();
                 sendDiscord({
                     title: 'Item Sold',
                     color: 16731310,
@@ -199,7 +208,7 @@ class MessageHandler {
         }, 5500);
     }
 
-    objectAdd(weirdItemName, price, target, profit, auctionID, bed, finder) {
+    objectAdd(weirdItemName, price, target, profit, auctionID, bed, finder, itemName, tag) {
         this.soldObject[`${weirdItemName}:${target}`] = {
             profit: profit,
             auctionID: auctionID
@@ -213,7 +222,11 @@ class MessageHandler {
         };
         this.relistObject[auctionID] = {
             target: target,
-            profit: profit
+            profit: profit,
+            itemName: itemName,
+            finder: finder,
+            tag: tag,
+            weirdItemName: weirdItemName
         }
         //console.log(this.webhookObject);
     }

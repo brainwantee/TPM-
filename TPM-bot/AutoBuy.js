@@ -35,7 +35,7 @@ class AutoBuy {
             const windowName = window.windowTitle;
             logmc(`Got new window ${windowName}, ${windowID}`);
             packets.confirmClick(windowID);
-            if (windowName === '{"italic":false,"extra":[{"text":"BIN Auction View"}],"text":""}' && bot.state !== 'listing') {
+            if (windowName === '{"italic":false,"extra":[{"text":"BIN Auction View"}],"text":""}' && state.get() !== 'listing') {
                 const finderCheck = this.recentFinder === "USER" && skipUser;
                 const skinCheck = isSkin(this.recentName) && skipSkins;
                 const profitCheck = this.recentProfit > skipMinProfit;
@@ -50,7 +50,7 @@ class AutoBuy {
                         packets.click(11, nextWindowID, 159);
                         this.recentlySkipped = true;
                         if (useSkip) {
-                            logmc(`§6[§bTPM§6] §cUsed skip because you have useSkip enabled in config`);
+                            logmc(`§6[§bTPM§6] §cUsed skip because you have skip always enabled in config`);
                             return;
                         }
                         let skipReasons = [];
@@ -58,12 +58,11 @@ class AutoBuy {
                         if (finderCheck) skipReasons.push('it was over skip min profit');
                         if (finderCheck) skipReasons.push('it was a skin');
                         logmc(`§6[§bTPM§6] §8Used skip because ${skipReasons.join(' and ')}. You can change this in your config`);
-                    } else {
-                        this.recentlySkipped = false;
+                        return;
                     }
-                } else {
-                    this.recentlySkipped = false;
                 }
+
+                this.recentlySkipped = false;
 
                 switch (item) {
                     case "bed":
@@ -73,6 +72,7 @@ class AutoBuy {
                         logmc(`§6[§bTPM§6]§c Potatoed :(`);
                         bot.betterWindowClose();
                         state.set(null);
+                        state.setAction(firstGui);
                         break;
                     case "feather":
                         const secondItem = (await this.itemLoad(31, true))?.name;
@@ -80,22 +80,26 @@ class AutoBuy {
                             logmc(`§6[§bTPM§6]§c Potatoed :(`)
                             bot.betterWindowClose();
                             state.set(null);
+                            state.setAction(firstGui);
                             break;
                         } else if (secondItem !== 'gold_block') {
                             console.error(`Found a weird item on second run through ${secondItem}`);
                             bot.betterWindowClose();
                             state.set(null);
+                            state.setAction(firstGui);
                             break;
                         }
                     case "gold_block":
                         bot.betterClick(31);
                         state.set(null);
                         this.relist.declineSoldAuction();
+                        state.setAction(firstGui);
                         break;
                 }
 
             } else if (windowName === '{"italic":false,"extra":[{"text":"Confirm Purchase"}],"text":""}') {
                 let confirmAt = Date.now() - firstGui;
+                state.setAction(firstGui);
                 logmc(`§6[§bTPM§6] §3Confirm at ${confirmAt}ms`);
                 if (!this.recentlySkipped) bot.betterClick(11, 0, 0);
                 state.set(null);
@@ -146,7 +150,7 @@ class AutoBuy {
             } else {
                 logmc(`§6[§bTPM§6] §cCan't open flips while ${currentState} :(`);
             }
-            webhook.objectAdd(weirdItemName, startingBid, target, profit, auctionID, bed, finder);
+            webhook.objectAdd(weirdItemName, startingBid, target, profit, auctionID, bed, finder, itemName, tag);
             logmc(`Found flip ${auctionID}`);
         })
 
@@ -243,13 +247,23 @@ class AutoBuy {
             if (!current) return;
             if (!this.bot.currentWindow && Date.now() > this.state.getTime() + delay && !this.state.get()) {
                 switch (current.state) {
-                    case "buying":
+                    case "buying": {
                         const { finder, profit, tag, itemName, auctionID } = current.action;
                         this.openExternalFlip(auctionID, profit, finder, itemName);
                         break;
+                    }
                     case "claiming":
                         this.bot.chat(current.action);
                         break;
+                    case "relist": {
+                        const { profit, finder, itemName, tag, auctionID, price, weirdItemName } = current.action;
+                        if (this.relist.relistCheck(profit, finder, itemName, tag, auctionID, price)) {
+                            this.relist.listAuction(auctionID, price, profit, weirdItemName);
+                        } else {
+                            return;
+                        }
+                        break;
+                    }
                 }
                 this.state.setAction(currentTime);
                 this.state.set(current.state);

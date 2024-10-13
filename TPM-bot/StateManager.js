@@ -20,7 +20,7 @@ class StateManager {
         return this.state;
     }
 
-    setAction(time) {
+    setAction(time = Date.now()) {
         this.lastaction = time;
     }
 

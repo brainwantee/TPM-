@@ -2,6 +2,7 @@ const { createBot } = require("mineflayer");
 const { logmc, customIGNColor } = require("../logger.js");
 const { getPackets, makePackets } = require("./packets.js");
 const axios = require('axios');
+const { CONNECTING } = require("ws");
 
 async function makeBot(ign) {
     return new Promise((resolve) => {
@@ -63,6 +64,7 @@ async function makeBot(ign) {
                     pursey = parseInt(purseString.replace(/\D/g, ''), 10);
                 }
             });
+            console.log(`Recent purse ${bot.recentPurse}. Current found ${pursey}. Recent: ${recent}`);
             if (recent) {
                 if (bot.recentPurse * .99 >= pursey || bot.recentPurse * 1.01 <= pursey) {
                     return bot.recentPurse;

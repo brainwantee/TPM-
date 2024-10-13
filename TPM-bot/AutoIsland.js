@@ -1,6 +1,6 @@
 const { logmc, customIGNColor } = require('../logger.js');
 const { config } = require('../config.js');
-const { sleep, betterOnce } = require('./Utils.js');
+const { sleep, betterOnce, getSlotLore } = require('./Utils.js');
 const { getPackets } = require('./packets.js');
 const useCookie = config.useCookie;
 let otherIsland = useCookie === false ? false : config.visitFriend;
@@ -54,7 +54,7 @@ class AutoIsland {
                         this.bot.chat(`/visit ${otherIsland}`);
                         await betterOnce(this.bot, 'windowOpen');
                         await sleep(150);
-                        const lore = this.bot.currentWindow?.slots[11]?.nbt?.value?.display?.value?.Lore?.value?.value;
+                        const lore = getSlotLore(this.bot.currentWindow?.slots[11]);
                         //console.log(lore);
                         if (lore.includes('§cIsland disallows guests!')) {
                             otherIsland = false;

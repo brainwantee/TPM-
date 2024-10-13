@@ -187,4 +187,24 @@ function addCommasToNumber(number) {
     return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-module.exports = { DISCORD_PING, addCommasToNumber, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };
+function normalNumber(num) {
+    if (typeof num === 'number') return num;
+    if (!num) return NaN;
+    num = num.toLowerCase();
+    if (num.includes('t')) {
+        return parseInt(num.replace('t', '')) * 1_000_000_000_000;
+    } else if (num.includes('b')) {
+        return parseInt(num.replace('b', '')) * 1_000_000_000;
+    } else if (num.includes('m')) {
+        return parseInt(num.replace('m', '')) * 1_000_000;
+    } else if (num.includes('k')) {
+        return parseInt(num.replace('k', '')) * 1_000;
+    }
+    return parseInt(num);
+}
+
+function isSkinned(item) {
+    return item.includes('✦') || item.toLowerCase().includes('skin') || item.includes('✿');
+}
+
+module.exports = { DISCORD_PING, isSkinned, normalNumber, addCommasToNumber, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };
