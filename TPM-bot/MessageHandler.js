@@ -114,6 +114,7 @@ class MessageHandler {
 
             const soldMatch = text.match(soldRegex);
             if (soldMatch) {
+                if(this.state.get() === 'getting ready') return;
                 this.sendScoreboard();
                 const buyer = soldMatch[1];
                 const item = soldMatch[2];

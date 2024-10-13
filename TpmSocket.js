@@ -1,16 +1,17 @@
 const { logmc } = require('./logger.js');
 const { sleep } = require('./TPM-bot/Utils.js');
+const { config } = require('./config.js');
 
 const WebSocket = require('ws');
 
 class TpmSocket {
 
-    constructor(botList) {
+    constructor(getBot) {
         this.ws = null;
-        this.botList = botList;
-        this.makeWebsocket();
+        this.getBot = getBot;
         this.sentFailureMessage = false;
         this.storedMessages = [];//if socket is down, send all of these at once
+        this.makeWebsocket();
     }
 
     makeWebsocket() {
@@ -59,7 +60,7 @@ class TpmSocket {
     handleMessage(message) {
         const msg = JSON.parse(message);
         const data = JSON.parse(msg.data);//This isn't safe and if it's not JSON format then it'll crash but that's intentional!
-        
+
     }
 
 }
