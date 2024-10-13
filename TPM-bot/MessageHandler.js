@@ -118,6 +118,11 @@ class MessageHandler {
                 const buyer = soldMatch[1];
                 const item = soldMatch[2];
                 const price = onlyNumbers(soldMatch[3]);
+                const object = this.soldObject[`${stripItemName(item)}:${price}`];
+                let profitMessage = '';
+                if(object){
+                    profitMessage = ` (\`${object.profit}\` profit)`
+                }
                 const clickEvent = message?.clickEvent?.value;
                 const auctionID = clickEvent.replace('/viewauction ', '').replace(/-/g, '');
                 this.state.setAction();
@@ -127,7 +132,7 @@ class MessageHandler {
                     fields: [
                         {
                             name: '',
-                            value: `Collected \`${addCommasToNumber(price)} coins\` for selling [\`${item}\`](https://sky.coflnet.com/auction/${auctionID}) to \`${buyer}\``,
+                            value: `Collected \`${addCommasToNumber(price)} coins\` for selling [\`${item}\`](https://sky.coflnet.com/auction/${auctionID}) to \`${buyer}\`${profitMessage}`,
                         }
                     ],
                     thumbnail: {
@@ -210,8 +215,7 @@ class MessageHandler {
 
     objectAdd(weirdItemName, price, target, profit, auctionID, bed, finder, itemName, tag) {
         this.soldObject[`${weirdItemName}:${target}`] = {
-            profit: profit,
-            auctionID: auctionID
+            profit: profit
         };
         this.webhookObject[`${weirdItemName}:${price}`] = {
             auctionID: auctionID,

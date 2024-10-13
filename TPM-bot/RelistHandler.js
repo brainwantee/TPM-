@@ -19,10 +19,11 @@ if (listHours >= 24) {
 
 class RelistHandler {
 
-    constructor(bot, state) {
+    constructor(bot, state, tpm) {
         this.bot = bot;
         this.state = state;
         this.useRelist = relist;
+        this.tpm = tpm;
         this.currentAuctions = 0;
         this.maxSlots = 14;
         this.getReady();
@@ -246,14 +247,14 @@ class RelistHandler {
                 fields: [
                     {
                         name: '',
-                        value: `Listed [\`${weirdItemName}\`](https://www.sky.coflnet.com/auction/${auctionID}) for \`${addCommasToNumber(price)}\` (\`${formatNumber(profit)}\` profit)`,
+                        value: `Listed [\`${weirdItemName}\`](https://www.sky.coflnet.com/auction/${auctionID}) for \`${addCommasToNumber(price)}\` (\`${formatNumber(profit)}\` profit) [Slots: ${this.currentAuctions}/${this.maxSlots}]`,
                     }
                 ],
                 thumbnail: {
                     url: `https://mc-heads.net/head/${bot.uuid}.png`,
                 },
                 footer: {
-                    text: `TPM Rewrite - Purse: ${addCommasToNumber(bot.getPurse())}`,
+                    text: `TPM Rewrite - Purse: ${formatNumber(bot.getPurse())}`,
                     icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                 }
             })
@@ -272,7 +273,10 @@ class RelistHandler {
     }
 
     checkRelist(profit, finder, itemName, tag, auctionID, price) {
-        if(!this.useRelist) return false;
+        if (!this.useRelist) {
+            this.sendTPMSocket(auctionID, `relist is off`, itemName);
+            return false;
+        }
         let reasons = [];
         if (tags.includes(tag)) reasons.push(`${tag} is a blocked tag`);
         if (profit > profitOver) reasons.push(`profit is over ${profitOver}`);
@@ -281,6 +285,7 @@ class RelistHandler {
 
         if (reasons.length > 0) {
             logmc(`§6[§bTPM§6] §c${itemName}§c is not being listing because ${reasons.join(' and ')}!`);
+            this.sendTPMSocket(auctionID, reasons.join(' and '), itemName);
             return false;
         }
 
@@ -290,6 +295,18 @@ class RelistHandler {
         }
 
         return true;
+    }
+
+    sendTPMSocket(auctionID, reasons, itemName) {
+        this.tpm.send(JSON.stringify({
+            type: "failedList",
+            data: JSON.stringify({
+                auctionID: auctionID,
+                reasons: reasons,
+                itemName: itemName,
+                username: this.bot.username
+            })
+        }), false)
     }
 
 }

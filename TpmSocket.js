@@ -41,17 +41,25 @@ class TpmSocket {
                 this.makeWebsocket();
             });
 
+            this.ws.on('message', this.handleMessage);
+
         } catch (e) {
             console.error(`WS error:`, e);
         }
     }
 
-    send(message) {
+    send(message, batch = true) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(message);
-        } else {
+        } else if (batch) {
             this.storedMessages.push(message);
         }
+    }
+
+    handleMessage(message) {
+        const msg = JSON.parse(message);
+        const data = JSON.parse(msg.data);//This isn't safe and if it's not JSON format then it'll crash but that's intentional!
+        
     }
 
 }

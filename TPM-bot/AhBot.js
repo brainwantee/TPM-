@@ -13,7 +13,7 @@ const { igns } = config;
 
 class AhBot {
 
-    constructor(ign) {
+    constructor(ign, TPMSocket) {
         this.ign = ign;
         this.bot = null;
         this.autoBuy = null;
@@ -23,10 +23,11 @@ class AhBot {
         this.island = null;
         this.state = null;
         this.packets = null;
+        this.tpm = TPMSocket;
     }
 
     async startBot() {
-        const { bot, ign } = this //screw "this"
+        const { bot, ign, tpm } = this //screw "this"
 
         let packets = getPackets(ign);
 
@@ -35,7 +36,7 @@ class AhBot {
         const coflSocket = new CoflWs(ign, bot);
         const ws = coflSocket.getWs();
 
-        const relist = new RelistHandler(bot, state);
+        const relist = new RelistHandler(bot, state, tpm);
         
         const webhook = new MessageHandler(ign, bot, coflSocket, state, relist);
 

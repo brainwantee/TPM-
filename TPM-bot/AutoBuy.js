@@ -1,9 +1,10 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
-const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep } = require('./Utils.js');
+const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber } = require('./Utils.js');
 const { logmc } = require('../logger.js');
 const { delay, waittime, skip: skipSettings, clickDelay, bedSpam } = config;
-const { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
+let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
+skipMinProfit = normalNumber(skipMinProfit);
 
 class AutoBuy {
 
@@ -42,7 +43,7 @@ class AutoBuy {
                 let useSkipOnFlip = profitCheck || skinCheck || finderCheck || useSkip;
                 firstGui = Date.now();
                 webhook.setBuySpeed(firstGui);
-                let item = (await this.itemLoad(31)).name;
+                let item = (await this.itemLoad(31))?.name;
                 if (item === 'gold_nugget') {
                     packets.click(31, windowID, 371);
                     bot.betterClick(31, 0, 0);
@@ -66,6 +67,7 @@ class AutoBuy {
 
                 switch (item) {
                     case "bed":
+                        logmc(`§6[§bTPM§6]§6 Found a bed!`)
                         this.initBedSpam();
                         break;
                     case "potato":
@@ -95,6 +97,13 @@ class AutoBuy {
                         this.relist.declineSoldAuction();
                         state.setAction(firstGui);
                         break;
+                    case "poisonous_potato":
+                        logmc(`§6[§bTPM§6]§c Too poor to buy it :(`);
+                        bot.betterWindowClose();
+                        state.set(null);
+                        state.setAction(firstGui);
+                        break;
+
                 }
 
             } else if (windowName === '{"italic":false,"extra":[{"text":"Confirm Purchase"}],"text":""}') {
