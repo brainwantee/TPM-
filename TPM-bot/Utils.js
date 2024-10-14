@@ -2,7 +2,7 @@ const { config } = require('../config.js');
 const { webhook } = config;
 const axios = require('axios');
 
-const DISCORD_PING = config.discordID ? "" : `<@${config.discordID}>`;
+const DISCORD_PING = !config.discordID ? "" : `<@${config.discordID}>`;
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 

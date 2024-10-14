@@ -32,15 +32,15 @@ class AhBot {
         let packets = getPackets(ign);
 
         const state = new StateManager(bot);
-
+        
         const coflSocket = new CoflWs(ign, bot);
         const ws = coflSocket.getWs();
 
         const relist = new RelistHandler(bot, state, tpm);
-        
-        const webhook = new MessageHandler(ign, bot, coflSocket, state, relist);
 
-        const island = new AutoIsland(ign, state, bot, webhook);
+        const island = new AutoIsland(ign, state, bot);
+
+        const webhook = new MessageHandler(ign, bot, coflSocket, state, relist, island);
 
         const autoBuy = new AutoBuy(bot, webhook, ws, ign, state, relist);
 
@@ -99,10 +99,9 @@ class AhBot {
         return thisPrefix;
     }
 
-    getBot(){
+    getBot() {
         return this.bot;
     }
-
 }
 
 module.exports = AhBot;

@@ -2,14 +2,10 @@ const { logmc, customIGNColor } = require('../logger.js');
 const { config } = require('../config.js');
 const { sleep, betterOnce, getSlotLore } = require('./Utils.js');
 const { getPackets } = require('./packets.js');
-const useCookie = config.useCookie;
-let otherIsland = useCookie === false ? false : config.visitFriend;
-
-const baseMessage = useCookie ? "Private Island" : "Hub";
 
 class AutoIsland {
 
-    constructor(ign, state, bot, webhook) {
+    constructor(ign, state, bot) {
         this.ign = ign;
         this.state = state;
         this.bot = bot;
@@ -18,8 +14,10 @@ class AutoIsland {
         this.bot.on('spawn', this.checkLocraw);
         this.checkLocraw(true);//Sometimes AutoIsland gets made after the bot spawned so we have to make it confirm first
         this.packets = getPackets(ign);
-        this.webhook = webhook;
         this.gottenReady = false;
+        this.useCookie = config.useCookie;
+        this.baseMessage = this.useCookie ? "Private Island" : "Hub";
+        this.otherIsland = this.useCookie === false ? false : config.visitFriend;
     }
 
     async checkLocraw(confirm = false) {
@@ -39,25 +37,25 @@ class AutoIsland {
                     this.move('/l');
                 } else if (locraw.lobbyname) {
                     this.move('/skyblock');
-                } else if (locraw.map !== baseMessage) {
+                } else if (locraw.map !== this.baseMessage) {
                     //console.log(`Base different`);
-                    if (useCookie) {
+                    if (this.useCookie) {
                         this.move('/is');
                     } else {
                         this.move('/hub');
                     }
-                } else if (otherIsland && otherIsland.trim() !== "") {
+                } else if (this.otherIsland && this.otherIsland.trim() !== "") {
                     let scoreboard = this.bot?.scoreboard?.sidebar?.items?.map(item => item?.displayName?.getText(null)?.replace(item?.name, ''));
                     let guests = scoreboard.find(line => line.includes('✌'));
                     let ownIsland = scoreboard.find(line => line.includes('Your Island'));
                     if (!guests || ownIsland) {
-                        this.bot.chat(`/visit ${otherIsland}`);
+                        this.bot.chat(`/visit ${this.otherIsland}`);
                         await betterOnce(this.bot, 'windowOpen');
                         await sleep(150);
                         const lore = getSlotLore(this.bot.currentWindow?.slots[11]);
                         //console.log(lore);
                         if (lore.includes('§cIsland disallows guests!')) {
-                            otherIsland = false;
+                            this.otherIsland = false;
                             console.log(`Hey so this person has invites off :(`);
                             this.checkLocraw();
                         }
@@ -70,7 +68,6 @@ class AutoIsland {
                             this.state.set('getting ready');
                             this.gottenReady = true;
                         }
-                        this.webhook.sendScoreboard();
                     }
                 } else if (this.state.get() === 'moving') {
                     //console.log('Made it to the island!');
@@ -80,7 +77,7 @@ class AutoIsland {
                         this.state.set('getting ready');
                         this.gottenReady = true;
                     }
-                    this.webhook.sendScoreboard();
+
                 }
             } catch (e) {
                 console.error(e);
@@ -101,6 +98,13 @@ class AutoIsland {
         this.state.set('moving');
         this.currentlyConfirming = true;
         this.checkLocraw(true);//confirm we made it
+    }
+
+    setIsland(otherIsland, baseMessage, useCookie){
+        this.otherIsland = otherIsland;
+        this.baseMessage = baseMessage;
+        this.useCookie = useCookie;
+        this.checkLocraw();
     }
 
 }

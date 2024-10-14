@@ -12,10 +12,11 @@ const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
 
 class MessageHandler {
 
-    constructor(ign, bot, socket, state, relist) {
+    constructor(ign, bot, socket, state, relist, island) {
         this.ign = ign;
         this.bot = bot;
         this.coflSocket = socket;
+        this.island = island;
         this.ws = socket.getWs();
         this.state = state;
         this.relist = relist;
@@ -24,6 +25,7 @@ class MessageHandler {
         this.soldObject = {};//"itemName:target"
         this.ignPrefix = igns.length == 1 ? "" : `${customIGNColor(ign)}${ign}: `;
         this.firstGui = null;
+        this.sentCookie = false;
         this.privacySettings = /no regex yet but I don't want it to crash so I'm putting regex/;
         this.messageListener();
         this.coflHandler();
@@ -53,6 +55,29 @@ class MessageHandler {
                     if (this.state.get() === 'buying') this.state.set(null);
                     this.state.setAction();
                     break;
+                case "You cannot view this auction!":
+                case "You need the Cookie Buff to use this command!":
+                    if(this.sentCookie) return;
+                    sendDiscord({
+                        title: 'Cookie Gone!!!',
+                        color: 13313596,
+                        fields: [
+                            {
+                                name: '',
+                                value: `${this.ign} doesn't have a cookie :( Automatically turning off relist and moving to hub`,
+                            }
+                        ],
+                        thumbnail: {
+                            url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                        },
+                        footer: {
+                            text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse())}`,
+                            icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                        }
+                    }, true)
+                    this.sentCookie = true;
+                    this.island.setIsland(false, 'Hub', false);
+                    logmc(`§6[§bTPM§6] §cCookie gone!!!`);
                 case "The auctioneer has closed this auction!":
                 case "You don't have enough coins to afford this bid!":
                     this.state.set(null);
@@ -114,14 +139,14 @@ class MessageHandler {
 
             const soldMatch = text.match(soldRegex);
             if (soldMatch) {
-                if(this.state.get() === 'getting ready') return;
+                if (this.state.get() === 'getting ready') return;
                 this.sendScoreboard();
                 const buyer = soldMatch[1];
                 const item = soldMatch[2];
                 const price = onlyNumbers(soldMatch[3]);
                 const object = this.soldObject[`${stripItemName(item)}:${price}`];
                 let profitMessage = '';
-                if(object){
+                if (object) {
                     profitMessage = ` (\`${object.profit}\` profit)`
                 }
                 const clickEvent = message?.clickEvent?.value;

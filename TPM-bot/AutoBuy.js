@@ -56,8 +56,8 @@ class AutoBuy {
                         }
                         let skipReasons = [];
                         if (finderCheck) skipReasons.push('it was a user flip');
-                        if (finderCheck) skipReasons.push('it was over skip min profit');
-                        if (finderCheck) skipReasons.push('it was a skin');
+                        if (profitCheck) skipReasons.push('it was over skip min profit');
+                        if (skinCheck) skipReasons.push('it was a skin');
                         logmc(`§6[§bTPM§6] §8Used skip because ${skipReasons.join(' and ')}. You can change this in your config`);
                         return;
                     }

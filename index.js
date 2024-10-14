@@ -39,7 +39,7 @@ testIgn();
 
     let message = '';
 
-    const tws = new TpmSocket();
+    const tws = new TpmSocket(bots);
 
     for (const ign of igns) {
         bots[ign] = new AhBot(ign, tws);

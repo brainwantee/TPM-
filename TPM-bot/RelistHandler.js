@@ -36,8 +36,8 @@ class RelistHandler {
     getReady() {
         if (!useCookie) return;
         const { bot, state } = this;
-        try {
-            var check = async () => {
+        var check = async () => {
+            try {
                 await sleep(20_500);
                 if (state.get() == 'getting ready') {
                     bot.getPurse();
@@ -139,10 +139,12 @@ class RelistHandler {
                 } else {
                     console.log('not getting ready!!!');
                 }
+            } catch (e) {
+                console.error(`Error getting relist ready! Not going to use relist for ${bot.ign}`, e);
+                this.useRelist = false;
+                bot.betterWindowClose();
+                state.set(null);
             }
-        } catch (e) {
-            console.error(`Error getting relist ready! Not going to use relist for ${bot.ign}`, e);
-            this.useRelist = false;
         }
 
         bot.on('spawn', check);
