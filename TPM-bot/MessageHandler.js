@@ -76,6 +76,7 @@ class MessageHandler {
                         }
                     }, true)
                     this.sentCookie = true;
+                    this.relist.turnOffRelist();
                     this.island.setIsland(false, 'Hub', false);
                     logmc(`§6[§bTPM§6] §cCookie gone!!!`);
                 case "The auctioneer has closed this auction!":

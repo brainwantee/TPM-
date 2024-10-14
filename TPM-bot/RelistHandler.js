@@ -26,6 +26,7 @@ class RelistHandler {
         this.tpm = tpm;
         this.currentAuctions = 0;
         this.maxSlots = 14;
+        this.hasCookie = true;
         this.getReady();
     }
 
@@ -275,6 +276,7 @@ class RelistHandler {
     }
 
     checkRelist(profit, finder, itemName, tag, auctionID, price) {
+        if(!this.hasCookie) return;
         if (!this.useRelist) {
             this.sendTPMSocket(auctionID, `relist is off`, itemName);
             return false;
@@ -309,6 +311,11 @@ class RelistHandler {
                 username: this.bot.username
             })
         }), false)
+    }
+
+    turnOffRelist() {//For when cookie runs out mid session
+        this.useRelist = false;
+        this.hasCookie = false;
     }
 
 }
