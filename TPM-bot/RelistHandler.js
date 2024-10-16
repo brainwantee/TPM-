@@ -27,6 +27,7 @@ class RelistHandler {
         this.currentAuctions = 0;
         this.maxSlots = 14;
         this.hasCookie = true;
+        this.ready = false;
         this.getReady();
     }
 
@@ -35,7 +36,10 @@ class RelistHandler {
     }
 
     getReady() {
-        if (!useCookie) return;
+        if (!useCookie) {
+            this.ready = true;
+            return;
+        }
         const { bot, state } = this;
         var check = async () => {
             try {
@@ -136,6 +140,7 @@ class RelistHandler {
                     }
 
                     state.set(null);
+                    this.ready = true;
 
                 } else {
                     console.log('not getting ready!!!');
@@ -145,14 +150,15 @@ class RelistHandler {
                 this.useRelist = false;
                 bot.betterWindowClose();
                 state.set(null);
+                this.ready = true;
             }
         }
 
         bot.on('spawn', check);
     }
 
-    async listAuction(auctionID, price, profit, weirdItemName) {
-        if (!this.useRelist) return;
+    async listAuction(auctionID, price, profit, weirdItemName, override = false) {
+        if (!this.useRelist && !override) return;
         console.log(`Listing ${auctionID} for ${price}`);
         try {
             const { state, bot } = this;
@@ -276,7 +282,7 @@ class RelistHandler {
     }
 
     checkRelist(profit, finder, itemName, tag, auctionID, price) {
-        if(!this.hasCookie) return;
+        if(!this.hasCookie) return false;
         if (!this.useRelist) {
             this.sendTPMSocket(auctionID, `relist is off`, itemName);
             return false;
@@ -301,6 +307,10 @@ class RelistHandler {
         return true;
     }
 
+    externalListCheck(){
+        return this.currentAuctions !== this.maxSlots;
+    }
+
     sendTPMSocket(auctionID, reasons, itemName) {
         this.tpm.send(JSON.stringify({
             type: "failedList",
@@ -317,6 +327,10 @@ class RelistHandler {
     turnOffRelist() {//For when cookie runs out mid session
         this.useRelist = false;
         this.hasCookie = false;
+    }
+
+    getGottenReady(){//freaky ahh name
+        return this.ready;
     }
 
 }

@@ -140,7 +140,7 @@ class MessageHandler {
 
             const soldMatch = text.match(soldRegex);
             if (soldMatch) {
-                if (this.state.get() === 'getting ready') return;
+                if (!this.relist.getGottenReady()) return;
                 this.sendScoreboard();
                 const buyer = soldMatch[1];
                 const item = soldMatch[2];
@@ -257,7 +257,8 @@ class MessageHandler {
             itemName: itemName,
             finder: finder,
             tag: tag,
-            weirdItemName: weirdItemName
+            weirdItemName: weirdItemName,
+            pricePaid: price
         }
         //console.log(this.webhookObject);
     }

@@ -55,7 +55,7 @@ class TpmSocket {
                 this.makeWebsocket();
             });
 
-            this.ws.on('message', this.handleMessage);
+            this.ws.on('message', this.handleMessage.bind(this));
 
         } catch (e) {
             console.error(`WS error:`, e);
@@ -74,15 +74,26 @@ class TpmSocket {
     handleMessage(message) {
         const msg = JSON.parse(message);
         const data = JSON.parse(msg.data);//This isn't safe and if it's not JSON format then it'll crash but that's intentional!
-
+        console.log(message.toString());
+        switch(msg.type){
+            case "list":
+                console.log(this.bots);
+                const bot = this.bots[data.username];
+                if(!bot) {
+                    console.error(`Didn't find a bot for ${data.username}`);
+                    return;
+                }
+                bot.state.queueAdd(data, 'listingNoName', 2);
+                break;
+        }
     }
 
     async getSettings() {
         const settingsPromises = Object.keys(this.bots).map((botKey) => {
             return new Promise((resolve) => {
                 const ws = this.bots[botKey].ws;
-                const WebSocket = this.bots[botKey].coflSocket;
-                WebSocket.handleCommand(`/cofl get json`);
+                const coflSocket = this.bots[botKey].coflSocket;
+                coflSocket.handleCommand(`/cofl get json`);
                 ws.once('jsonSettings', (msg) => {
                     this.settings.push(msg);
                     resolve();

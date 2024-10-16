@@ -263,13 +263,23 @@ class AutoBuy {
                     case "claiming":
                         this.bot.chat(current.action);
                         break;
-                    case "relist": {
+                    case "listing": {
                         const { profit, finder, itemName, tag, auctionID, price, weirdItemName } = current.action;
-                        if (this.relist.relistCheck(profit, finder, itemName, tag, auctionID, price)) {
-                            this.relist.listAuction(auctionID, price, profit, weirdItemName);
-                        } else {
+                        if (!this.relist.checkRelist(profit, finder, itemName, tag, auctionID, price)) return;
+                        this.relist.listAuction(auctionID, price, profit, weirdItemName);
+                        break;
+                    }
+                    case "listingNoName": {
+                        const { auctionID, price } = current.action;
+                        if (!this.relist.externalListCheck()) {
+                            console.log(`Didn't pass relist check`);
                             return;
-                        }
+                        };
+                        const { relist: relistObject } = this.webhook.getObjects();
+                        const { weirdItemName, pricePaid } = relistObject[auctionID];
+                        let profit = IHATETAXES(price) - pricePaid;
+                        this.relist.listAuction(auctionID, price, profit, weirdItemName, true);
+                        current.state = 'listing';
                         break;
                     }
                 }

@@ -21,8 +21,8 @@ class AutoIsland {
     }
 
     async checkLocraw(confirm = false) {
-        console.log(`Move check: confirming: ${this.currentlyConfirming}. Instance ${confirm}. Evaluate ${this.currentlyConfirming && !confirm}`)
-        if (this.currentlyConfirming && !confirm) return
+        console.log(`Move check: confirming: ${this.currentlyConfirming}. Instance ${confirm}. Evaluate ${this.currentlyConfirming && !confirm}`);
+        if (this.currentlyConfirming && !confirm) return;
         await sleep(20_000);
         this.currentlyConfirming = false;
         this.bot.chat('/locraw');
