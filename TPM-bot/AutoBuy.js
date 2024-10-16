@@ -103,7 +103,6 @@ class AutoBuy {
                         state.set(null);
                         state.setAction(firstGui);
                         break;
-
                 }
 
             } else if (windowName === '{"italic":false,"extra":[{"text":"Confirm Purchase"}],"text":""}') {

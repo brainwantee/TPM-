@@ -308,7 +308,8 @@ class RelistHandler {
                 auctionID: auctionID,
                 reasons: reasons,
                 itemName: itemName,
-                username: this.bot.username
+                username: this.bot.username,
+                uuid: this.bot.uuid
             })
         }), false)
     }
