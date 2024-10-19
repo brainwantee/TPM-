@@ -1,6 +1,6 @@
 const { makeBot } = require("./bot.js");
 const { getPackets, makePackets } = require("./packets.js");
-const { logmc, customIGNColor } = require("../logger.js");
+const { debug } = require("../logger.js");
 const { config } = require('../config.js');
 const CoflWs = require("./CoflWs.js");
 const StateManager = require("./StateManager.js");
@@ -86,13 +86,13 @@ class AhBot {
         if (igns.length == 1) return null;
 
         let thisPrefix = this.ign.substring(0, sub);
-        console.log(`|${thisPrefix}|`)
+        debug(`|${thisPrefix}|`)
         try {
             igns.forEach(ign => {
                 if (ign.substring(0, sub) == thisPrefix && ign !== this.ign) sex//i forgot how to throw errors and this is faster than looking it up
             })
         } catch {
-            console.log(`retrying`)
+            debug(`retrying`)
             return this.initAskPrefix(++sub);
         }
 

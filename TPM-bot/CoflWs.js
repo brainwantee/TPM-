@@ -2,9 +2,9 @@ const axios = require('axios');
 const WebSocket = require('ws');
 const EventEmitter = require('events');
 
-const { config, updateConfig } = require('../config.js');
-const { logmc, customIGNColor } = require('../logger.js');
-const { DISCORD_PING, formatNumber, noColorCodes, sleep, sendDiscord } = require('./Utils.js');
+const { config } = require('../config.js');
+const { logmc, customIGNColor, debug, error } = require('../logger.js');
+const { formatNumber, noColorCodes, sleep } = require('./Utils.js');
 const { getPackets } = require('./packets.js');
 
 const { blockUselessMessages, session } = config;
@@ -32,11 +32,11 @@ class CoflWs {
         }//There's no option to use regular socket because it's slower. 
 
         this.websocket = new WebSocket(link);
-        const { websocket, ws } = this;//screw "this" 
+        const { websocket, ws } = this;
 
         websocket.on('open', (message) => {
             this.reconnect = true;
-            console.log(`Started cofl connection!`);
+            logmc(`§6[§bTPM§6] §eStarted cofl connection!`);
             ws.emit("open", message);
         })
 
@@ -44,7 +44,7 @@ class CoflWs {
             if (this.reconnect) {
                 await sleep(5000);
                 this.startWs(link);
-                console.log(`Reconnecting`)
+                logmc(`§6[§bTPM§6] §cCofl connection stopped. Auto reconnecting`);
             }
         })
 
@@ -134,7 +134,7 @@ class CoflWs {
             return;
         }
         this.websocket.send(msg);
-        if (type) console.log(msg)
+        if (type) debug(msg)
     }
 
     testMessage(msg) {
@@ -144,7 +144,7 @@ class CoflWs {
 
         const connectionMatch = msg.match(connectionRegex);
         if (connectionMatch) {
-            console.log(`Got connection ID ${connectionMatch[1]}`);
+            debug(`Got connection ID ${connectionMatch[1]}`);
         }
 
         if (msg.includes(`Until you do you are using the free version which will make less profit and your settings won't be saved`)) {//logged out
@@ -160,7 +160,7 @@ class CoflWs {
     }
 
     closeSocket() {
-        console.log(`Intentional socket close`);
+        debug(`Intentional socket close`);
         this.reconnect = false;
         this.websocket.close();
     }

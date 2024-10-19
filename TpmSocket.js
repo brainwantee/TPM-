@@ -1,4 +1,4 @@
-const { logmc } = require('./logger.js');
+const { logmc, debug, error } = require('./logger.js');
 const { sleep } = require('./TPM-bot/Utils.js');
 const { config } = require('./config.js');
 const { igns, webhook, discordID } = config;
@@ -49,7 +49,7 @@ class TpmSocket {
                         this.sentFailureMessage = true;
                     }
                 } else {
-                    console.error('WS error:', e);
+                    error('WS error:', e);
                 }
                 sleep(5000);
                 this.makeWebsocket();
@@ -58,13 +58,13 @@ class TpmSocket {
             this.ws.on('message', this.handleMessage.bind(this));
 
         } catch (e) {
-            console.error(`WS error:`, e);
+            error(`WS error:`, e);
         }
     }
 
     send(message, batch = true) {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-            console.log(`Sending ${message}`);
+            debug(`Sending ${message}`);
             this.ws.send(message);
         } else if (batch) {
             this.storedMessages.push(message);
@@ -74,13 +74,12 @@ class TpmSocket {
     handleMessage(message) {
         const msg = JSON.parse(message);
         const data = JSON.parse(msg.data);//This isn't safe and if it's not JSON format then it'll crash but that's intentional!
-        console.log(message.toString());
+        debug(message.toString());
         switch(msg.type){
             case "list":
-                console.log(this.bots);
                 const bot = this.bots[data.username];
                 if(!bot) {
-                    console.error(`Didn't find a bot for ${data.username}`);
+                    debug(`Didn't find a bot for ${data.username}`);
                     return;
                 }
                 bot.state.queueAdd(data, 'listingNoName', 2);

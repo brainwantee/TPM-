@@ -1,4 +1,5 @@
 const { config } = require('../config.js');
+const { debug, error } = require('../logger.js');
 const { webhook } = config;
 const axios = require('axios');
 
@@ -41,7 +42,7 @@ async function betterOnce(listener, event, timeframe = 5000) {
 
 function stripItemName(name) {
     const stripped = noColorCodes(name.replace(/!|-us|\.|\b(?:[1-9]|[1-5][0-9]|6[0-4])x\b/g, ""));
-    console.log(`Stripped ${name} => ${stripped}`);
+    debug(`Stripped ${name} => ${stripped}`);
     return stripped;
 }
 
@@ -78,7 +79,7 @@ function normalizeDate(dateString) {
             throw new Error('Invalid date format');
         }
     } catch (error) {
-        console.error(`Date normalization error: ${error.message} for ${dateString}`);
+        debug(`Date normalization error: ${error.message} for ${dateString}`);
         return dateString; // Fallback to the original string
     }
 }
@@ -121,7 +122,7 @@ async function sendDiscord(embed, ping = false, attempt = 0) {
                   });
             }
         } catch(e) {
-            console.error(e)
+            error(e)
             if (attempt < 3) {
                 await sleep(5000)
                 await sendDiscord(embed, attempt + 1);

@@ -1,4 +1,4 @@
-const { logmc, customIGNColor } = require('../logger.js');
+const { debug, error, logmc } = require('../logger.js');
 const { config } = require('../config.js');
 const { sleep, betterOnce, getSlotLore } = require('./Utils.js');
 const { getPackets } = require('./packets.js');
@@ -21,7 +21,7 @@ class AutoIsland {
     }
 
     async checkLocraw(confirm = false) {
-        console.log(`Move check: confirming: ${this.currentlyConfirming}. Instance ${confirm}. Evaluate ${this.currentlyConfirming && !confirm}`);
+        debug(`Move check: confirming: ${this.currentlyConfirming}. Instance ${confirm}. Evaluate ${this.currentlyConfirming && !confirm}`);
         if (this.currentlyConfirming && !confirm) return;
         await sleep(20_000);
         this.currentlyConfirming = false;
@@ -56,7 +56,7 @@ class AutoIsland {
                         //console.log(lore);
                         if (lore.includes('§cIsland disallows guests!')) {
                             this.otherIsland = false;
-                            console.log(`Hey so this person has invites off :(`);
+                            logmc(`§6[§bTPM§6] §cHey so this person has invites off :(`);
                             this.checkLocraw();
                         }
                         this.bot.betterClick(11, 0, 0);
@@ -93,7 +93,7 @@ class AutoIsland {
 
     async move(place) {
         await sleep(3000);
-        console.log(`Moving to ${place}`);
+        debug(`Moving to ${place}`);
         this.packets.sendMessage(place);
         this.state.set('moving');
         this.currentlyConfirming = true;

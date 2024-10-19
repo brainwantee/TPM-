@@ -1,5 +1,6 @@
 const prompt = require('prompt-sync')();
 const { randomUUID } = require('crypto');
+const { logmc } = require('./logger.js');
 const readline = require('readline');
 const rl = readline.createInterface({
     input: process.stdin,
@@ -87,7 +88,7 @@ function askUser() {
             if (askPrefix) {
                 bot = bots[askPrefix];
             } else {
-                console.error(`Hey that's not a valid prefix! Use one of these: ${Object.keys(askPrefixes).join(', ')}`);
+                logmc(`Hey that's not a valid prefix! Use one of these: ${Object.keys(askPrefixes).join(', ')}`);
                 askUser();
                 return;
             }

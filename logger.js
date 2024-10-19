@@ -1,4 +1,9 @@
+const { createLogger, format, transports } = require('winston');
+const { combine, printf, colorize } = format;
+const fs = require('fs');
+
 let ignColors = {}
+const directoryPath = './logs';
 
 const colors = {
     '1': '\x1b[34m', // dark blue
@@ -38,7 +43,7 @@ function logmc(string) {
         msg += message;
     }
 
-    console.log('\x1b[0m\x1b[1m\x1b[90m' + msg + '\x1b[0m');
+    info('\x1b[0m\x1b[1m\x1b[90m' + msg + '\x1b[0m');
 }
 
 function customIGNColor(ign) {
@@ -48,5 +53,92 @@ function customIGNColor(ign) {
     ignColors[ign] = randomColor;
     return randomColor;
 }
+//winston stuff below
+if (!fs.existsSync(directoryPath)) {
+    fs.mkdirSync(directoryPath);
+}
 
-module.exports = { logmc, customIGNColor };
+function formatDate() {
+    const date = new Date();
+
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const strMinutes = minutes < 10 ? '0' + minutes : minutes;
+
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const year = date.getFullYear().toString().slice(-2);
+    const formattedDate = `${month}-${day}-${year}_${hours}-${strMinutes}${ampm}`;
+    return formattedDate;
+}
+
+const latestLogPath = `${directoryPath}/latest.log`;
+const timelog = `${directoryPath}/${formatDate()}.log`;
+
+if (!fs.existsSync(latestLogPath)) {
+    fs.writeFileSync(latestLogPath, '');
+} else {
+    fs.truncateSync(latestLogPath, 0);
+}
+
+// Regex to match ANSI escape sequences
+const ansiRegex = /\x1b\[[0-9;]*m/g;
+
+const regex = /[a-zA-Z0-9!@#$%^&*()_+\-=[\]{}|;:'",. <>/?`~\\]/g;
+
+const plainFormat = printf(({ message }) => {
+    message = message.replace(ansiRegex, '');
+    message = message.match(regex)?.join('') || '';
+    return `${Date.now()}: ${message}`;
+});
+
+const normalFormat = printf(({ message }) => {
+    return message;
+});
+
+const logger = createLogger({
+    level: 'silly',
+    transports: [
+        new transports.Console({
+            level: 'info',
+            format: combine(
+                colorize(),
+                normalFormat
+            )
+        }),
+        new transports.File({
+            filename: latestLogPath,
+            format: plainFormat
+        }),
+        new transports.File({
+            filename: timelog,
+            format: plainFormat
+        })
+    ]
+});
+
+function silly(...args) {
+    logger.silly(args.join(' '), "silly");
+}
+
+function debug(...args) {
+    logger.debug(args.join(' '), "debug");
+}
+
+function error(...args) {
+    logger.error(args.join(' '), "error");
+}
+
+function info(...args) {
+    logger.info(args.join(' '), "info");
+}
+
+function getLatestLog(){
+    //stuff
+}
+
+module.exports = { logmc, customIGNColor, silly, debug, error, info };

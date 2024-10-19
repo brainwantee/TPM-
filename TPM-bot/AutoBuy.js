@@ -1,7 +1,7 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
 const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber } = require('./Utils.js');
-const { logmc } = require('../logger.js');
+const { logmc, debug, error } = require('../logger.js');
 const { delay, waittime, skip: skipSettings, clickDelay, bedSpam } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
 skipMinProfit = normalNumber(skipMinProfit);
@@ -34,7 +34,7 @@ class AutoBuy {
             const windowID = window.windowId;
             const nextWindowID = windowID === 100 ? 1 : windowID + 1
             const windowName = window.windowTitle;
-            logmc(`Got new window ${windowName}, ${windowID}`);
+            debug(`Got new window ${windowName}, ${windowID}`);
             packets.confirmClick(windowID);
             if (windowName === '{"italic":false,"extra":[{"text":"BIN Auction View"}],"text":""}' && state.get() !== 'listing') {
                 const finderCheck = this.recentFinder === "USER" && skipUser;
@@ -85,7 +85,7 @@ class AutoBuy {
                             state.setAction(firstGui);
                             break;
                         } else if (secondItem !== 'gold_block') {
-                            console.error(`Found a weird item on second run through ${secondItem}`);
+                            error(`Found a weird item on second run through ${secondItem}`);
                             bot.betterWindowClose();
                             state.set(null);
                             state.setAction(firstGui);
@@ -159,7 +159,7 @@ class AutoBuy {
                 logmc(`§6[§bTPM§6] §cCan't open flips while ${currentState} :(`);
             }
             webhook.objectAdd(weirdItemName, startingBid, target, profit, auctionID, bed, finder, itemName, tag);
-            logmc(`Found flip ${auctionID}`);
+            debug(`Found flip ${auctionID}`);
         })
 
     }
@@ -174,7 +174,7 @@ class AutoBuy {
                 if (check?.name !== first) {
                     clearInterval(interval);
                     resolve(check);
-                    logmc(`Found ${check?.name} on ${index}`);
+                    debug(`Found ${check?.name} on ${index}`);
                 }
                 index++
             }, 1) : setInterval(() => {
@@ -182,7 +182,7 @@ class AutoBuy {
                 if (check) {
                     clearInterval(interval);
                     resolve(check);
-                    logmc(`Found ${check?.name} on ${index}`);
+                    debug(`Found ${check?.name} on ${index}`);
                 }
                 index++
             }, 1);
@@ -235,13 +235,13 @@ class AutoBuy {
                 undefinedCount++
                 if (undefinedCount == 5) {
                     clearInterval(bedSpam);
-                    console.log(`Clearing bed spam because of undefined count`, this.bedFailed, config.bedSpam, getWindowName(window), item);
+                    debug(`Clearing bed spam because of undefined count`, this.bedFailed, config.bedSpam, getWindowName(window), item);
                 }
                 return;
             }
             if ((!this.bedFailed && !config.bedSpam) || getWindowName(window) !== 'BIN Auction View' || item !== 'bed') {
                 clearInterval(bedSpam);
-                console.log('Clearing bed spam', this.bedFailed, config.bedSpam, getWindowName(window), item);
+                debug('Clearing bed spam', this.bedFailed, config.bedSpam, getWindowName(window), item);
                 return;
             };
             this.bot.betterClick(31, 0, 0);
@@ -272,7 +272,7 @@ class AutoBuy {
                     case "listingNoName": {
                         const { auctionID, price } = current.action;
                         if (!this.relist.externalListCheck()) {
-                            console.log(`Didn't pass relist check`);
+                            debug(`Didn't pass relist check`);
                             return;
                         };
                         const { relist: relistObject } = this.webhook.getObjects();

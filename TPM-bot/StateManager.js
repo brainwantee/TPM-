@@ -1,5 +1,4 @@
-const { config } = require('../config.js');
-const { delay } = config;
+const { debug } = require('../logger.js');
 
 let queue = [];
 
@@ -12,7 +11,7 @@ class StateManager {
     }
 
     set(newState) {
-        console.log(`Set state to ${newState}`);
+        debug(`Set state to ${newState}`);
         this.state = newState;
     }
 
@@ -35,7 +34,7 @@ class StateManager {
     queueAdd(action, state, priority) {
         queue.push({ action: action, state: state, priority: priority });
         queue.sort((a, b) => b.priority - a.priority);
-        console.log(queue);
+        debug(JSON.stringify(queue));
     }
 
     queueRemove(){

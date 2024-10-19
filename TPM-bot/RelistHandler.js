@@ -1,6 +1,6 @@
 const { config } = require('../config.js');
 const { sleep, betterOnce, getWindowName, noColorCodes, getSlotLore, sendDiscord, onlyNumbers, addCommasToNumber, normalNumber, isSkinned, formatNumber } = require('./Utils.js');
-const { logmc } = require('../logger.js');
+const { logmc, error, debug } = require('../logger.js');
 const { useCookie, relist, percentOfTarget, listHours, doNotRelist } = config;
 let { profitOver, skinned, tags, finders } = doNotRelist;
 profitOver = normalNumber(profitOver);
@@ -46,7 +46,7 @@ class RelistHandler {
                 await sleep(20_500);
                 if (state.get() == 'getting ready') {
                     bot.getPurse();
-                    console.log('getting ready!')
+                    debug('getting ready!')
                     bot.off('spawn', check);
                     bot.chat('/profiles');
                     await betterOnce(bot, "windowOpen");
@@ -62,11 +62,11 @@ class RelistHandler {
                         } else if (singleMatch) {
                             this.maxSlots += 3;
                         } else {
-                            console.error('wtf is your coop', profileLore);
+                            error('wtf is your coop', JSON.stringify(profileLore));
                         }
                     }
 
-                    console.log(`max slots set to ${this.maxSlots}`)
+                    debug(`max slots set to ${this.maxSlots}`)
 
                     bot.betterWindowClose();
 
@@ -100,7 +100,7 @@ class RelistHandler {
                         bot.betterClick(soldAuctions[0].slot);
                     }
 
-                    console.log(`Currently has ${this.currentAuctions} auctions`);
+                    debug(`Currently has ${this.currentAuctions} auctions`);
 
                     let webhookMessage = "";
 
@@ -112,8 +112,8 @@ class RelistHandler {
                         const soldLine = noColorCodes(lore.find(line => line.includes('Sold for:')));
                         const soldFor = onlyNumbers(soldLine);
                         totalCollected += soldFor;
-                        console.log(soldLine);
-                        console.log(soldFor);
+                        debug(soldLine);
+                        debug(soldFor);
                         webhookMessage += `Collected \`${addCommasToNumber(soldFor)} coins\` for selling \`${itemName}\`\n`;
                     })
 
@@ -143,10 +143,10 @@ class RelistHandler {
                     this.ready = true;
 
                 } else {
-                    console.log('not getting ready!!!');
+                    debug('not getting ready!!!');
                 }
             } catch (e) {
-                console.error(`Error getting relist ready! Not going to use relist for ${bot.ign}`, e);
+                error(`Error getting relist ready! Not going to use relist for ${bot.username}`, e);
                 this.useRelist = false;
                 bot.betterWindowClose();
                 state.set(null);
@@ -159,7 +159,7 @@ class RelistHandler {
 
     async listAuction(auctionID, price, profit, weirdItemName, override = false) {
         if (!this.useRelist && !override) return;
-        console.log(`Listing ${auctionID} for ${price}`);
+        debug(`Listing ${auctionID} for ${price}`);
         try {
             const { state, bot } = this;
             state.set('listing');
@@ -175,22 +175,22 @@ class RelistHandler {
             await betterOnce(bot, 'windowOpen');
             bot.currentWindow.slots.forEach(slot => {
                 if (this.getItemUuid(slot) === itemUuid) {
-                    console.log(`Found item in ${slot.slot}`);
+                    debug(`Found item in ${slot.slot}`);
                     bot.betterClick(slot.slot);
                 }
             });
             await betterOnce(bot, 'windowOpen');
-            console.log(getWindowName(bot.currentWindow));
+            debug(getWindowName(bot.currentWindow));
             if (getWindowName(bot.currentWindow) === 'Create Auction') {
                 betterClick(48);
                 await sleep(250)
             } else if (getWindowName(bot.currentWindow).includes('Auction House')) {//includes allows for coop as well. This means item in slot most likely
-                logmc(`Item likely in slot already.`);
+                logmc(`§6[§bTPM§6] §cItem likely in slot already :(`);
                 bot.betterClick(15);
                 await betterOnce(bot, 'windowOpen');
                 let createSlot = bot.currentWindow.slots.find(obj => obj?.nbt?.value?.display?.value?.Name?.value?.includes('Create Auction'));
                 createSlot = createSlot.slot;
-                console.log(`Found create slot ${createSlot}`);
+                debug(`Found create slot ${createSlot}`);
                 if (!createSlot) {
                     throw new Error(`Failed to get create slot :(`);
                 }
@@ -212,7 +212,7 @@ class RelistHandler {
                 }
             }
 
-            console.log(relistpercent)
+            debug(relistpercent)
 
             const listPrice = Math.round(relistpercent * price / 100);
             if (listPrice < 500) {
@@ -220,7 +220,7 @@ class RelistHandler {
                 throw new Error(`Most likely incorrect listing price ${listPrice}`);
             }
 
-            console.log(listPrice);
+            debug(listPrice);
 
             bot.betterClick(31);//set price
             await sleep(250);
@@ -270,7 +270,7 @@ class RelistHandler {
 
         } catch (e) {
             await sleep(250);
-            console.error(`Error listing`, e);
+            error(`Error listing`, e);
             this.bot.betterWindowClose();
             this.state.set(null);
             this.state.setAction();

@@ -1,4 +1,4 @@
-const { logmc, customIGNColor } = require("../logger.js");
+const { logmc, customIGNColor, debug } = require("../logger.js");
 const { sendDiscord, stripItemName, nicerFinders, formatNumber, addCommasToNumber, onlyNumbers } = require('./Utils.js');
 const { config } = require('../config.js');
 const { igns, webhookFormat, blockUselessMessages } = config;
@@ -81,6 +81,7 @@ class MessageHandler {
                     logmc(`§6[§bTPM§6] §cCookie gone!!!`);
                 case "The auctioneer has closed this auction!":
                 case "You don't have enough coins to afford this bid!":
+                case "You cannot bid this amount!":
                     this.state.set(null);
                     this.bot.betterWindowClose();
                     this.state.setAction();
@@ -94,8 +95,8 @@ class MessageHandler {
                 const priceNoCommas = price.replace(/,/g, '');
                 const weirdBought = stripItemName(item);
                 const objectIntance = this.webhookObject[`${weirdBought}:${priceNoCommas}`];
-                console.log(objectIntance);
-                console.log(`${weirdBought}:${priceNoCommas}`);
+                debug(JSON.stringify(objectIntance));
+                debug(`${weirdBought}:${priceNoCommas}`);
                 if (objectIntance) {
                     let { profit, auctionID, target, bed, finder } = objectIntance;
                     finder = nicerFinders(finder);
@@ -127,7 +128,7 @@ class MessageHandler {
 
                     const { profit: relistProfit, target: relistTarget, itemName, weirdItemName, finder: relistFinder, tag } = relistObject;
 
-                    console.log(relistObject);
+                    debug(JSON.stringify(relistObject));
                     setTimeout(() => {
                         if (this.relist.checkRelist(relistProfit, relistFinder, itemName, tag, auctionID, relistTarget)) {
                             this.relist.listAuction(auctionID, relistTarget, relistProfit, weirdItemName);
@@ -260,7 +261,6 @@ class MessageHandler {
             weirdItemName: weirdItemName,
             pricePaid: price
         }
-        //console.log(this.webhookObject);
     }
 
     formatString(format, ...args) {

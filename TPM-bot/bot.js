@@ -1,8 +1,7 @@
 const { createBot } = require("mineflayer");
-const { logmc, customIGNColor } = require("../logger.js");
+const { logmc, customIGNColor, debug } = require("../logger.js");
 const { getPackets, makePackets } = require("./packets.js");
 const axios = require('axios');
-const { CONNECTING } = require("ws");
 
 async function makeBot(ign) {
     return new Promise((resolve) => {
@@ -18,12 +17,12 @@ async function makeBot(ign) {
 
         bot.betterClick = function (slot, mode1 = 0, mode2 = 0) {
             if (!bot.currentWindow) {
-                console.log(`No window found for clicking ${slot}`);
+                debug(`No window found for clicking ${slot}`);
                 return;
             }
             let packets = getPackets(ign);
             if (!packets) {
-                console.log(`Packets weren't made for betterclick`);
+                debug(`Packets weren't made for betterclick`);
                 return;
             }
             packets.bump();
@@ -34,7 +33,7 @@ async function makeBot(ign) {
         bot.betterWindowClose = function () {
 
             if (!bot.currentWindow) {
-                console.log(`No window found for closing`);
+                debug(`No window found for closing`);
                 return;
             }
 
@@ -64,7 +63,7 @@ async function makeBot(ign) {
                     pursey = parseInt(purseString.replace(/\D/g, ''), 10);
                 }
             });
-            console.log(`Recent purse ${bot.recentPurse}. Current found ${pursey}. Recent: ${recent}`);
+            debug(`Recent purse ${bot.recentPurse}. Current found ${pursey}. Recent: ${recent}`);
             if (recent) {
                 if (bot.recentPurse * .99 >= pursey || bot.recentPurse * 1.01 <= pursey) {
                     return bot.recentPurse;
@@ -90,7 +89,7 @@ async function getUUID(ign, attempt = 0) {
     try {
         return (await axios.get(`https://api.mojang.com/users/profiles/minecraft/${ign}`)).data.id;
     } catch (e) {
-        console.log(e);
+        debug(e);
         return getUUID(ign, ++attempt);
     }
 }
