@@ -4,3 +4,4 @@ TPM-rewrite-macos
 TPM-rewrite-win.exe
 *.exe
 testing
+/logs

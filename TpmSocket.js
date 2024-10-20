@@ -1,5 +1,5 @@
 const { logmc, debug, error } = require('./logger.js');
-const { sleep } = require('./TPM-bot/Utils.js');
+const { sleep, getLatestLog } = require('./TPM-bot/Utils.js');
 const { config } = require('./config.js');
 const { igns, webhook, discordID } = config;
 
@@ -23,7 +23,7 @@ class TpmSocket {
             this.ws.on('open', async () => {
                 this.sentFailureMessage = false;
                 logmc('§6[§bTPM§6] §3Connected to the TPM websocket!');
-                await sleep(10_000 * igns.length);
+                await this.botsReady();
                 if (this.settings.length === 0) await this.getSettings();
                 if (this.storedMessages.length > 0) {
                     this.send(JSON.stringify({
@@ -49,7 +49,14 @@ class TpmSocket {
                         this.sentFailureMessage = true;
                     }
                 } else {
-                    error('WS error:', e);
+                    error('WS error1:', e);
+                }
+            });
+
+            this.ws.on('close', async (e) => {
+                if (!this.sentFailureMessage) {
+                    logmc('§6[§bTPM§6] §cTPM websocket down. Please report to a dev!');
+                    this.sentFailureMessage = true;
                 }
                 sleep(5000);
                 this.makeWebsocket();
@@ -58,7 +65,7 @@ class TpmSocket {
             this.ws.on('message', this.handleMessage.bind(this));
 
         } catch (e) {
-            error(`WS error:`, e);
+            error(`WS error2:`, e);
         }
     }
 
@@ -72,18 +79,21 @@ class TpmSocket {
     }
 
     handleMessage(message) {
+        console.log(`Got message from TPM`)
         const msg = JSON.parse(message);
         const data = JSON.parse(msg.data);//This isn't safe and if it's not JSON format then it'll crash but that's intentional!
         debug(message.toString());
-        switch(msg.type){
+        switch (msg.type) {
             case "list":
                 const bot = this.bots[data.username];
-                if(!bot) {
+                if (!bot) {
                     debug(`Didn't find a bot for ${data.username}`);
                     return;
                 }
                 bot.state.queueAdd(data, 'listingNoName', 2);
                 break;
+            case "log":
+                const log = getLatestLog();
         }
     }
 
@@ -101,6 +111,16 @@ class TpmSocket {
         });
 
         await Promise.all(settingsPromises);
+    }
+
+    async botsReady() {
+        return new Promise(async (resolve) => {
+            while (Object.keys(this.bots).length !== igns.length) {
+                await sleep(10_000);
+            }
+            console.log(`Resolving because ${Object.keys(this.bots).length} and ${igns.length}`)
+            resolve();
+        });
     }
 }
 

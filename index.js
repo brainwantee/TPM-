@@ -43,8 +43,9 @@ testIgn();
     const tws = new TpmSocket(bots);
 
     for (const ign of igns) {
-        bots[ign] = new AhBot(ign, tws);
-        await bots[ign].createBot();
+        const tempBot = new AhBot(ign, tws);
+        await tempBot.createBot();
+        bots[ign] = tempBot;
         askPrefixes[bots[ign].initAskPrefix()?.toLowerCase()] = ign;
         message += `Logged in as \`\`${ign}\`\`\n`;
     }

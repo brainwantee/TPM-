@@ -1,5 +1,5 @@
 const { logmc, customIGNColor, debug } = require("../logger.js");
-const { sendDiscord, stripItemName, nicerFinders, formatNumber, addCommasToNumber, onlyNumbers } = require('./Utils.js');
+const { sendDiscord, stripItemName, nicerFinders, formatNumber, addCommasToNumber, onlyNumbers, betterOnce, sleep } = require('./Utils.js');
 const { config } = require('../config.js');
 const { igns, webhookFormat, blockUselessMessages } = config;
 
@@ -28,6 +28,7 @@ class MessageHandler {
         this.sentCookie = false;
         this.privacySettings = /no regex yet but I don't want it to crash so I'm putting regex/;
         this.messageListener();
+        this.coflHandler = this.coflHandler.bind(this)
         this.coflHandler();
     }
 
@@ -57,7 +58,7 @@ class MessageHandler {
                     break;
                 case "You cannot view this auction!":
                 case "You need the Cookie Buff to use this command!":
-                    if(this.sentCookie) return;
+                    if (this.sentCookie) return;
                     sendDiscord({
                         title: 'Cookie Gone!!!',
                         color: 13313596,
@@ -196,7 +197,23 @@ class MessageHandler {
 
     coflHandler() {
         this.ws.on('getInventory', this.sendInventory);
-        this.ws.on('open', this.sendScoreboard);
+        this.ws.on('open', async () => {
+            const test = async () => {
+                debug(`Checking for scoreboard`)
+                if (this.island.onIslandCheck()) {
+                    this.sendScoreboard();
+                    return;
+                }
+                try {
+                    await betterOnce(this.bot, 'spawn', 30_000);
+                    await sleep(20_000);
+                } catch (e) {
+                    console.error(e);
+                    test();
+                }
+            };
+            test();
+        });
         const settings = msg => {
             this.privacySettings = new RegExp(msg.chatRegex);
             this.ws.off('settings', settings);
@@ -227,6 +244,7 @@ class MessageHandler {
     }
 
     sendScoreboard() {
+        debug(`Sending scoreboard`);
         setTimeout(() => {
             if (!this.bot?.scoreboard?.sidebar?.items) return;
             let scoreboard = this.bot.scoreboard.sidebar.items.map(item => item.displayName.getText(null).replace(item.name, ''));

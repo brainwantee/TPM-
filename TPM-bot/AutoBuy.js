@@ -1,7 +1,7 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
 const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber } = require('./Utils.js');
-const { logmc, debug, error } = require('../logger.js');
+const { logmc, debug } = require('../logger.js');
 const { delay, waittime, skip: skipSettings, clickDelay, bedSpam } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
 skipMinProfit = normalNumber(skipMinProfit);
@@ -85,7 +85,7 @@ class AutoBuy {
                             state.setAction(firstGui);
                             break;
                         } else if (secondItem !== 'gold_block') {
-                            error(`Found a weird item on second run through ${secondItem}`);
+                            debug(`Found a weird item on second run through ${secondItem}`);
                             bot.betterWindowClose();
                             state.set(null);
                             state.setAction(firstGui);
@@ -276,7 +276,12 @@ class AutoBuy {
                             return;
                         };
                         const { relist: relistObject } = this.webhook.getObjects();
-                        const { weirdItemName, pricePaid } = relistObject[auctionID];
+                        try {
+                            var { weirdItemName, pricePaid } = relistObject[auctionID]; //ew var
+                        } catch {
+                            var weirdItemName = auctionID; //ew var
+                            var pricePaid = 0; //ew var
+                        }
                         let profit = IHATETAXES(price) - pricePaid;
                         this.relist.listAuction(auctionID, price, profit, weirdItemName, true);
                         current.state = 'listing';

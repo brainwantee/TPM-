@@ -10,14 +10,15 @@ class AutoIsland {
         this.state = state;
         this.bot = bot;
         this.currentlyConfirming = true;
-        this.checkLocraw = this.checkLocraw.bind(this);//Idk what this means tbh
-        this.bot.on('spawn', this.checkLocraw);
-        this.checkLocraw(true);//Sometimes AutoIsland gets made after the bot spawned so we have to make it confirm first
         this.packets = getPackets(ign);
         this.gottenReady = false;
         this.useCookie = config.useCookie;
         this.baseMessage = this.useCookie ? "Private Island" : "Hub";
         this.otherIsland = this.useCookie === false ? false : config.visitFriend;
+        this.onIsland = false;
+        this.checkLocraw = this.checkLocraw.bind(this);//Idk what this means tbh
+        this.bot.on('spawn', this.checkLocraw);
+        this.checkLocraw(true);//Sometimes AutoIsland gets made after the bot spawned so we have to make it confirm first
     }
 
     async checkLocraw(confirm = false) {
@@ -62,6 +63,7 @@ class AutoIsland {
                         this.bot.betterClick(11, 0, 0);
                     } else {
                         //console.log('Made it to the island!');
+                        this.onIsland = true;
                         if (this.gottenReady) {
                             this.state.set(null);
                         } else {
@@ -71,6 +73,7 @@ class AutoIsland {
                     }
                 } else if (this.state.get() === 'moving') {
                     //console.log('Made it to the island!');
+                    this.onIsland = true;
                     if (this.gottenReady) {
                         this.state.set(null);
                     } else {
@@ -92,6 +95,7 @@ class AutoIsland {
     }
 
     async move(place) {
+        this.onIsland = false;
         await sleep(3000);
         debug(`Moving to ${place}`);
         this.packets.sendMessage(place);
@@ -105,6 +109,10 @@ class AutoIsland {
         this.baseMessage = baseMessage;
         this.useCookie = useCookie;
         this.checkLocraw();
+    }
+
+    onIslandCheck(){
+        return this.onIsland;
     }
 
 }

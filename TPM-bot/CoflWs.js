@@ -145,6 +145,7 @@ class CoflWs {
         const connectionMatch = msg.match(connectionRegex);
         if (connectionMatch) {
             debug(`Got connection ID ${connectionMatch[1]}`);
+            this.handleCommand('/cofl get json');
         }
 
         if (msg.includes(`Until you do you are using the free version which will make less profit and your settings won't be saved`)) {//logged out

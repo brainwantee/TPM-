@@ -131,6 +131,8 @@ async function sendDiscord(embed, ping = false, attempt = 0) {
     }
 }
 
+
+
 function nicerFinders(finder) {
     switch (finder) {
         case "USER":
@@ -208,4 +210,12 @@ function isSkinned(item) {
     return item.includes('✦') || item.toLowerCase().includes('skin') || item.includes('✿');
 }
 
-module.exports = { DISCORD_PING, isSkinned, normalNumber, addCommasToNumber, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };
+function getLatestLog(){
+    const logFilePath = path.join(process.pkg ? path.dirname(process.execPath) : __dirname, 'logs', 'latest.log');
+    const logFile = fs.createReadStream(logFilePath);
+    const form = new FormData();
+    form.append('file', logFile, 'latest.log');
+    return form;
+}
+
+module.exports = { DISCORD_PING, getLatestLog, isSkinned, normalNumber, addCommasToNumber, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };
