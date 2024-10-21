@@ -256,7 +256,7 @@ class RelistHandler {
                 fields: [
                     {
                         name: '',
-                        value: `Listed [\`${weirdItemName}\`](https://www.sky.coflnet.com/auction/${auctionID}) for \`${addCommasToNumber(price)}\` (\`${formatNumber(profit)}\` profit) [Slots: ${this.currentAuctions}/${this.maxSlots}]`,
+                        value: `Listed [\`${weirdItemName}\`](https://sky.coflnet.com/auction/${auctionID}) for \`${addCommasToNumber(price)}\` (\`${formatNumber(profit)}\` profit) [Slots: ${this.currentAuctions}/${this.maxSlots}]`,
                     }
                 ],
                 thumbnail: {
@@ -281,7 +281,7 @@ class RelistHandler {
         return slot?.nbt?.value?.ExtraAttributes?.value?.uuid?.value;
     }
 
-    checkRelist(profit, finder, itemName, tag, auctionID, price) {
+    checkRelist(profit, finder, itemName, tag, auctionID, price, weirdItemName, fromQueue = false) {
         if(!this.hasCookie) return false;
         if (!this.useRelist) {
             this.sendTPMSocket(auctionID, `relist is off`, itemName);
@@ -300,7 +300,7 @@ class RelistHandler {
         }
 
         if (this.currentAuctions == this.maxSlots || this.state.get() || this.bot.currentWindow) {
-            this.state.queueAdd({ profit, finder, itemName, tag, auctionID, price }, 'listing', 2);//currently useless :(
+            if(!fromQueue) this.state.queueAdd({ profit, finder, itemName, tag, auctionID, price, weirdItemName }, 'listing', 2);
             return false;
         }
 

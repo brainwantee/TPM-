@@ -195,15 +195,15 @@ function normalNumber(num) {
     if (!num) return NaN;
     num = num.toLowerCase();
     if (num.includes('t')) {
-        return parseInt(num.replace('t', '')) * 1_000_000_000_000;
+        return parseFloat(num.replace('t', '')) * 1_000_000_000_000;
     } else if (num.includes('b')) {
-        return parseInt(num.replace('b', '')) * 1_000_000_000;
+        return parseFloat(num.replace('b', '')) * 1_000_000_000;
     } else if (num.includes('m')) {
-        return parseInt(num.replace('m', '')) * 1_000_000;
+        return parseFloat(num.replace('m', '')) * 1_000_000;
     } else if (num.includes('k')) {
-        return parseInt(num.replace('k', '')) * 1_000;
+        return parseFloat(num.replace('k', '')) * 1_000;
     }
-    return parseInt(num);
+    return parseFloat(num);
 }
 
 function isSkinned(item) {

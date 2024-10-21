@@ -256,7 +256,7 @@ class AutoBuy {
             if (!this.bot.currentWindow && Date.now() > this.state.getTime() + delay && !this.state.get()) {
                 switch (current.state) {
                     case "buying": {
-                        const { finder, profit, tag, itemName, auctionID } = current.action;
+                        const { finder, profit, itemName, auctionID } = current.action;
                         this.openExternalFlip(auctionID, profit, finder, itemName);
                         break;
                     }
@@ -265,7 +265,7 @@ class AutoBuy {
                         break;
                     case "listing": {
                         const { profit, finder, itemName, tag, auctionID, price, weirdItemName } = current.action;
-                        if (!this.relist.checkRelist(profit, finder, itemName, tag, auctionID, price)) return;
+                        if (!this.relist.checkRelist(profit, finder, itemName, tag, auctionID, price, weirdItemName, true)) return;
                         this.relist.listAuction(auctionID, price, profit, weirdItemName);
                         break;
                     }

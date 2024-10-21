@@ -1,5 +1,5 @@
 const { logmc, debug, error } = require('./logger.js');
-const { sleep, getLatestLog } = require('./TPM-bot/Utils.js');
+const { sleep, getLatestLog, normalNumber } = require('./TPM-bot/Utils.js');
 const { config } = require('./config.js');
 const { igns, webhook, discordID } = config;
 
@@ -18,6 +18,7 @@ class TpmSocket {
 
     makeWebsocket() {
         try {
+            debug(`Making new TPM socket`);
             this.ws = new WebSocket('ws://107.152.38.30:1241');//random VPS
 
             this.ws.on('open', async () => {
@@ -43,6 +44,7 @@ class TpmSocket {
             })
 
             this.ws.on('error', async (e) => {
+                debug(`TPM Socket error 1`);
                 if (e.code === 'ECONNREFUSED') {
                     if (!this.sentFailureMessage) {
                         logmc('§6[§bTPM§6] §cTPM websocket down. Please report to a dev!');
@@ -54,6 +56,7 @@ class TpmSocket {
             });
 
             this.ws.on('close', async (e) => {
+                debug(`TPM Socket closed`);
                 if (!this.sentFailureMessage) {
                     logmc('§6[§bTPM§6] §cTPM websocket down. Please report to a dev!');
                     this.sentFailureMessage = true;
@@ -75,17 +78,19 @@ class TpmSocket {
             this.ws.send(message);
         } else if (batch) {
             this.storedMessages.push(message);
+            debug(`Not currently connected`)
         }
     }
 
     handleMessage(message) {
-        console.log(`Got message from TPM`)
         const msg = JSON.parse(message);
         const data = JSON.parse(msg.data);//This isn't safe and if it's not JSON format then it'll crash but that's intentional!
         debug(message.toString());
         switch (msg.type) {
             case "list":
                 const bot = this.bots[data.username];
+                data.price = normalNumber(data.price);
+                console.log(JSON.stringify(data));
                 if (!bot) {
                     debug(`Didn't find a bot for ${data.username}`);
                     return;
