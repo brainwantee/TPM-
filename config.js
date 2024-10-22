@@ -54,7 +54,7 @@ const defaultConfig = `{
         "always": false,
 
         //Skip on flips with a profit over x
-        "minProfit": 5000000,
+        "minProfit": 25000000,
 
         //Skip on user finder flips
         "userFinder": true,
