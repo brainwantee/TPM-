@@ -54,7 +54,7 @@ class MessageHandler {
                     this.state.setAction();
                     break;
                 case "This auction wasn't found!":
-                    if (this.state.get() === 'buying') this.state.set(null);
+                    if (this.state.get() === 'buying' || this.state.get() === 'claiming') this.state.set(null);
                     this.state.setAction();
                     break;
                 case "You cannot view this auction!":
