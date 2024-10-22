@@ -32,7 +32,7 @@ const defaultConfig = `{
     "waittime": 15,
 
     //Set up different list price ranges and their corresponding percent off of target price. (The lower value of the range is inclusive, the higher value is exclusive)
-    "percentOfTarget": [0, 10000000000, 97],
+    "percentOfTarget": ["0", "10b", 97],
 
     //Delay between clicks for bed spam (ideally use 100-125)
     "clickDelay": 125,
@@ -54,7 +54,7 @@ const defaultConfig = `{
         "always": false,
 
         //Skip on flips with a profit over x
-        "minProfit": 25000000,
+        "minProfit": "25m",
 
         //Skip on user finder flips
         "userFinder": true,

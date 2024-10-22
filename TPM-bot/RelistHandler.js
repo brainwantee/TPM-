@@ -202,9 +202,9 @@ class RelistHandler {
 
             let relistpercent = 100;
             for (let i = 0; i < percentOfTarget.length; i += 3) {
-                let lowerBound = percentOfTarget[i];
-                let upperBound = percentOfTarget[i + 1];
-                let percent = percentOfTarget[i + 2];
+                let lowerBound = normalNumber(percentOfTarget[i]);
+                let upperBound = normalNumber(percentOfTarget[i + 1]);
+                let percent = normalNumber(percentOfTarget[i + 2]);
 
                 if (price >= lowerBound && price < upperBound) {
                     relistpercent = percent;
