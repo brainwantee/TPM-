@@ -38,6 +38,7 @@ class StateManager {
     }
 
     queueRemove(){
+        debug(`Removing ${JSON.stringify(queue[0])} from queue`);
         queue.shift();
     }
 

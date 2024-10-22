@@ -291,6 +291,7 @@ class AutoBuy {
                 this.state.setAction(currentTime);
                 this.state.set(current.state);
                 this.state.queueRemove();
+                debug(`QUEUE: Running ${current}`);
             }
         }, delay)
     }
