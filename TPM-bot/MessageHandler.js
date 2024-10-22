@@ -7,6 +7,7 @@ const axios = require('axios');
 
 const soldRegex = /^\[Auction\] (.+?) bought (.+?) for ([\d,]+) coins CLICK$/;
 const boughtRegex = /^You purchased (.+?) for ([\d,]+) coins!$/;
+const claimedRegex = /^You collected ([\d,]+) coins from selling (.+?) to (.+?) in an auction!$/
 
 const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
 
@@ -179,6 +180,13 @@ class MessageHandler {
 
                 setTimeout(() => this.bot.getPurse, 5000);
 
+            }
+
+            const claimedMatch = text.match(claimedRegex);
+            if(claimedMatch){
+                setTimeout(() =>{
+                    this.bot.getPurse();//fix incorrect purse after claiming
+                }, 5000)
             }
 
             if (blockUselessMessages) {

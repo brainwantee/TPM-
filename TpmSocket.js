@@ -123,7 +123,6 @@ class TpmSocket {
             while (Object.keys(this.bots).length !== igns.length) {
                 await sleep(10_000);
             }
-            console.log(`Resolving because ${Object.keys(this.bots).length} and ${igns.length}`)
             resolve();
         });
     }
