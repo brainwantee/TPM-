@@ -94,7 +94,7 @@ function getWindowName(window) {
 }
 
 function isSkin(item){
-    return item?.includes('✦') || item?.toLowerCase()?.includes('skin') || !item?.includes('✿');
+    return item?.includes('✦') || item?.toLowerCase()?.includes('skin') || item?.includes('✿');
 }
 
 function noColorCodes(text) {
