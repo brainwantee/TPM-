@@ -132,7 +132,7 @@ class MessageHandler {
 
                     debug(JSON.stringify(relistObject));
                     setTimeout(() => {
-                        if (this.relist.checkRelist(relistProfit, relistFinder, itemName, tag, auctionID, relistTarget)) {
+                        if (this.relist.checkRelist(relistProfit, relistFinder, itemName, tag, auctionID, relistTarget, weirdItemName)) {
                             this.relist.listAuction(auctionID, relistTarget, relistProfit, weirdItemName);
                         }
                     }, 10000)//delay to allow for other flips to get bought
