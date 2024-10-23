@@ -13,7 +13,7 @@ const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
 
 class MessageHandler {
 
-    constructor(ign, bot, socket, state, relist, island) {
+    constructor(ign, bot, socket, state, relist, island, updateSold, updateBought) {
         this.ign = ign;
         this.bot = bot;
         this.coflSocket = socket;
@@ -21,6 +21,8 @@ class MessageHandler {
         this.ws = socket.getWs();
         this.state = state;
         this.relist = relist;
+        this.updateSold = updateSold;
+        this.updateBought = updateBought;
         this.webhookObject = {};//"itemName:pricePaid"
         this.relistObject = {};//auctionID. Using a different object ensures that it never lists for the wrong price
         this.soldObject = {};//"itemName:target"
@@ -103,24 +105,45 @@ class MessageHandler {
                     let { profit, auctionID, target, bed, finder } = objectIntance;
                     finder = nicerFinders(finder);
                     target = formatNumber(target);
-                    profit = formatNumber(profit);
-                    sendDiscord({
-                        title: 'Item purchased',
-                        color: 2615974,
-                        fields: [
-                            {
-                                name: '',
-                                value: this.formatString(webhookFormat, item, profit, price, target, buyspeed, bed, finder, auctionID),
+                    let formattedProfit = formatNumber(profit);
+                    this.updateBought(profit);
+                    if (profit < 100_000_000) {
+                        sendDiscord({
+                            title: 'Item purchased',
+                            color: 2615974,
+                            fields: [
+                                {
+                                    name: '',
+                                    value: this.formatString(webhookFormat, item, formattedProfit, price, target, buyspeed, bed, finder, auctionID),
+                                }
+                            ],
+                            thumbnail: {
+                                url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                            },
+                            footer: {
+                                text: `TPM Rewrite - Found by ${finder} - Purse ${formatNumber(this.bot.getPurse(true) - parseInt(priceNoCommas, 10))}`,
+                                icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                             }
-                        ],
-                        thumbnail: {
-                            url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
-                        },
-                        footer: {
-                            text: `TPM Rewrite - Found by ${finder} - Purse ${formatNumber(this.bot.getPurse(true) - parseInt(priceNoCommas, 10))}`,
-                            icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
-                        }
-                    })
+                        })
+                    } else {
+                        sendDiscord({
+                            title: 'LEGENDARY FLIP WOOOOO!!!',
+                            color: 16629250,
+                            fields: [
+                                {
+                                    name: '',
+                                    value: this.formatString(webhookFormat, item, formattedProfit, price, target, buyspeed, bed, finder, auctionID),
+                                }
+                            ],
+                            thumbnail: {
+                                url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                            },
+                            footer: {
+                                text: `TPM Rewrite - Found by ${finder} - Purse ${formatNumber(this.bot.getPurse(true) - parseInt(priceNoCommas, 10))}`,
+                                icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                            }
+                        }, true)
+                    }
 
                     this.state.setAction();
 
@@ -144,6 +167,7 @@ class MessageHandler {
             const soldMatch = text.match(soldRegex);
             if (soldMatch) {
                 if (!this.relist.getGottenReady()) return;
+                this.updateSold();
                 this.sendScoreboard();
                 const buyer = soldMatch[1];
                 const item = soldMatch[2];
@@ -183,8 +207,8 @@ class MessageHandler {
             }
 
             const claimedMatch = text.match(claimedRegex);
-            if(claimedMatch){
-                setTimeout(() =>{
+            if (claimedMatch) {
+                setTimeout(() => {
                     this.bot.getPurse();//fix incorrect purse after claiming
                 }, 5000)
             }

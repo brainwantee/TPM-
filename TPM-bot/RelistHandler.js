@@ -19,11 +19,12 @@ if (listHours >= 24) {
 
 class RelistHandler {
 
-    constructor(bot, state, tpm) {
+    constructor(bot, state, tpm, updateSold) {
         this.bot = bot;
         this.state = state;
         this.useRelist = relist;
         this.tpm = tpm;
+        this.updateSold = updateSold;
         this.currentAuctions = 0;
         this.maxSlots = 14;
         this.hasCookie = true;
@@ -84,6 +85,7 @@ class RelistHandler {
                         const hasBuyer = lore.find(line => line.includes('Buyer:'));
                         if (hasBuyer) {
                             soldAuctions.push(slot);
+                            this.updateSold();
                             return;
                         }
                         const hasSeller = lore.find(line => line.includes('Seller:'));
@@ -173,8 +175,11 @@ class RelistHandler {
             await sleep(250);
             bot.chat('/ah');
             await betterOnce(bot, 'windowOpen');
+            const uuids = [];//item not found debugging
             bot.currentWindow.slots.forEach(slot => {
-                if (this.getItemUuid(slot) === itemUuid) {
+                const uuid = this.getItemUuid(slot);
+                uuids.push(uuid);
+                if (uuid === itemUuid) {
                     debug(`Found item in ${slot.slot}`);
                     bot.betterClick(slot.slot);
                 }
@@ -201,14 +206,16 @@ class RelistHandler {
             }
 
             let relistpercent = 100;
-            for (let i = 0; i < percentOfTarget.length; i += 3) {
-                let lowerBound = normalNumber(percentOfTarget[i]);
-                let upperBound = normalNumber(percentOfTarget[i + 1]);
-                let percent = normalNumber(percentOfTarget[i + 2]);
+            if (!override) {
+                for (let i = 0; i < percentOfTarget.length; i += 3) {
+                    let lowerBound = normalNumber(percentOfTarget[i]);
+                    let upperBound = normalNumber(percentOfTarget[i + 1]);
+                    let percent = normalNumber(percentOfTarget[i + 2]);
 
-                if (price >= lowerBound && price < upperBound) {
-                    relistpercent = percent;
-                    break;
+                    if (price >= lowerBound && price < upperBound) {
+                        relistpercent = percent;
+                        break;
+                    }
                 }
             }
 
@@ -282,7 +289,7 @@ class RelistHandler {
     }
 
     checkRelist(profit, finder, itemName, tag, auctionID, price, weirdItemName, fromQueue = false) {
-        if(!this.hasCookie) return false;
+        if (!this.hasCookie) return false;
         if (!this.useRelist) {
             this.sendTPMSocket(auctionID, `relist is off`, itemName);
             return false;
@@ -300,14 +307,14 @@ class RelistHandler {
         }
 
         if (this.currentAuctions == this.maxSlots || this.state.get() || this.bot.currentWindow) {
-            if(!fromQueue) this.state.queueAdd({ profit, finder, itemName, tag, auctionID, price, weirdItemName }, 'listing', 2);
+            if (!fromQueue) this.state.queueAdd({ profit, finder, itemName, tag, auctionID, price, weirdItemName }, 'listing', 2);
             return false;
         }
 
         return true;
     }
 
-    externalListCheck(){
+    externalListCheck() {
         return this.currentAuctions !== this.maxSlots;
     }
 
@@ -329,7 +336,7 @@ class RelistHandler {
         this.hasCookie = false;
     }
 
-    getGottenReady(){//freaky ahh name
+    getGottenReady() {//freaky ahh name
         return this.ready;
     }
 

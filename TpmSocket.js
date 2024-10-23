@@ -99,6 +99,19 @@ class TpmSocket {
                 break;
             case "log":
                 const log = getLatestLog();
+                break;
+            case "allStats":
+                for (const ign in this.bots) {
+                    const bot = this.bots[ign];
+                    bot.handleTerminal('/stats');
+                }
+                break;
+            case "stats":
+                for (const ign in this.bots) {
+                    const bot = this.bots[ign];
+                    bot.handleTerminal('/ping');
+                }
+                break;
         }
     }
 

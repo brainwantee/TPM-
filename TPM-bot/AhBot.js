@@ -1,7 +1,8 @@
 const { makeBot } = require("./bot.js");
-const { getPackets, makePackets } = require("./packets.js");
+const { getPackets } = require("./packets.js");
 const { debug } = require("../logger.js");
 const { config } = require('../config.js');
+const { getStats, getPingStats } = require('./Utils.js');
 const CoflWs = require("./CoflWs.js");
 const StateManager = require("./StateManager.js");
 const AutoIsland = require('./AutoIsland.js');
@@ -23,7 +24,13 @@ class AhBot {
         this.island = null;
         this.state = null;
         this.packets = null;
+        this.sold = 0;
+        this.bought = [];
         this.tpm = TPMSocket;
+        this.start = Date.now();
+
+        this.updateBought = this.updateBought.bind(this);
+        this.updateSold = this.updateSold.bind(this);//this whole binding thing is getting annoying
     }
 
     async startBot() {
@@ -32,15 +39,15 @@ class AhBot {
         let packets = getPackets(ign);
 
         const state = new StateManager(bot);
-        
+
         const coflSocket = new CoflWs(ign, bot);
         const ws = coflSocket.getWs();
 
-        const relist = new RelistHandler(bot, state, tpm);
+        const relist = new RelistHandler(bot, state, tpm, this.updateSold);
 
         const island = new AutoIsland(ign, state, bot);
 
-        const webhook = new MessageHandler(ign, bot, coflSocket, state, relist, island);
+        const webhook = new MessageHandler(ign, bot, coflSocket, state, relist, island, this.updateSold, this.updateBought);
 
         const autoBuy = new AutoBuy(bot, webhook, ws, ign, state, relist);
 
@@ -79,6 +86,12 @@ class AhBot {
             case "/fc":
                 this.coflSocket.handleCommand(`/cofl chat ${message}`);
                 break;
+            case "/stats":
+                getStats(this.bot, this.coflSocket.handleCommand, this.ws, this.sold, this.bought, this.start);
+                break;
+            case "/ping":
+                getPingStats(this.bot, this.coflSocket.handleCommand, this.ws, this.sold, this.bought);
+                break;
         }
     }
 
@@ -101,6 +114,14 @@ class AhBot {
 
     getBot() {
         return this.bot;
+    }
+
+    updateSold() {
+        this.sold++;
+    }
+
+    updateBought(profit) {
+        this.bought.push(profit);
     }
 }
 

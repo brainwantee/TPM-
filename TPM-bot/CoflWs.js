@@ -20,6 +20,7 @@ class CoflWs {
         this.ign = ign;
         this.bot = bot;
         this.reconnect = true;
+        this.handleCommand = this.handleCommand.bind(this);//Can call in other places now!!!
 
         this.startWs();
     }
