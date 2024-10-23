@@ -41,7 +41,8 @@ async function betterOnce(listener, event, timeframe = 5000) {
 }
 
 function stripItemName(name) {
-    const stripped = noColorCodes(name.replace(/!|-us|\.|\b(?:[1-9]|[1-5][0-9]|6[0-4])x\b/g, ""));
+    const noCodes = noColorCodes(name);
+    const stripped = noCodes.replace(/\b(?:[1-9]|[1-5][0-9]|6[0-4])x\b\s*|[!.]|-us/g, "")
     debug(`Stripped ${name} => ${stripped}`);
     return stripped;
 }

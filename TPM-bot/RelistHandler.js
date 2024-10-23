@@ -169,18 +169,19 @@ class RelistHandler {
             await betterOnce(bot, 'windowOpen');
             let itemUuid = this.getItemUuid(bot.currentWindow.slots[13]);
             if (!itemUuid) {
-                throw new Error(`Failed to get item uuid :( ${itemUuid}`);
+                throw new Error(`Failed to get item uuid :( ${itemUuid} ${bot.currentWindow.slots[13]}`);
             }
             bot.betterClick(31);
             await sleep(250);
             bot.chat('/ah');
             await betterOnce(bot, 'windowOpen');
             const uuids = [];//item not found debugging
-            bot.currentWindow.slots.forEach(slot => {
+            bot.currentWindow.slots.forEach(async slot => {
                 const uuid = this.getItemUuid(slot);
                 uuids.push(uuid);
                 if (uuid === itemUuid) {
                     debug(`Found item in ${slot.slot}`);
+                    await sleep(2500);//issue with item not loading
                     bot.betterClick(slot.slot);
                 }
             });
