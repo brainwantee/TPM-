@@ -127,6 +127,9 @@ class AutoBuy {
                             }
                         })
                         break;
+                    case "stained_glass_pane":
+                        if (state.get() === 'delisting') this.bot.betterClick(33);
+                        break;
                 }
 
             } else if (windowName === '{"italic":false,"extra":[{"text":"Confirm Purchase"}],"text":""}') {
@@ -310,6 +313,16 @@ class AutoBuy {
                         this.relist.listAuction(auctionID, price, profit, weirdItemName, true);
                         current.state = 'listing';
                         break;
+                    }
+                    case "delisting": {
+                        const { auctionID, itemUuid } = current.action;
+                        const { relist: relistObject } = this.webhook.getObjects();
+                        try {
+                            var { weirdItemName } = relistObject[auctionID]; //ew var
+                        } catch {
+                            var weirdItemName = auctionID; //ew var
+                        }
+                        this.relist.delistAuction(itemUuid, auctionID, weirdItemName);
                     }
                 }
                 this.state.setAction(currentTime);

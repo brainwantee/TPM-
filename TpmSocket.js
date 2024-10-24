@@ -87,16 +87,17 @@ class TpmSocket {
         const data = JSON.parse(msg.data);//This isn't safe and if it's not JSON format then it'll crash but that's intentional!
         debug(message.toString());
         switch (msg.type) {
-            case "list":
+            case "list": {
                 const bot = this.bots[data.username];
                 data.price = normalNumber(data.price);
-                console.log(JSON.stringify(data));
+                debug(JSON.stringify(data));
                 if (!bot) {
                     debug(`Didn't find a bot for ${data.username}`);
                     return;
                 }
                 bot.state.queueAdd(data, 'listingNoName', 2);
                 break;
+            }
             case "log":
                 const log = getLatestLog();
                 break;
@@ -112,6 +113,16 @@ class TpmSocket {
                     bot.handleTerminal('/ping');
                 }
                 break;
+            case "delist": {
+                const bot = this.bots[data.username];
+                debug(JSON.stringify(data));
+                if (!bot) {
+                    debug(`Didn't find a bot for ${data.username}`);
+                    return;
+                }
+                bot.state.queueAdd(data, 'delisting', 3);
+                break;
+            }
         }
     }
 

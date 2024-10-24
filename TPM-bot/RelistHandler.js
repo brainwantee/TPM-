@@ -177,7 +177,7 @@ class RelistHandler {
             await betterOnce(bot, 'windowOpen');
             const uuids = [];//item not found debugging
             bot.currentWindow.slots.forEach(async slot => {
-                const uuid = this.getItemUuid(slot);
+                let uuid = this.getItemUuid(slot);
                 uuids.push(uuid);
                 if (uuid === itemUuid) {
                     debug(`Found item in ${slot.slot}`);
@@ -258,23 +258,17 @@ class RelistHandler {
             state.setAction();
             this.currentAuctions++;
 
-            sendDiscord({
-                title: 'Item Listed!',
-                color: 13677311,
-                fields: [
-                    {
-                        name: '',
-                        value: `Listed [\`${weirdItemName}\`](https://sky.coflnet.com/auction/${auctionID}) for \`${addCommasToNumber(price)}\` (\`${formatNumber(profit)}\` profit) [Slots: ${this.currentAuctions}/${this.maxSlots}]`,
-                    }
-                ],
-                thumbnail: {
-                    url: `https://mc-heads.net/head/${bot.uuid}.png`,
-                },
-                footer: {
-                    text: `TPM Rewrite - Purse: ${formatNumber(bot.getPurse())}`,
-                    icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
-                }
-            })
+            this.tpm.send(JSON.stringify({
+                type: "listed",
+                data: JSON.stringify({
+                    auctionID,
+                    purse: formatNumber(bot.getPurse()),
+                    username: bot.username,
+                    message: `Listed [\`${weirdItemName}\`](https://sky.coflnet.com/auction/${auctionID}) for \`${addCommasToNumber(price)}\` (\`${formatNumber(profit)}\` profit) [Slots: ${this.currentAuctions}/${this.maxSlots}]`,
+                    uuid: this.bot.uuid,
+                    itemUuid: itemUuid
+                })
+            }), false)
 
         } catch (e) {
             await sleep(250);
@@ -339,6 +333,57 @@ class RelistHandler {
 
     getGottenReady() {//freaky ahh name
         return this.ready;
+    }
+
+    async delistAuction(itemUuid, auctionID, weirdItemName) {
+        if (!useCookie) return;
+        this.state.set('delisting');
+        const { bot } = this;
+        try {
+            bot.chat('/ah');
+            await betterOnce(bot, 'windowOpen');
+            bot.betterClick(15);
+            await betterOnce(bot, 'windowOpen');
+            debug(itemUuid)
+            bot.currentWindow.slots.forEach(slot => {
+                const uuid = this.getItemUuid(slot);
+                debug(uuid, uuid === itemUuid)
+                if (uuid === itemUuid) {
+                    bot.betterClick(slot.slot);
+                }
+            })
+
+            await betterOnce(bot, 'windowOpen');
+
+            sendDiscord({
+                title: 'Delisted auction',
+                color: 13320532,
+                fields: [
+                    {
+                        name: '',
+                        value: `Delisted [\`${weirdItemName}\`](https://sky.coflnet.com/a/${auctionID})`,
+                    }
+                ],
+                thumbnail: {
+                    url: `https://mc-heads.net/head/${bot.uuid}.png`,
+                },
+                footer: {
+                    text: `TPM Rewrite`,
+                    icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                }
+            });
+            this.declineSoldAuction();
+
+            bot.betterWindowClose();
+            this.state.set(null);
+            this.state.setAction();
+        } catch (e) {
+            await sleep(250);
+            error(`Error delisting`, e);
+            bot.betterWindowClose();
+            this.state.set(null);
+            this.state.setAction();
+        }
     }
 
 }
