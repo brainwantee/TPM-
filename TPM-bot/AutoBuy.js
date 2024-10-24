@@ -27,7 +27,7 @@ class AutoBuy {
     }
 
     async flipHandler() {
-        const { webhook, bot, ws, ign, state, packets } = this;
+        const { webhook, bot, ws, state, packets } = this;
         let firstGui;
 
         bot._client.on('open_window', async (window) => {

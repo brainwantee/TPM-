@@ -86,6 +86,7 @@ class MessageHandler {
                 case "The auctioneer has closed this auction!":
                 case "You don't have enough coins to afford this bid!":
                 case "You cannot bid this amount!":
+                case "This auction has expired!":
                     this.state.set(null);
                     this.bot.betterWindowClose();
                     this.state.setAction();
