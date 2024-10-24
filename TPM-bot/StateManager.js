@@ -33,7 +33,7 @@ class StateManager {
 
     queueAdd(action, state, priority) {
         queue.push({ action: action, state: state, priority: priority });
-        queue.sort((a, b) => b.priority - a.priority);
+        queue.sort((a, b) => a.priority - b.priority);
         debug(JSON.stringify(queue));
     }
 
