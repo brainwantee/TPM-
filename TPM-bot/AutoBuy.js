@@ -1,6 +1,6 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
-const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber } = require('./Utils.js');
+const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore } = require('./Utils.js');
 const { logmc, debug } = require('../logger.js');
 const { delay, waittime, skip: skipSettings, clickDelay, bedSpam } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
@@ -99,6 +99,13 @@ class AutoBuy {
                         break;
                     case "poisonous_potato":
                         logmc(`§6[§bTPM§6]§c Too poor to buy it :(`);
+                        bot.betterWindowClose();
+                        state.set(null);
+                        state.setAction(firstGui);
+                        break;
+                    case "gold_ingot":
+                        debug(`INGOT!!!`);
+                        debug(JSON.stringify(getSlotLore(31)))
                         bot.betterWindowClose();
                         state.set(null);
                         state.setAction(firstGui);

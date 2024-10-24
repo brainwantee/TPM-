@@ -2,7 +2,7 @@ const { makeBot } = require("./bot.js");
 const { getPackets } = require("./packets.js");
 const { debug } = require("../logger.js");
 const { config } = require('../config.js');
-const { getStats, getPingStats, sendDiscord } = require('./Utils.js');
+const { getStats, getPingStats, sendDiscord, formatNumber } = require('./Utils.js');
 const CoflWs = require("./CoflWs.js");
 const StateManager = require("./StateManager.js");
 const AutoIsland = require('./AutoIsland.js');
@@ -99,17 +99,34 @@ class AhBot {
                     fields: [
                         {
                             name: '',
-                            value: this.formatString(webhookFormat, 'Hyperion', '1.7B', '100,000', '1.7B', '50', "NUGGET", "Craft Cost", ),
+                            value: this.webhook.formatString(webhookFormat, 'Hyperion', '1.7B', '100,000', '1.7B', '50', "NUGGET", "Craft Cost", ""),
                         }
                     ],
                     thumbnail: {
                         url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
                     },
                     footer: {
-                        text: `TPM Rewrite - Found by ${finder} - Purse ${formatNumber(this.bot.getPurse(true) - parseInt(priceNoCommas, 10))}`,
+                        text: `TPM Rewrite - Found by Craft Cost - Purse ${formatNumber(this.bot.getPurse(true))}`,
                         icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                     }
                 }, true)
+                sendDiscord({
+                    title: 'Item purchased',
+                    color: 2615974,
+                    fields: [
+                        {
+                            name: '',
+                            value: this.webhook.formatString(webhookFormat, 'Hyperion', '1.7B', '100,000', '1.7B', '50', "NUGGET", "Craft Cost", ""),
+                        }
+                    ],
+                    thumbnail: {
+                        url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                    },
+                    footer: {
+                        text: `TPM Rewrite - Found by Craft Cost - Purse ${formatNumber(this.bot.getPurse(true))}`,
+                        icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                    }
+                })
         }
     }
 
