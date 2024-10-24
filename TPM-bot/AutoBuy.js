@@ -1,6 +1,6 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
-const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore } = require('./Utils.js');
+const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, sendDiscord } = require('./Utils.js');
 const { logmc, debug } = require('../logger.js');
 const { delay, waittime, skip: skipSettings, clickDelay, bedSpam } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
@@ -109,6 +109,23 @@ class AutoBuy {
                         bot.betterWindowClose();
                         state.set(null);
                         state.setAction(firstGui);
+                        sendDiscord({
+                            title: 'Gold ingot madness',
+                            color: 2615974,
+                            fields: [
+                                {
+                                    name: '',
+                                    value: "send the log of this to icyhenryt please",
+                                }
+                            ],
+                            thumbnail: {
+                                url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                            },
+                            footer: {
+                                text: `TPM Rewrite`,
+                                icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                            }
+                        })
                         break;
                 }
 
