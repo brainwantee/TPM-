@@ -83,7 +83,7 @@ class AutoIsland {
 
                 }
             } catch (e) {
-                console.error(e);
+                debug(e);
             };
         }
 

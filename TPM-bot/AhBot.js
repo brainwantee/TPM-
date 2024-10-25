@@ -47,7 +47,7 @@ class AhBot {
 
         const island = new AutoIsland(ign, state, bot);
 
-        const webhook = new MessageHandler(ign, bot, coflSocket, state, relist, island, this.updateSold, this.updateBought);
+        const webhook = new MessageHandler(ign, bot, coflSocket, state, relist, island, this.updateSold, this.updateBought, tpm);
 
         const autoBuy = new AutoBuy(bot, webhook, ws, ign, state, relist);
 

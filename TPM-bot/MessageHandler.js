@@ -13,7 +13,7 @@ const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
 
 class MessageHandler {
 
-    constructor(ign, bot, socket, state, relist, island, updateSold, updateBought) {
+    constructor(ign, bot, socket, state, relist, island, updateSold, updateBought, tpm) {
         this.ign = ign;
         this.bot = bot;
         this.coflSocket = socket;
@@ -23,6 +23,7 @@ class MessageHandler {
         this.relist = relist;
         this.updateSold = updateSold;
         this.updateBought = updateBought;
+        this.tpm = tpm;
         this.webhookObject = {};//"itemName:pricePaid"
         this.relistObject = {};//auctionID. Using a different object ensures that it never lists for the wrong price
         this.soldObject = {};//"itemName:target"
@@ -30,6 +31,7 @@ class MessageHandler {
         this.firstGui = null;
         this.sentCookie = false;
         this.privacySettings = /no regex yet but I don't want it to crash so I'm putting regex/;
+
         this.messageListener();
         this.coflHandler = this.coflHandler.bind(this)
         this.coflHandler();
@@ -145,6 +147,21 @@ class MessageHandler {
                             }
                         }, true)
                     }
+
+                    this.tpm.send(JSON.stringify({
+                        type: "flip",
+                        data: JSON.stringify({
+                            user: this.ign,
+                            bed: bed,
+                            flip: item,
+                            price: price,
+                            profit: profit,
+                            uuid: this.bot.uuid,
+                            auctionId: auctionID,
+                            finder: finder,
+                            buyspeed: buyspeed
+                        })
+                    }))
 
                     this.state.setAction();
 

@@ -70,6 +70,7 @@ class AutoBuy {
                         logmc(`§6[§bTPM§6]§6 Found a bed!`)
                         this.initBedSpam();
                         break;
+                    case null:
                     case "potato":
                         logmc(`§6[§bTPM§6]§c Potatoed :(`);
                         bot.betterWindowClose();
@@ -130,6 +131,7 @@ class AutoBuy {
                     case "stained_glass_pane":
                         if (state.get() === 'delisting') this.bot.betterClick(33);
                         break;
+
                 }
 
             } else if (windowName === '{"italic":false,"extra":[{"text":"Confirm Purchase"}],"text":""}') {
@@ -215,6 +217,7 @@ class AutoBuy {
             }, 1);
 
             setTimeout(() => {
+                debug(`Failed to find an item :(`);
                 clearInterval(interval);
                 resolve(null);
             }, 100);
