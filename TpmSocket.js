@@ -7,9 +7,11 @@ const WebSocket = require('ws');
 
 class TpmSocket {
 
-    constructor(bots) {
+    constructor(bots, destroyBot, startBot) {
         this.ws = null;
         this.bots = bots;
+        this.destroyBot = destroyBot;
+        this.startBot = startBot;
         this.sentFailureMessage = false;
         this.storedMessages = [];//if socket is down, send all of these at once
         this.settings = [];
@@ -121,6 +123,16 @@ class TpmSocket {
                     return;
                 }
                 bot.state.queueAdd(data, 'delisting', 3);
+                break;
+            }
+            case "startBot":{
+                debug(`Starting ${data.username}`)
+                this.startBot(data.username, this, true); 
+                break;
+            }
+            case "killBot":{
+                debug(`Killing ${data.username}`)
+                this.destroyBot(data.username);
                 break;
             }
         }

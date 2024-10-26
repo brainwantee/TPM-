@@ -9,7 +9,7 @@ const AutoIsland = require('./AutoIsland.js');
 const MessageHandler = require('./MessageHandler.js');
 const AutoBuy = require('./AutoBuy.js');
 const RelistHandler = require('./RelistHandler.js');
-const { igns, webhookFormat } = config;
+const { webhookFormat } = config;
 
 
 class AhBot {
@@ -49,7 +49,7 @@ class AhBot {
 
         const webhook = new MessageHandler(ign, bot, coflSocket, state, relist, island, this.updateSold, this.updateBought, tpm);
 
-        const autoBuy = new AutoBuy(bot, webhook, ws, ign, state, relist);
+        const autoBuy = new AutoBuy(bot, webhook, coflSocket, ign, state, relist);
 
         this.autoBuy = autoBuy;
         this.webhook = webhook;
@@ -69,8 +69,8 @@ class AhBot {
         })
     }
 
-    async stopBot() {
-        //safety stuff idk
+    async stop() {
+        this.state.queueAdd('rip', "death", 10);//let everything clear out first
     }
 
     handleTerminal(command, message) {
@@ -130,9 +130,7 @@ class AhBot {
         }
     }
 
-    initAskPrefix(sub = 3) {
-        if (igns.length == 1) return null;
-
+    initAskPrefix(igns, sub = 3) {
         let thisPrefix = this.ign.substring(0, sub);
         debug(`|${thisPrefix}|`)
         try {
@@ -141,7 +139,7 @@ class AhBot {
             })
         } catch {
             debug(`retrying`)
-            return this.initAskPrefix(++sub);
+            return this.initAskPrefix(igns, ++sub);
         }
 
         return thisPrefix;

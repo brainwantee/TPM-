@@ -2,6 +2,7 @@ const { createLogger, format, transports } = require('winston');
 const { combine, printf, colorize } = format;
 const fs = require('fs');
 
+let currentIgns = [];
 let ignColors = {}
 const directoryPath = './logs';
 
@@ -27,6 +28,25 @@ const colors = {
 const colorKeys = Object.keys(colors);
 const badColors = new Set(['§0', '§5', '§f', '§8', '§7', '§2', '§9']);
 
+function updateIgns(ign) {
+    currentIgns.push(ign);
+}
+
+function removeIgn(ign) {
+    const index = currentIgns.indexOf(ign);
+    if (index === -1) {
+        debug(`Failed to remove ${ign} from ${JSON.stringify(currentIgns)}`);
+        return;
+    }
+
+    currentIgns.splice(index, 1);
+
+}
+
+function getIgns(){
+    return currentIgns;
+}
+
 function logmc(string) {
     let msg = '';
     if (!string) return;
@@ -46,6 +66,11 @@ function logmc(string) {
     info('\x1b[0m\x1b[1m\x1b[90m' + msg + '\x1b[0m');
 }
 
+function getPrefix(ign) {
+    if (currentIgns.length === 1) return "";
+    return `${customIGNColor(ign)}${ign}: `
+}
+
 function customIGNColor(ign) {
     if (ignColors[ign]) return ignColors[ign];
     const randomColor = "§" + colorKeys[Math.floor(Math.random() * 11)];
@@ -53,6 +78,7 @@ function customIGNColor(ign) {
     ignColors[ign] = randomColor;
     return randomColor;
 }
+
 //winston stuff below
 if (!fs.existsSync(directoryPath)) {
     fs.mkdirSync(directoryPath);
@@ -137,8 +163,8 @@ function info(...args) {
     logger.info(args.join(' '), "info");
 }
 
-function getLatestLog(){
+function getLatestLog() {
     //stuff
 }
 
-module.exports = { logmc, customIGNColor, silly, debug, error, info };
+module.exports = { logmc, customIGNColor, silly, debug, error, info, getPrefix, updateIgns, removeIgn, getIgns };

@@ -1,9 +1,7 @@
-const { logmc, customIGNColor, debug } = require("../logger.js");
+const { logmc, getPrefix, debug } = require("../logger.js");
 const { sendDiscord, stripItemName, nicerFinders, formatNumber, addCommasToNumber, onlyNumbers, betterOnce, sleep } = require('./Utils.js');
 const { config } = require('../config.js');
-const { igns, webhookFormat, blockUselessMessages } = config;
-
-const axios = require('axios');
+const { webhookFormat, blockUselessMessages } = config;
 
 const soldRegex = /^\[Auction\] (.+?) bought (.+?) for ([\d,]+) coins CLICK$/;
 const boughtRegex = /^You purchased (.+?) for ([\d,]+) coins!$/;
@@ -27,7 +25,6 @@ class MessageHandler {
         this.webhookObject = {};//"itemName:pricePaid"
         this.relistObject = {};//auctionID. Using a different object ensures that it never lists for the wrong price
         this.soldObject = {};//"itemName:target"
-        this.ignPrefix = igns.length == 1 ? "" : `${customIGNColor(ign)}${ign}: `;
         this.firstGui = null;
         this.sentCookie = false;
         this.privacySettings = /no regex yet but I don't want it to crash so I'm putting regex/;
@@ -240,7 +237,7 @@ class MessageHandler {
                 }
             }
 
-            if (!sentMessage) logmc(`${this.ignPrefix}${message.toAnsi()}`);
+            if (!sentMessage) logmc(`${getPrefix(this.ign)}${message.toAnsi()}`);
         })
 
     }

@@ -1,17 +1,18 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
 const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, sendDiscord } = require('./Utils.js');
-const { logmc, debug } = require('../logger.js');
+const { logmc, debug, removeIgn } = require('../logger.js');
 const { delay, waittime, skip: skipSettings, clickDelay, bedSpam } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
 skipMinProfit = normalNumber(skipMinProfit);
 
 class AutoBuy {
 
-    constructor(bot, WebhookManager, ws, ign, state, relist) {
+    constructor(bot, WebhookManager, coflSocket, ign, state, relist) {
         this.bot = bot;
         this.webhook = WebhookManager;
-        this.ws = ws;
+        this.coflSocket = coflSocket;
+        this.ws = coflSocket.getWs();
         this.ign = ign;
         this.state = state;
         this.relist = relist;
@@ -326,6 +327,13 @@ class AutoBuy {
                             var weirdItemName = auctionID; //ew var
                         }
                         this.relist.delistAuction(itemUuid, auctionID, weirdItemName);
+                        break;
+                    }
+                    case "death":{
+                        this.bot.quit();
+                        this.coflSocket.closeSocket();
+                        removeIgn(this.ign);
+                        logmc(`§6[§bTPM§6] §c${this.ign} is now dead. May he rest in peace.`)
                     }
                 }
                 this.state.setAction(currentTime);

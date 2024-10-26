@@ -1,6 +1,6 @@
 const prompt = require('prompt-sync')();
 const { randomUUID } = require('crypto');
-const { logmc } = require('./logger.js');
+const { logmc, updateIgns, getIgns } = require('./logger.js');
 const readline = require('readline');
 const rl = readline.createInterface({
     input: process.stdin,
@@ -40,13 +40,10 @@ testIgn();
 
     let message = '';
 
-    const tws = new TpmSocket(bots);
+    const tws = new TpmSocket(bots, destroyBot, startBot);
 
     for (const ign of igns) {
-        const tempBot = new AhBot(ign, tws);
-        await tempBot.createBot();
-        bots[ign] = tempBot;
-        askPrefixes[bots[ign].initAskPrefix()?.toLowerCase()] = ign;
+        await startBot(ign, tws);
         message += `Logged in as \`\`${ign}\`\`\n`;
     }
 
@@ -78,11 +75,74 @@ testIgn();
 
 })();
 
+async function destroyBot(ign) {
+    const ahBot = bots[ign];
+    if (!ahBot) return;
+    const bot = ahBot.getBot();
+    ahBot.stop();
+    delete askPrefixes[bots[ign].initAskPrefix(igns)?.toLowerCase()]
+    delete bots[ign];
+
+    sendDiscord({
+        title: 'Killed bot',
+        color: 13320532,
+        fields: [
+            {
+                name: '',
+                value: `Rip ${ign}`,
+            }
+        ],
+        thumbnail: {
+            url: `https://mc-heads.net/head/${bot.uuid}.png`,
+        },
+        footer: {
+            text: `The "Perfect" Macro Rewrite`,
+            icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+        }
+    })
+
+}
+
+async function startBot(ign, tws, secondary = false) {
+    return new Promise(async (resolve) => {
+        const tempBot = new AhBot(ign, tws);
+        await tempBot.createBot();
+        bots[ign] = tempBot;
+        askPrefixes[bots[ign].initAskPrefix(igns)?.toLowerCase()] = ign;
+        updateIgns(ign);
+        if (secondary) {
+            sendDiscord({
+                title: 'Started flipping',
+                color: 16629250,
+                fields: [
+                    {
+                        name: '',
+                        value: `Logged in as \`\`${ign}\`\`\n`,
+                    }
+                ],
+                thumbnail: {
+                    url: `https://mc-heads.net/head/${tempBot.getBot().uuid}.png`,
+                },
+                footer: {
+                    text: `The "Perfect" Macro Rewrite`,
+                    icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                }
+            })
+        }
+        resolve();
+    })
+}
+
 function askUser() {
     rl.question(`> `, async (input) => {
         const args = input.trim().split(/\s+/);
         let bot;
-        if (igns.length !== 1) {
+        if(getIgns().length === 0){
+            logmc(`No accounts currently running! Start one from discord`);
+            askUser();
+            return;
+        }
+        if (getIgns().length !== 1) {
             let prefix = args[0].toLowerCase().substring(0, 3);
             let askPrefix = askPrefixes[prefix];
             args.shift();
@@ -94,10 +154,10 @@ function askUser() {
                 return;
             }
         } else {
-            bot = bots[igns[0]];
+            bot = bots[getIgns()[0]];
         }
         let message = args.slice(1).join(' ');
-        bot.handleTerminal(args[0], message);
+        if (bot) bot.handleTerminal(args[0], message);
         askUser();
     });
 }
