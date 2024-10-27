@@ -72,6 +72,7 @@ class AutoBuy {
                         this.initBedSpam();
                         break;
                     case null:
+                    case undefined:
                     case "potato":
                         logmc(`§6[§bTPM§6]§c Potatoed :(`);
                         bot.betterWindowClose();
@@ -221,7 +222,7 @@ class AutoBuy {
                 debug(`Failed to find an item :(`);
                 clearInterval(interval);
                 resolve(null);
-            }, 100);
+            }, delay * 3);
         });
     }
 
