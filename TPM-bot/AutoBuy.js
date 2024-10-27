@@ -199,12 +199,14 @@ class AutoBuy {
         return new Promise((resolve) => {
             const { bot } = this;
             let index = 1;
+            let found = false;
             const first = bot.currentWindow?.slots[slot]?.name;
             const interval = alreadyLoaded ? setInterval(() => {
                 const check = bot.currentWindow?.slots[slot];
                 if (check?.name !== first) {
                     clearInterval(interval);
                     resolve(check);
+                    found = true;
                     debug(`Found ${check?.name} on ${index}`);
                 }
                 index++
@@ -213,12 +215,14 @@ class AutoBuy {
                 if (check) {
                     clearInterval(interval);
                     resolve(check);
+                    found = false;
                     debug(`Found ${check?.name} on ${index}`);
                 }
                 index++
             }, 1);
 
             setTimeout(() => {
+                if (found) return;
                 debug(`Failed to find an item :(`);
                 clearInterval(interval);
                 resolve(null);
@@ -330,7 +334,7 @@ class AutoBuy {
                         this.relist.delistAuction(itemUuid, auctionID, weirdItemName);
                         break;
                     }
-                    case "death":{
+                    case "death": {
                         this.bot.quit();
                         this.coflSocket.closeSocket();
                         removeIgn(this.ign);
