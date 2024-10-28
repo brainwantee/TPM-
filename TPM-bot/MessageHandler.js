@@ -86,6 +86,7 @@ class MessageHandler {
                 case "You don't have enough coins to afford this bid!":
                 case "You cannot bid this amount!":
                 case "This auction has expired!":
+                case "Invalid auction ID!":
                     this.state.set(null);
                     this.bot.betterWindowClose();
                     this.state.setAction();
@@ -237,7 +238,8 @@ class MessageHandler {
                 }
             }
 
-            if (!sentMessage) logmc(`${getPrefix(this.ign)}${message.toAnsi()}`);
+            if (!sentMessage) logmc(`${getPrefix(this.ign)}${message.toMotd()}`);
+
         })
 
     }

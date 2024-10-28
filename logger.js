@@ -2,8 +2,10 @@ const { createLogger, format, transports } = require('winston');
 const { combine, printf, colorize } = format;
 const fs = require('fs');
 
+let messages = [];
+let tracking = false;
 let currentIgns = [];
-let ignColors = {}
+let ignColors = {};
 const directoryPath = './logs';
 
 const colors = {
@@ -43,13 +45,14 @@ function removeIgn(ign) {
 
 }
 
-function getIgns(){
+function getIgns() {
     return currentIgns;
 }
 
 function logmc(string) {
     let msg = '';
     if (!string) return;
+    if (tracking) messages.push(string.replace(/§./g, ''));
     let split = string.split('§');
     msg += split[0];
 
@@ -167,4 +170,14 @@ function getLatestLog() {
     //stuff
 }
 
-module.exports = { logmc, customIGNColor, silly, debug, error, info, getPrefix, updateIgns, removeIgn, getIgns };
+async function startTracker(timer = 10_000) {
+    tracking = true;
+    messages = [];
+    await new Promise((resolve) => {
+        setTimeout(resolve, timer)
+    })
+    tracking = false;
+    return messages;
+}
+
+module.exports = { logmc, customIGNColor, silly, debug, error, info, getPrefix, updateIgns, removeIgn, getIgns, startTracker };

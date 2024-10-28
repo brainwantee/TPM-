@@ -1,5 +1,5 @@
-const { logmc, debug, error } = require('./logger.js');
-const { sleep, getLatestLog, normalNumber } = require('./TPM-bot/Utils.js');
+const { logmc, debug, error, startTracker } = require('./logger.js');
+const { sleep, getLatestLog, normalNumber, sendDiscord } = require('./TPM-bot/Utils.js');
 const { config } = require('./config.js');
 const { igns, webhook, discordID } = config;
 
@@ -84,7 +84,7 @@ class TpmSocket {
         }
     }
 
-    handleMessage(message) {
+    async handleMessage(message) {
         const msg = JSON.parse(message);
         const data = JSON.parse(msg.data);//This isn't safe and if it's not JSON format then it'll crash but that's intentional!
         debug(message.toString());
@@ -125,14 +125,63 @@ class TpmSocket {
                 bot.state.queueAdd(data, 'delisting', 3);
                 break;
             }
-            case "startBot":{
+            case "startBot": {
                 debug(`Starting ${data.username}`)
-                this.startBot(data.username, this, true); 
+                this.startBot(data.username, this, true);
                 break;
             }
-            case "killBot":{
+            case "killBot": {
                 debug(`Killing ${data.username}`)
                 this.destroyBot(data.username);
+                break;
+            }
+            case "buyFlip": {
+                let username = data.username;
+                if (!username) {
+                    username =  Object.keys(this.bots)[0];
+                }
+                const bot = this.bots[username];
+                debug(JSON.stringify(data));
+                if (!bot) {
+                    debug(`Didn't find a bot for ${username}`);
+                    return;
+                }
+                bot.state.queueAdd({ finder: "EXTERNAL", profit: 0, itemName: data.auctionId, auctionID: data.auctionId }, 'buying', 4);
+                break;
+            }
+            case "sendTerminal": {
+                let username = data.username;
+                if (!username) {
+                    username =  Object.keys(this.bots)[0];
+                }
+                const bot = this.bots[username];
+                debug(JSON.stringify(data));
+                if (!bot) {
+                    debug(`Didn't find a bot for ${username}`);
+                    return;
+                }
+                const split = data.command.split(' ');
+                const command = split.shift();
+                bot.handleTerminal(command, split.join(' '));
+                console.log(data.command);
+                const messages = await startTracker();
+                sendDiscord({
+                    title: 'Command!',
+                    color: 13313596,
+                    fields: [
+                        {
+                            name: '',
+                            value: `\`\`Messages for the past 10 seconds:\`\`\n${messages.join('\n')}`,
+                        }
+                    ],
+                    thumbnail: {
+                        url: `https://mc-heads.net/head/${bot.uuid}.png`,
+                    },
+                    footer: {
+                        text: `TPM Rewrite`,
+                        icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                    }
+                })
                 break;
             }
         }
