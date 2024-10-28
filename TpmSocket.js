@@ -63,7 +63,7 @@ class TpmSocket {
                     logmc('§6[§bTPM§6] §cTPM websocket down. Please report to a dev!');
                     this.sentFailureMessage = true;
                 }
-                sleep(5000);
+                await sleep(5000);
                 this.makeWebsocket();
             });
 
