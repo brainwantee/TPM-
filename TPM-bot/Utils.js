@@ -123,7 +123,7 @@ async function sendDiscord(embed, ping = false, attempt = 0) {
                 });
             }
         } catch (e) {
-            error(e)
+            error(`Webhook error`, e)
             if (attempt < 3) {
                 await sleep(5000)
                 await sendDiscord(embed, attempt + 1);
@@ -131,8 +131,6 @@ async function sendDiscord(embed, ping = false, attempt = 0) {
         }
     }
 }
-
-
 
 function nicerFinders(finder) {
     switch (finder) {

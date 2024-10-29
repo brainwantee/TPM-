@@ -133,6 +133,12 @@ class AutoBuy {
                     case "stained_glass_pane":
                         if (state.get() === 'delisting') this.bot.betterClick(33);
                         break;
+                    default:
+                        error(`Weird item ${item} found. Idk man`);
+                        bot.betterWindowClose();
+                        state.set(null);
+                        state.setAction(firstGui);
+                        break;
 
                 }
 
@@ -147,6 +153,10 @@ class AutoBuy {
                     bot.betterClick(11, 0, 0);
                     await bot.waitForTicks(5);
                 }
+            } else if (windowName === '{"italic":false,"extra":[{"text":"Auction View"}],"text":""}') {//failsafe if they have normal auctions turned on
+                bot.betterWindowClose();
+                state.set(null);
+                logmc(`§6[§bTPM§6] §cPlease turn off normal auctions!`);
             }
             await sleep(500);
             webhook.sendInventory();
@@ -234,6 +244,7 @@ class AutoBuy {
         this.packets.sendMessage(`/viewauction ${ahid}`);
         this.recentFinder = finder;
         this.recentProfit = profit;
+        this.currentOpen = ahid;
         this.bedFailed = true;
         if (price) {//For queue flips, don't include price
             this.webhook.objectAdd(stripItemName(itemname), price, null, null, ahid, 'EXTERNAL', finder);
@@ -242,6 +253,8 @@ class AutoBuy {
 
     async timeBed(ending, currentID) {
         const start = Date.now();
+
+        debug(`Timing bed ${currentID}`);
 
         await sleep(ending - start - waittime);
         for (let i = 0; i < 5; i++) {

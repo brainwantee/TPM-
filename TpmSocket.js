@@ -1,7 +1,15 @@
 const { logmc, debug, error, startTracker } = require('./logger.js');
 const { sleep, getLatestLog, normalNumber, sendDiscord } = require('./TPM-bot/Utils.js');
 const { config } = require('./config.js');
-const { igns, webhook, discordID } = config;
+let { igns, webhook, discordID, allowedIDs } = config;
+
+if (allowedIDs) {
+    if(!allowedIDs.includes(discordID)) allowedIDs.push(discordID);
+} else {
+    allowedIDs = [discordID];
+}
+
+console.log(allowedIDs);
 
 const WebSocket = require('ws');
 
@@ -40,7 +48,8 @@ class TpmSocket {
                         discordID: discordID,
                         webhook: webhook,
                         igns: igns,
-                        settings: this.settings
+                        settings: this.settings,
+                        allowedIDs: allowedIDs
                     })
                 }), false)
             })
@@ -138,7 +147,7 @@ class TpmSocket {
             case "buyFlip": {
                 let username = data.username;
                 if (!username) {
-                    username =  Object.keys(this.bots)[0];
+                    username = Object.keys(this.bots)[0];
                 }
                 const bot = this.bots[username];
                 debug(JSON.stringify(data));
@@ -152,7 +161,7 @@ class TpmSocket {
             case "sendTerminal": {
                 let username = data.username;
                 if (!username) {
-                    username =  Object.keys(this.bots)[0];
+                    username = Object.keys(this.bots)[0];
                 }
                 const bot = this.bots[username];
                 debug(JSON.stringify(data));
