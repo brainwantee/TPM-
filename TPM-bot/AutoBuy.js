@@ -133,6 +133,8 @@ class AutoBuy {
                     case "stained_glass_pane":
                         if (state.get() === 'delisting') this.bot.betterClick(33);
                         break;
+                    case "gold_nugget":
+                        break;
                     default:
                         error(`Weird item ${item} found. Idk man`);
                         bot.betterWindowClose();
