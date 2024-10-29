@@ -1,7 +1,7 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
 const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, sendDiscord } = require('./Utils.js');
-const { logmc, debug, removeIgn } = require('../logger.js');
+const { logmc, debug, removeIgn, error } = require('../logger.js');
 const { delay, waittime, skip: skipSettings, clickDelay, bedSpam } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
 skipMinProfit = normalNumber(skipMinProfit);
