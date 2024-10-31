@@ -217,8 +217,8 @@ class AutoBuy {
                 const check = bot.currentWindow?.slots[slot];
                 if (check?.name !== first) {
                     clearInterval(interval);
-                    resolve(check);
                     found = true;
+                    resolve(check);
                     debug(`Found ${check?.name} on ${index}`);
                 }
                 index++
@@ -226,8 +226,8 @@ class AutoBuy {
                 const check = bot.currentWindow?.slots[slot];
                 if (check) {
                     clearInterval(interval);
+                    found = true;
                     resolve(check);
-                    found = false;
                     debug(`Found ${check?.name} on ${index}`);
                 }
                 index++
