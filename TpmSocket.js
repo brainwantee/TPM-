@@ -9,8 +9,6 @@ if (allowedIDs) {
     allowedIDs = [discordID];
 }
 
-console.log(allowedIDs);
-
 const WebSocket = require('ws');
 
 class TpmSocket {

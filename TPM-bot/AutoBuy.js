@@ -108,7 +108,7 @@ class AutoBuy {
                         break;
                     case "gold_ingot":
                         debug(`INGOT!!!`);
-                        debug(JSON.stringify(getSlotLore(31)))
+                        debug(getSlotLore(31).join('\n'));
                         bot.betterWindowClose();
                         state.set(null);
                         state.setAction(firstGui);
@@ -262,6 +262,7 @@ class AutoBuy {
         for (let i = 0; i < 5; i++) {
             if (getWindowName(this.bot.currentWindow)?.includes('BIN Auction View') && this.currentOpen === currentID) {
                 this.bot.betterClick(31, 0, 0);
+                debug(`Clicking ${currentID} bed`);
                 await sleep(3);
             } else {
                 break;
@@ -269,10 +270,16 @@ class AutoBuy {
         }
 
         await sleep(5000);
-        if (getWindowName(this.bot.currentWindow)?.includes('BIN Auction View') && this.currentOpen === currentID) {
+        const windowName = getWindowName(this.bot.currentWindow)
+        if (windowName?.includes('BIN Auction View') && this.currentOpen === currentID) {
             this.bot.closeWindow(this.bot.currentWindow);
             this.state.set(null);
             logmc(`§6[§bTPM§6] §cBed timing failed and we had to abort the auction :( Please lower your waittime if this continues or turn on bedspam`);
+        } else if (!windowName && this.currentOpen === currentID && this.state.get() === 'buying') {
+            logmc(`§6[§bTPM§6] §cWindow somehow closed after bed timing (possibly died)`);
+            this.state.set(null);
+        } else {
+            debug(`Timed ${currentID} correctly. CurrentOpen: ${this.currentOpen}. Window Name: ${windowName}`);
         }
 
     }
@@ -302,9 +309,9 @@ class AutoBuy {
     initQueue() {
         setInterval(() => {
             const current = this.state.getHighest();
-            const currentTime = Date.now();
             if (!current) return;
-            if (!this.bot.currentWindow && Date.now() > this.state.getTime() + delay && !this.state.get()) {
+            const currentTime = Date.now();
+            if (!this.bot.currentWindow && currentTime > this.state.getTime() + delay && !this.state.get()) {
                 switch (current.state) {
                     case "buying": {
                         const { finder, profit, itemName, auctionID } = current.action;
