@@ -54,6 +54,7 @@ class MessageHandler {
                     this.bot.betterWindowClose();
                     this.state.setAction();
                     break;
+                case "This auction is unavailable!":
                 case "This auction wasn't found!":
                     if (this.state.get() === 'buying' || this.state.get() === 'claiming') this.state.set(null);
                     this.state.setAction();
@@ -107,6 +108,8 @@ class MessageHandler {
                     finder = nicerFinders(finder);
                     target = formatNumber(target);
                     let formattedProfit = formatNumber(profit);
+                    let formattedPrice = formatNumber(priceNoCommas);
+                    let formattedString = this.formatString(webhookFormat, item, formattedProfit, price, target, buyspeed, bed, finder, auctionID, formattedPrice)
                     this.updateBought(profit);
                     if (profit < 100_000_000) {
                         sendDiscord({
@@ -115,7 +118,7 @@ class MessageHandler {
                             fields: [
                                 {
                                     name: '',
-                                    value: this.formatString(webhookFormat, item, formattedProfit, price, target, buyspeed, bed, finder, auctionID),
+                                    value: formattedString,
                                 }
                             ],
                             thumbnail: {
@@ -133,7 +136,7 @@ class MessageHandler {
                             fields: [
                                 {
                                     name: '',
-                                    value: this.formatString(webhookFormat, item, formattedProfit, price, target, buyspeed, bed, finder, auctionID),
+                                    value: formattedString,
                                 }
                             ],
                             thumbnail: {

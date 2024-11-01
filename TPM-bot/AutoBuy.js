@@ -23,6 +23,8 @@ class AutoBuy {
         this.bedFailed = false;
         this.currentOpen = null;
         this.packets = getPackets(ign);
+        this.currentlyTimingBed = false;//failsafe
+
         this.flipHandler();
         this.initQueue();
     }
@@ -69,6 +71,7 @@ class AutoBuy {
                 switch (item) {
                     case "bed":
                         logmc(`§6[§bTPM§6]§6 Found a bed!`)
+                        if (!bedSpam && !this.bedFailed && !this.currentlyTimingBed) this.bedFailed = true;//Sometimes beds aren't timed idk why but this should be a good failsafe
                         this.initBedSpam();
                         break;
                     case null:
@@ -257,6 +260,7 @@ class AutoBuy {
         const start = Date.now();
 
         debug(`Timing bed ${currentID}`);
+        this.currentlyTimingBed = true;
 
         await sleep(ending - start - waittime);
         for (let i = 0; i < 5; i++) {
@@ -282,6 +286,8 @@ class AutoBuy {
             debug(`Timed ${currentID} correctly. CurrentOpen: ${this.currentOpen}. Window Name: ${windowName}`);
         }
 
+        this.currentlyTimingBed = false;
+
     }
 
     initBedSpam() {
@@ -293,13 +299,13 @@ class AutoBuy {
                 undefinedCount++
                 if (undefinedCount == 5) {
                     clearInterval(bedSpam);
-                    debug(`Clearing bed spam because of undefined count`, this.bedFailed, config.bedSpam, getWindowName(window), item);
+                    debug(`Clearing bed spam because of undefined count`, this.bedFailed, config.bedSpam, this.currentlyTimingBed, getWindowName(window), item);
                 }
                 return;
             }
-            if ((!this.bedFailed && !config.bedSpam) || getWindowName(window) !== 'BIN Auction View' || item !== 'bed') {
+            if ((!this.bedFailed && !config.bedSpam && !this.currentlyTimingBed) || getWindowName(window) !== 'BIN Auction View' || item !== 'bed') {
                 clearInterval(bedSpam);
-                debug('Clearing bed spam', this.bedFailed, config.bedSpam, getWindowName(window), item);
+                debug('Clearing bed spam', this.bedFailed, config.bedSpam, this.currentlyTimingBed, getWindowName(window), item);
                 return;
             };
             this.bot.betterClick(31, 0, 0);
