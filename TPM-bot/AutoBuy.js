@@ -303,7 +303,7 @@ class AutoBuy {
                 }
                 return;
             }
-            if ((!this.bedFailed && !config.bedSpam && !this.currentlyTimingBed) || getWindowName(window) !== 'BIN Auction View' || item !== 'bed') {
+            if ((!this.bedFailed && !config.bedSpam && this.currentlyTimingBed) || getWindowName(window) !== 'BIN Auction View' || item !== 'bed') {
                 clearInterval(bedSpam);
                 debug('Clearing bed spam', this.bedFailed, config.bedSpam, this.currentlyTimingBed, getWindowName(window), item);
                 return;
