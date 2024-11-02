@@ -6,6 +6,7 @@ const { webhookFormat, blockUselessMessages } = config;
 const soldRegex = /^\[Auction\] (.+?) bought (.+?) for ([\d,]+) coins CLICK$/;
 const boughtRegex = /^You purchased (.+?) for ([\d,]+) coins!$/;
 const claimedRegex = /^You collected ([\d,]+) coins from selling (.+?) to (.+?) in an auction!$/
+const partyRegex = /^-+\s*(.+?) has invited you to join their party!\s*You have 60 seconds to accept\. Click here to join!\s*-+$/m;
 
 const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
 
@@ -192,9 +193,10 @@ class MessageHandler {
                 const item = soldMatch[2];
                 const price = onlyNumbers(soldMatch[3]);
                 const object = this.soldObject[`${stripItemName(item)}:${price}`];
+                debug(`Sold messge object: ${stripItemName(item)}:${price}`);
                 let profitMessage = '';
                 if (object) {
-                    profitMessage = ` (\`${object.profit}\` profit)`
+                    profitMessage = ` (\`${formatNumber(object.profit)}\` profit)`
                 }
                 const clickEvent = message?.clickEvent?.value;
                 const auctionID = clickEvent.replace('/viewauction ', '').replace(/-/g, '');
@@ -230,6 +232,27 @@ class MessageHandler {
                 setTimeout(() => {
                     this.bot.getPurse();//fix incorrect purse after claiming
                 }, 5000)
+            }
+
+            const partyMatch = text.match(partyRegex);
+            if (partyMatch) {
+                sendDiscord({
+                    title: 'Party invite!',
+                    color: 8703743,
+                    fields: [
+                        {
+                            name: '',
+                            value: `Party invite from ${partyMatch[1]}`,
+                        }
+                    ],
+                    thumbnail: {
+                        url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                    },
+                    footer: {
+                        text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse())}`,
+                        icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                    }
+                })
             }
 
             if (blockUselessMessages) {
@@ -312,9 +335,13 @@ class MessageHandler {
     }
 
     objectAdd(weirdItemName, price, target, profit, auctionID, bed, finder, itemName, tag) {
-        this.soldObject[`${weirdItemName}:${target}`] = {
+        const soldPrice = Math.round(this.relist.calcPriceCut(target) * target / 100);
+        debug(`Sold object added: ${weirdItemName}:${soldPrice}`);
+
+        this.soldObject[`${weirdItemName}:${soldPrice}`] = {
             profit: profit
         };
+
         this.webhookObject[`${weirdItemName}:${price}`] = {
             auctionID: auctionID,
             target: target,
@@ -322,6 +349,7 @@ class MessageHandler {
             bed: bed,
             finder: finder
         };
+
         this.relistObject[auctionID] = {
             target: target,
             profit: profit,

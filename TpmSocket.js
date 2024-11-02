@@ -4,7 +4,7 @@ const { config } = require('./config.js');
 let { igns, webhook, discordID, allowedIDs } = config;
 
 if (allowedIDs) {
-    if(!allowedIDs.includes(discordID)) allowedIDs.push(discordID);
+    if (!allowedIDs.includes(discordID)) allowedIDs.push(discordID);
 } else {
     allowedIDs = [discordID];
 }
@@ -124,7 +124,6 @@ class TpmSocket {
                 break;
             case "delist": {
                 const bot = this.bots[data.username];
-                debug(JSON.stringify(data));
                 if (!bot) {
                     debug(`Didn't find a bot for ${data.username}`);
                     return;
@@ -148,7 +147,6 @@ class TpmSocket {
                     username = Object.keys(this.bots)[0];
                 }
                 const bot = this.bots[username];
-                debug(JSON.stringify(data));
                 if (!bot) {
                     debug(`Didn't find a bot for ${username}`);
                     return;
@@ -162,7 +160,6 @@ class TpmSocket {
                     username = Object.keys(this.bots)[0];
                 }
                 const bot = this.bots[username];
-                debug(JSON.stringify(data));
                 if (!bot) {
                     debug(`Didn't find a bot for ${username}`);
                     return;
@@ -170,7 +167,6 @@ class TpmSocket {
                 const split = data.command.split(' ');
                 const command = split.shift();
                 bot.handleTerminal(command, split.join(' '));
-                console.log(data.command);
                 const messages = await startTracker();
                 sendDiscord({
                     title: 'Command!',
@@ -182,13 +178,65 @@ class TpmSocket {
                         }
                     ],
                     thumbnail: {
-                        url: `https://mc-heads.net/head/${bot.uuid}.png`,
+                        url: `https://mc-heads.net/head/${bot.getBot().uuid}.png`,
                     },
                     footer: {
                         text: `TPM Rewrite`,
                         icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                     }
                 })
+                break;
+            }
+            case "timeout": {
+                const time = data.timeout;
+                let username = data.username;
+                if (!username) {
+                    username = Object.keys(this.bots)[0];
+                }
+
+                const bot = this.bots[username];
+                if (!bot) {
+                    debug(`Didn't find a bot for ${username}`);
+                    return;
+                }
+
+                sendDiscord({
+                    title: 'Set timeout!',
+                    color: 2615974,
+                    fields: [
+                        {
+                            name: '',
+                            value: `Your macro will stop <t:${Math.round((Date.now() + time) / 1000)}:R>`,
+                        }
+                    ],
+                    thumbnail: {
+                        url: `https://mc-heads.net/head/${bot.getBot().uuid}.png`,
+                    },
+                    footer: {
+                        text: `TPM Rewrite`,
+                        icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                    }
+                })
+                setTimeout(() => {
+                    this.destroyBot(username);
+                    sendDiscord({
+                        title: 'Stopping account!',
+                        color: 15755110,
+                        fields: [
+                            {
+                                name: '',
+                                value: `It's your timeout!!! May ${username} rest in peace`,
+                            }
+                        ],
+                        thumbnail: {
+                            url: `https://mc-heads.net/head/${bot.getBot().uuid}.png`,
+                        },
+                        footer: {
+                            text: `TPM Rewrite`,
+                            icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                        }
+                    })
+                }, time);
                 break;
             }
         }

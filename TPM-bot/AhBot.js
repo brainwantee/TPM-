@@ -99,7 +99,7 @@ class AhBot {
                     fields: [
                         {
                             name: '',
-                            value: this.webhook.formatString(webhookFormat, 'Hyperion', '1.7B', '100,000', '1.7B', '50', "NUGGET", "Craft Cost", ""),
+                            value: this.webhook.formatString(webhookFormat, 'Hyperion', '1.7B', '100,000', '1.7B', '50', "NUGGET", "Craft Cost", "000000000000000000", "100K"),
                         }
                     ],
                     thumbnail: {

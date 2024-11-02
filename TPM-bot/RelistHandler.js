@@ -9,7 +9,7 @@ const coopRegexPlayers = /Co-op with (\d+) players:/;
 const coopRegexSinglePlayer = /Co-op with (?:\[.*\]\s*)?([\w]+)/;
 
 let itemDurationVisual = `${listHours.toString()} Hour`;
-if (listHours >= 24) {
+if (listHours > 24) {
     if (listHours > 336) {
         itemDurationVisual = `14 Days`;
     } else {
@@ -169,7 +169,7 @@ class RelistHandler {
             await betterOnce(bot, 'windowOpen');
             let itemUuid = this.getItemUuid(bot.currentWindow.slots[13]);
             if (!itemUuid) {
-                throw new Error(`Failed to get item uuid :( ${itemUuid} ${bot.currentWindow.slots[13]}`);
+                throw new Error(`Failed to get item uuid :( ${itemUuid} ${JSON.stringify(bot.currentWindow.slots[13])}`);
             }
             bot.betterClick(31);
             await sleep(250);
@@ -188,7 +188,7 @@ class RelistHandler {
             await betterOnce(bot, 'windowOpen');
             debug(getWindowName(bot.currentWindow));
             if (getWindowName(bot.currentWindow) === 'Create Auction') {
-                betterClick(48);
+                bot.betterClick(48);
                 await sleep(250)
             } else if (getWindowName(bot.currentWindow).includes('Auction House')) {//includes allows for coop as well. This means item in slot most likely
                 debug(uuids.join('\n'));
@@ -209,16 +209,7 @@ class RelistHandler {
 
             let relistpercent = 100;
             if (!override) {
-                for (let i = 0; i < percentOfTarget.length; i += 3) {
-                    let lowerBound = normalNumber(percentOfTarget[i]);
-                    let upperBound = normalNumber(percentOfTarget[i + 1]);
-                    let percent = normalNumber(percentOfTarget[i + 2]);
-
-                    if (price >= lowerBound && price < upperBound) {
-                        relistpercent = percent;
-                        break;
-                    }
-                }
+                relistpercent = this.calcPriceCut(price);
             }
 
             debug(relistpercent)
@@ -384,6 +375,18 @@ class RelistHandler {
             bot.betterWindowClose();
             this.state.set(null);
             this.state.setAction();
+        }
+    }
+
+    calcPriceCut(price){
+        for (let i = 0; i < percentOfTarget.length; i += 3) {
+            let lowerBound = normalNumber(percentOfTarget[i]);
+            let upperBound = normalNumber(percentOfTarget[i + 1]);
+            let percent = normalNumber(percentOfTarget[i + 2]);
+
+            if (price >= lowerBound && price < upperBound) {
+                return percent;
+            }
         }
     }
 

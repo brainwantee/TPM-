@@ -111,7 +111,7 @@ class AutoBuy {
                         break;
                     case "gold_ingot":
                         debug(`INGOT!!!`);
-                        debug(getSlotLore(31).join('\n'));
+                        debug(JSON.stringify(bot.currentWindow?.slots[31]));
                         bot.betterWindowClose();
                         state.set(null);
                         state.setAction(firstGui);
@@ -140,6 +140,7 @@ class AutoBuy {
                         break;
                     default:
                         error(`Weird item ${item} found. Idk man`);
+                        error(JSON.stringify(bot.currentWindow.slots[31]));
                         bot.betterWindowClose();
                         state.set(null);
                         state.setAction(firstGui);
