@@ -1,3 +1,5 @@
+const { error } = require('../logger.js');
+
 let packetsObject = {};
 
 function makePackets(ign, client) {
@@ -35,7 +37,7 @@ function makePackets(ign, client) {
 function getPackets(ign) {
     const packets = packetsObject[ign];
     if (packets) return packets;
-    console.error(`No packets made for ${ign}`);
+    error(`No packets made for ${ign}`);
     return null;
 }
 

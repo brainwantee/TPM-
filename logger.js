@@ -49,7 +49,7 @@ function getIgns() {
     return currentIgns;
 }
 
-function logmc(string) {
+async function logmc(string) {
     let msg = '';
     if (!string) return;
     if (tracking) messages.push(string.replace(/§./g, ''));
@@ -150,19 +150,19 @@ const logger = createLogger({
     ]
 });
 
-function silly(...args) {
+async function silly(...args) {
     logger.silly(args.join(' '), "silly");
 }
 
-function debug(...args) {
+async function debug(...args) {
     logger.debug(args.join(' '), "debug");
 }
 
-function error(...args) {
+async function error(...args) {
     logger.error(args.join(' '), "error");
 }
 
-function info(...args) {
+async function info(...args) {
     logger.info(args.join(' '), "info");
 }
 

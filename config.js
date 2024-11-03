@@ -80,6 +80,16 @@ const defaultConfig = `{
         "finders": ["USER"]
 
     },
+
+    //Choose how long to flip for and rest for in hours.
+    "autoRotate": {
+
+        //Put your IGN (CAPS MATTER).
+        //If you run multiple accounts, put a , after the value (second quote), press enter, and follow the same format as the first.
+        //First time is how long to flip for, second is resting time
+        "ign": "12:12"
+
+    },
     
     //Cofl account password. DO NOT SHARE
     "session": ""
@@ -96,6 +106,7 @@ let config = { ...parsedDefaultConfig, ...JSON5.parse(fs.readFileSync('./config.
 
 config.doNotRelist = { ...parsedDefaultConfig.doNotRelist, ...config.doNotRelist }
 config.skip = { ...parsedDefaultConfig.skip, ...config.skip };
+config.autoRotate = { ...parsedDefaultConfig.autoRotate, ...config.autoRotate };
 
 function updateConfig(data) {//golden-fleece my savior idk how to spell that
     const newConfig = patch(defaultConfig, data);

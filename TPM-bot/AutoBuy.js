@@ -2,9 +2,10 @@ const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
 const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, sendDiscord } = require('./Utils.js');
 const { logmc, debug, removeIgn, error } = require('../logger.js');
-const { delay, waittime, skip: skipSettings, clickDelay, bedSpam } = config;
+let { delay, waittime, skip: skipSettings, clickDelay, bedSpam, delayBetweenClicks } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
 skipMinProfit = normalNumber(skipMinProfit);
+delayBetweenClicks = delayBetweenClicks || 3;
 
 class AutoBuy {
 
@@ -268,7 +269,7 @@ class AutoBuy {
             if (getWindowName(this.bot.currentWindow)?.includes('BIN Auction View') && this.currentOpen === currentID) {
                 this.bot.betterClick(31, 0, 0);
                 debug(`Clicking ${currentID} bed`);
-                await sleep(3);
+                await sleep(delayBetweenClicks);
             } else {
                 break;
             }
@@ -302,6 +303,11 @@ class AutoBuy {
                     clearInterval(bedSpam);
                     debug(`Clearing bed spam because of undefined count`, this.bedFailed, config.bedSpam, this.currentlyTimingBed, getWindowName(window), item);
                 }
+                return;
+            }
+            if (item == "gold_nugget") {//idk man sometimes it happens
+                this.bot.betterClick(31, 0, 0);
+                undefinedCount++
                 return;
             }
             if ((!this.bedFailed && !config.bedSpam && this.currentlyTimingBed) || getWindowName(window) !== 'BIN Auction View' || item !== 'bed') {
