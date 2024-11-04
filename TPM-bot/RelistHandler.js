@@ -173,10 +173,12 @@ class RelistHandler {
             if (!itemUuid) {
                 throw new Error(`Failed to get item uuid :( ${itemUuid} ${JSON.stringify(bot.currentWindow.slots[13])}`);
             }
+            debug(`Item uuid: ${itemUuid}`);
             bot.betterClick(31);
             await sleep(250);
             bot.chat('/ah');
             await betterOnce(bot, 'windowOpen');
+            await sleep(500);
             const uuids = [];//item not found debugging
             bot.currentWindow.slots.forEach(async slot => {
                 let uuid = this.getItemUuid(slot);
@@ -193,7 +195,7 @@ class RelistHandler {
                 bot.betterClick(48);
                 await sleep(250)
             } else if (getWindowName(bot.currentWindow).includes('Auction House')) {//includes allows for coop as well. This means item in slot most likely
-                debug(uuids.join('\n'));
+                debug(uuids.join(' '));
                 logmc(`§6[§bTPM§6] §cItem likely in slot already :(`);
                 bot.betterClick(15);
                 await betterOnce(bot, 'windowOpen');
