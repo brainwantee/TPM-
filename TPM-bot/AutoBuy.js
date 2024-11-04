@@ -101,9 +101,10 @@ class AutoBuy {
                     case "gold_block":
                         if (coop) {
                             await bot.waitForTicks(15);
-                            const lore = getSlotLore(31);
+                            const lore = getSlotLore(13);
                             if (!lore) {
                                 logmc(`§6[§bTPM§6] §cNot claiming sold auction because I can't find the lore :( so idk if you sold it or your coop.`);
+                                if (bot.currentWindow) debug(JSON.stringify(bot.currentWindow.slots[13]));
                                 state.set(null);
                                 state.setAction(firstGui);
                                 bot.betterWindowClose();
