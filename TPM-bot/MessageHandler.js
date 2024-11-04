@@ -234,7 +234,7 @@ class MessageHandler {
                             url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
                         },
                         footer: {
-                            text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse(true) + price)}`,
+                            text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse(true) + priceNoCommas)}`,
                             icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                         }
                     })
