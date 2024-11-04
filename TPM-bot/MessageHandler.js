@@ -196,7 +196,7 @@ class MessageHandler {
                 const auctionID = clickEvent.replace('/viewauction ', '').replace(/-/g, '');
                 if (!object) {
                     this.soldObject[`${stripItemName(item)}:${IHATECLAIMINGTAXES(price)}`] = { auctionID };//allows for cofl link in webhook
-                    debug(`added sold obbject ${stripItemName(item)}:${IHATECLAIMINGTAXES(price)}`);
+                    debug(`added sold obbject ${stripItemName(item)}:${Math.round(IHATECLAIMINGTAXES(price))}`);
                 }
                 this.state.setAction();
 

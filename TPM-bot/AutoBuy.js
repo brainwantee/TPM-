@@ -102,6 +102,13 @@ class AutoBuy {
                         if (coop) {
                             await bot.waitForTicks(15);
                             const lore = getSlotLore(31);
+                            if (!lore) {
+                                logmc(`§6[§bTPM§6] §cNot claiming sold auction because I can't find the lore :( so idk if you sold it or your coop.`);
+                                state.set(null);
+                                state.setAction(firstGui);
+                                bot.betterWindowClose();
+                                break;
+                            }
                             const found = lore.find(line => {
                                 const result = noColorCodes(line)?.includes(ign);
                                 debug(`Found line ${noColorCodes(line)} and ${result}`);
@@ -111,7 +118,7 @@ class AutoBuy {
                                 bot.betterClick(31);
                                 this.relist.declineSoldAuction();
                             } else {
-                                logmc("§6[§bTPM§6] Item was sold by coop! Not claiming.");
+                                logmc("§6[§bTPM§6] §cItem was sold by coop! Not claiming.");
                                 bot.betterWindowClose();
                             }
                         } else {
