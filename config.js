@@ -22,6 +22,9 @@ const defaultConfig = `{
     //Required to use relist!! Will flip in if you don't have a cookie
     "useCookie": true,
 
+    //Don't claim coop's auctions
+    "angryCoopPrevention": false,
+
     //Automatically list auctions
     "relist": true,
 

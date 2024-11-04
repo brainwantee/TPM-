@@ -1,5 +1,5 @@
 const { logmc, getPrefix, debug } = require("../logger.js");
-const { sendDiscord, stripItemName, nicerFinders, formatNumber, addCommasToNumber, onlyNumbers, betterOnce, sleep } = require('./Utils.js');
+const { sendDiscord, stripItemName, nicerFinders, formatNumber, addCommasToNumber, onlyNumbers, betterOnce, sleep, IHATECLAIMINGTAXES } = require('./Utils.js');
 const { config } = require('../config.js');
 const { webhookFormat, blockUselessMessages } = config;
 
@@ -189,35 +189,16 @@ class MessageHandler {
                 if (!this.relist.getGottenReady()) return;
                 this.updateSold();
                 this.sendScoreboard();
-                const buyer = soldMatch[1];
                 const item = soldMatch[2];
                 const price = onlyNumbers(soldMatch[3]);
                 const object = this.soldObject[`${stripItemName(item)}:${price}`];
-                debug(`Sold messge object: ${stripItemName(item)}:${price}`);
-                let profitMessage = '';
-                if (object) {
-                    profitMessage = ` (\`${formatNumber(object.profit)}\` profit)`
-                }
                 const clickEvent = message?.clickEvent?.value;
                 const auctionID = clickEvent.replace('/viewauction ', '').replace(/-/g, '');
+                if (!object) {
+                    this.soldObject[`${stripItemName(item)}:${IHATECLAIMINGTAXES(price)}`] = { auctionID };//allows for cofl link in webhook
+                    debug(`added sold obbject ${stripItemName(item)}:${IHATECLAIMINGTAXES(price)}`);
+                }
                 this.state.setAction();
-                sendDiscord({
-                    title: 'Item Sold',
-                    color: 16731310,
-                    fields: [
-                        {
-                            name: '',
-                            value: `Collected \`${addCommasToNumber(price)} coins\` for selling [\`${item}\`](https://sky.coflnet.com/auction/${auctionID}) to \`${buyer}\`${profitMessage}`,
-                        }
-                    ],
-                    thumbnail: {
-                        url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
-                    },
-                    footer: {
-                        text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse(true) + price)}`,
-                        icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
-                    }
-                })
 
                 setTimeout(() => {
                     this.state.queueAdd(clickEvent, 'claiming', 1);
@@ -228,10 +209,39 @@ class MessageHandler {
             }
 
             const claimedMatch = text.match(claimedRegex);
-            if (claimedMatch) {
+            if (claimedMatch && this.relist.getGottenReady()) {
                 setTimeout(() => {
-                    this.bot.getPurse();//fix incorrect purse after claiming
-                }, 5000)
+                    const price = claimedMatch[1];
+                    const item = claimedMatch[2];
+                    const buyer = claimedMatch[3];
+                    const priceNoCommas = onlyNumbers(price);
+                    debug(`${stripItemName(item)}:${priceNoCommas}`);
+                    const object = this.soldObject[`${stripItemName(item)}:${priceNoCommas}`];
+                    debug(object);
+                    let profitMessage = '';
+                    if (object?.profit) profitMessage = ` (\`${formatNumber(object.profit)}\` profit)`
+                    debug(object);
+                    sendDiscord({
+                        title: 'Item Sold',
+                        color: 16731310,
+                        fields: [
+                            {
+                                name: '',
+                                value: `Collected \`${addCommasToNumber(price)} coins\` for selling [\`${item}\`](https://sky.coflnet.com/auction/${object.auctionID}) to \`${buyer}\`${profitMessage}`,
+                            }
+                        ],
+                        thumbnail: {
+                            url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                        },
+                        footer: {
+                            text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse(true) + price)}`,
+                            icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                        }
+                    })
+                    setTimeout(() => {
+                        this.bot.getPurse();//fix incorrect purse after claiming
+                    }, 4000)
+                }, 1000)
             }
 
             const partyMatch = text.match(partyRegex);
@@ -335,7 +345,7 @@ class MessageHandler {
     }
 
     objectAdd(weirdItemName, price, target, profit, auctionID, bed, finder, itemName, tag) {
-        const soldPrice = Math.round(this.relist.calcPriceCut(target) * target / 100);
+        const soldPrice = Math.round(IHATECLAIMINGTAXES(Math.round(this.relist.calcPriceCut(target) * target / 100)));//wow this is ugly
         debug(`Sold object added: ${weirdItemName}:${soldPrice}`);
 
         this.soldObject[`${weirdItemName}:${soldPrice}`] = {

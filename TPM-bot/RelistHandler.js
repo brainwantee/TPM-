@@ -142,7 +142,9 @@ class RelistHandler {
                     }
 
                     state.set(null);
-                    this.ready = true;
+                    setTimeout(() =>{
+                        this.ready = true;
+                    }, 5000)
 
                 } else {
                     debug('not getting ready!!!');
@@ -216,7 +218,6 @@ class RelistHandler {
 
             const listPrice = Math.round(relistpercent * price / 100);
             if (listPrice < 500) {
-                bot.betterClick(13);//remove item from slot
                 throw new Error(`Most likely incorrect listing price ${listPrice}`);
             }
 
@@ -237,7 +238,6 @@ class RelistHandler {
             const timeSlot = bot.currentWindow.slots[33]?.nbt?.value?.display?.value?.Name?.value;
 
             if (!priceSlot.includes(addCommasToNumber(listPrice)) || !timeSlot.includes(itemDurationVisual)) {//acts as a window dectector too!
-                bot.betterClick(13);
                 throw new Error(`Incorrect pricing or time ${priceSlot} ${timeSlot} not having ${addCommasToNumber(listPrice)} or ${itemDurationVisual}`);
             }
 
@@ -263,6 +263,7 @@ class RelistHandler {
             }), false)
 
         } catch (e) {
+            if(getWindowName(this.bot.currentWindow).includes('Create')) this.bot.betterClick(13);//remove item from slot
             await sleep(250);
             error(`Error listing`, e);
             this.bot.betterWindowClose();

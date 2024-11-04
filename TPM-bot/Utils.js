@@ -57,6 +57,12 @@ function IHATETAXES(price) {
     }
 }
 
+function IHATECLAIMINGTAXES(price) {
+    if (price < 1_000_000) return price;
+    if ((price * .99) < 1_000_000) return 1_000_000;
+    return price * .99;
+}
+
 function normalizeDate(dateString) {
     try {
         const isoFormatWithoutMillisUTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
@@ -194,15 +200,15 @@ function normalNumber(num) {
     if (!num) return NaN;
     num = num.toLowerCase();
     if (num.includes('t')) {
-        return parseFloat(num.replace('t', '')) * 1_000_000_000_000;
+        return parseInt(num.replace('t', '')) * 1_000_000_000_000;
     } else if (num.includes('b')) {
-        return parseFloat(num.replace('b', '')) * 1_000_000_000;
+        return parseInt(num.replace('b', '')) * 1_000_000_000;
     } else if (num.includes('m')) {
-        return parseFloat(num.replace('m', '')) * 1_000_000;
+        return parseInt(num.replace('m', '')) * 1_000_000;
     } else if (num.includes('k')) {
-        return parseFloat(num.replace('k', '')) * 1_000;
+        return parseInt(num.replace('k', '')) * 1_000;
     }
-    return parseFloat(num);
+    return parseInt(num);
 }
 
 function isSkinned(item) {
@@ -431,4 +437,4 @@ async function getPingStats(bot, handleCommand, ws, soldNum, profitList) {
     })
 }
 
-module.exports = { DISCORD_PING, getPingStats, getStats, TheBig3, getLatestLog, isSkinned, normalNumber, addCommasToNumber, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };
+module.exports = { DISCORD_PING, getPingStats, IHATECLAIMINGTAXES, getStats, TheBig3, getLatestLog, isSkinned, normalNumber, addCommasToNumber, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };

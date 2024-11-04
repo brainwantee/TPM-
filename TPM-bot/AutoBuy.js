@@ -2,7 +2,7 @@ const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
 const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, sendDiscord } = require('./Utils.js');
 const { logmc, debug, removeIgn, error } = require('../logger.js');
-let { delay, waittime, skip: skipSettings, clickDelay, bedSpam, delayBetweenClicks } = config;
+let { delay, waittime, skip: skipSettings, clickDelay, bedSpam, delayBetweenClicks, angryCoopPrevention: coop } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
 skipMinProfit = normalNumber(skipMinProfit);
 delayBetweenClicks = delayBetweenClicks || 3;
@@ -99,9 +99,26 @@ class AutoBuy {
                             break;
                         }
                     case "gold_block":
-                        bot.betterClick(31);
+                        if (coop) {
+                            await bot.waitForTicks(15);
+                            const lore = getSlotLore(31);
+                            const found = lore.find(line => {
+                                const result = noColorCodes(line)?.includes(ign);
+                                debug(`Found line ${noColorCodes(line)} and ${result}`);
+                                return result;
+                            });
+                            if (found) {
+                                bot.betterClick(31);
+                                this.relist.declineSoldAuction();
+                            } else {
+                                logmc("§6[§bTPM§6] Item was sold by coop! Not claiming.");
+                                bot.betterWindowClose();
+                            }
+                        } else {
+                            bot.betterClick(31);
+                            this.relist.declineSoldAuction();
+                        }
                         state.set(null);
-                        this.relist.declineSoldAuction();
                         state.setAction(firstGui);
                         break;
                     case "poisonous_potato":
