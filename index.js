@@ -140,8 +140,8 @@ async function startBot(ign, tws, secondary = false) {
 
 function rotate(ign) {
     const timings = autoRotate[ign].split(':');
-    const start = timings[0] * 3_600_000;
-    const stop = timings[1] * 3_600_000;
+    const stop = timings[0] * 3_600_000;
+    const start = timings[1] * 3_600_000;
     const bot = bots[ign].getBot();
     setTimeout(() => {
         destroyBot(ign, false);

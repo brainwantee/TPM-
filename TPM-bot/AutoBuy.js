@@ -101,8 +101,8 @@ class AutoBuy {
                     case "gold_block":
                         if (coop) {
                             await bot.waitForTicks(15);
-                            const lore = getSlotLore(13);
-                            debug(`lore`, lore);
+                            const lore = getSlotLore(bot.currentWindow.slots[13]);
+                            debug(`lore: ${lore}`);
                             if (!lore) {
                                 logmc(`§6[§bTPM§6] §cNot claiming sold auction because I can't find the lore :( so idk if you sold it or your coop.`);
                                 if (bot.currentWindow) debug(JSON.stringify(bot.currentWindow.slots[13]));
@@ -162,6 +162,11 @@ class AutoBuy {
                         break;
                     case "stained_glass_pane":
                         if (state.get() === 'delisting') this.bot.betterClick(33);
+                        else {
+                            bot.betterWindowClose();
+                            state.set(null);
+                            state.setAction(firstGui);
+                        }
                         break;
                     case "gold_nugget":
                         break;

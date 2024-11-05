@@ -133,7 +133,7 @@ class MessageHandler {
                     } else {
                         sendDiscord({
                             title: 'LEGENDARY FLIP WOOOOO!!!',
-                            color: 16629250,
+                            color: profit > 1_000_000_000 ? 15566847 : 16629250,
                             fields: [
                                 {
                                     name: '',
@@ -212,7 +212,8 @@ class MessageHandler {
             if (claimedMatch && this.relist.getGottenReady()) {
                 const price = claimedMatch[1];
                 const item = claimedMatch[2];
-                const buyer = claimedMatch[3];
+                let buyer = claimedMatch[3];
+                if (buyer.includes(' ')) buyer = buyer.split(' ')[0];
                 const priceNoCommas = onlyNumbers(price);
                 debug(`${stripItemName(item)}:${priceNoCommas}`);
                 const object = this.soldObject[`${stripItemName(item)}:${priceNoCommas}`];

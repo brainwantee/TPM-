@@ -1,4 +1,3 @@
-const axios = require('axios');
 const WebSocket = require('ws');
 const EventEmitter = require('events');
 
@@ -76,7 +75,7 @@ class CoflWs {
                 break;
             case "writeToChat":
             case "chatMessage":
-                this.ws.emit("message", msg)
+                this.ws.emit("message", msg);
                 text = smallMessageParse(data);
                 this.ws.emit("messageText", text);
                 break;
@@ -87,7 +86,7 @@ class CoflWs {
             case "createAuction":
                 break;
             case "settings":
-                this.ws.emit('jsonSettings', msg)
+                this.ws.emit('jsonSettings', msg);
                 break;
             case "getInventory":
                 this.ws.emit('getInventory', msg);
@@ -135,7 +134,7 @@ class CoflWs {
             return;
         }
         this.websocket.send(msg);
-        if (type) debug(msg)
+        if (type) debug(msg);
     }
 
     testMessage(msg) {
