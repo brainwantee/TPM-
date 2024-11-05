@@ -1,6 +1,6 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
-const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, sendDiscord } = require('./Utils.js');
+const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, sendDiscord, noColorCodes } = require('./Utils.js');
 const { logmc, debug, removeIgn, error } = require('../logger.js');
 let { delay, waittime, skip: skipSettings, clickDelay, bedSpam, delayBetweenClicks, angryCoopPrevention: coop } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
@@ -112,7 +112,7 @@ class AutoBuy {
                                 break;
                             }
                             const found = lore.find(line => {
-                                const result = noColorCodes(line)?.includes(ign);
+                                const result = noColorCodes(line)?.includes(bot.username);
                                 debug(`Found line ${noColorCodes(line)} and ${result}`);
                                 return result;
                             });

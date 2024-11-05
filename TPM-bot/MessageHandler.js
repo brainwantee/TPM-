@@ -213,7 +213,7 @@ class MessageHandler {
                 const price = claimedMatch[1];
                 const item = claimedMatch[2];
                 let buyer = claimedMatch[3];
-                if (buyer.includes(' ')) buyer = buyer.split(' ')[0];
+                if (buyer.includes(' ')) buyer = buyer.split(' ')[1];
                 const priceNoCommas = onlyNumbers(price);
                 debug(`${stripItemName(item)}:${priceNoCommas}`);
                 const object = this.soldObject[`${stripItemName(item)}:${priceNoCommas}`];
