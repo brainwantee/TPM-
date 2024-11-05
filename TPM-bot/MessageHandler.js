@@ -210,24 +210,24 @@ class MessageHandler {
 
             const claimedMatch = text.match(claimedRegex);
             if (claimedMatch && this.relist.getGottenReady()) {
+                const price = claimedMatch[1];
+                const item = claimedMatch[2];
+                const buyer = claimedMatch[3];
+                const priceNoCommas = onlyNumbers(price);
+                debug(`${stripItemName(item)}:${priceNoCommas}`);
+                const object = this.soldObject[`${stripItemName(item)}:${priceNoCommas}`];
+                debug(object);
+                let profitMessage = '';
+                if (object?.profit) profitMessage = ` (\`${formatNumber(object.profit)}\` profit)`
+                debug(object);
                 setTimeout(() => {
-                    const price = claimedMatch[1];
-                    const item = claimedMatch[2];
-                    const buyer = claimedMatch[3];
-                    const priceNoCommas = onlyNumbers(price);
-                    debug(`${stripItemName(item)}:${priceNoCommas}`);
-                    const object = this.soldObject[`${stripItemName(item)}:${priceNoCommas}`];
-                    debug(object);
-                    let profitMessage = '';
-                    if (object?.profit) profitMessage = ` (\`${formatNumber(object.profit)}\` profit)`
-                    debug(object);
                     sendDiscord({
                         title: 'Item Sold',
                         color: 16731310,
                         fields: [
                             {
                                 name: '',
-                                value: `Collected \`${addCommasToNumber(price)} coins\` for selling [\`${item}\`](https://sky.coflnet.com/auction/${object.auctionID}) to \`${buyer}\`${profitMessage}`,
+                                value: `Collected \`${addCommasToNumber(price)} coins\` for selling [\`${item}\`](https://sky.coflnet.com/auction/${object?.auctionID}) to \`${buyer}\`${profitMessage}`,
                             }
                         ],
                         thumbnail: {
@@ -246,7 +246,16 @@ class MessageHandler {
 
             const partyMatch = text.match(partyRegex);
             if (partyMatch) {
-                sendDiscord({
+                this.tpm.send(JSON.stringify({
+                    type: "partyInvite",
+                    data: JSON.stringify({
+                        username: this.ign,
+                        inviteUser: partyMatch[1],
+                        botPurse: formatNumber(this.bot.getPurse()),
+                        uuid: this.bot.uuid
+                    })
+                }))
+                /*sendDiscord({
                     title: 'Party invite!',
                     color: 8703743,
                     fields: [
@@ -262,7 +271,7 @@ class MessageHandler {
                         text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse())}`,
                         icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                     }
-                })
+                })*/
             }
 
             if (blockUselessMessages) {
