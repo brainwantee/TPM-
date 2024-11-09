@@ -1,7 +1,7 @@
 const { logmc, getPrefix, debug } = require("../logger.js");
 const { sendDiscord, stripItemName, nicerFinders, formatNumber, addCommasToNumber, onlyNumbers, betterOnce, sleep, IHATECLAIMINGTAXES } = require('./Utils.js');
 const { config } = require('../config.js');
-const { webhookFormat, blockUselessMessages } = config;
+const { webhookFormat, blockUselessMessages, useItemImage } = config;
 
 const soldRegex = /^\[Auction\] (.+?) bought (.+?) for ([\d,]+) coins CLICK$/;
 const boughtRegex = /^You purchased (.+?) for ([\d,]+) coins!$/;
@@ -73,13 +73,13 @@ class MessageHandler {
                             }
                         ],
                         thumbnail: {
-                            url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                            url: `https://sky.coflnet.com/animated/icon/BOOSTER_COOKIE`,
                         },
                         footer: {
                             text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse())}`,
                             icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                         }
-                    }, true)
+                    }, this.bot.head, true)
                     this.sentCookie = true;
                     this.relist.turnOffRelist();
                     this.island.setIsland(false, 'Hub', false);
@@ -105,13 +105,17 @@ class MessageHandler {
                 debug(JSON.stringify(objectIntance));
                 debug(`${weirdBought}:${priceNoCommas}`);
                 if (objectIntance) {
-                    let { profit, auctionID, target, bed, finder } = objectIntance;
+                    let { profit, auctionID, target, bed, finder, itemTag } = objectIntance;
                     finder = nicerFinders(finder);
                     target = formatNumber(target);
                     let formattedProfit = formatNumber(profit);
                     let formattedPrice = formatNumber(priceNoCommas);
                     let formattedString = this.formatString(webhookFormat, item, formattedProfit, price, target, buyspeed, bed, finder, auctionID, formattedPrice)
                     this.updateBought(profit);
+                    let thumbnail = this.bot.head;
+                    if (useItemImage && itemTag) {
+                        thumbnail = `https://sky.coflnet.com/static/icon/${itemTag}`;
+                    }
                     if (profit < 100_000_000) {
                         sendDiscord({
                             title: 'Item purchased',
@@ -123,13 +127,13 @@ class MessageHandler {
                                 }
                             ],
                             thumbnail: {
-                                url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                                url: thumbnail,
                             },
                             footer: {
                                 text: `TPM Rewrite - Found by ${finder} - Purse ${formatNumber(this.bot.getPurse(true) - parseInt(priceNoCommas, 10))}`,
                                 icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                             }
-                        })
+                        }, useItemImage ? this.bot.head : null)
                     } else {
                         sendDiscord({
                             title: 'LEGENDARY FLIP WOOOOO!!!',
@@ -141,13 +145,13 @@ class MessageHandler {
                                 }
                             ],
                             thumbnail: {
-                                url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                                url: thumbnail,
                             },
                             footer: {
                                 text: `TPM Rewrite - Found by ${finder} - Purse ${formatNumber(this.bot.getPurse(true) - parseInt(priceNoCommas, 10))}`,
                                 icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                             }
-                        }, true)
+                        }, useItemImage ? this.bot.head : null, true)
                     }
 
                     this.tpm.send(JSON.stringify({
@@ -221,6 +225,10 @@ class MessageHandler {
                 let profitMessage = '';
                 if (object?.profit) profitMessage = ` (\`${formatNumber(object.profit)}\` profit)`
                 debug(object);
+                let thumbnail = this.bot.head;
+                if (object?.itemTag) {
+                    thumbnail = `https://sky.coflnet.com/static/icon/${object.itemTag}`;
+                }
                 setTimeout(() => {
                     sendDiscord({
                         title: 'Item Sold',
@@ -232,13 +240,13 @@ class MessageHandler {
                             }
                         ],
                         thumbnail: {
-                            url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                            url: thumbnail,
                         },
                         footer: {
                             text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse(true) + priceNoCommas)}`,
                             icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                         }
-                    })
+                    }, useItemImage ? this.bot.head : null)
                     setTimeout(() => {
                         this.bot.getPurse();//fix incorrect purse after claiming
                     }, 4000)
@@ -300,7 +308,7 @@ class MessageHandler {
                     return;
                 }
                 try {
-                    await betterOnce(this.bot, 'spawn', 30_000);
+                    await betterOnce(this.bot, 'spawn', null, 30_000);
                     await sleep(20_000);
                 } catch (e) {
                     console.error(e);
@@ -359,7 +367,8 @@ class MessageHandler {
         debug(`Sold object added: ${weirdItemName}:${soldPrice}`);
 
         this.soldObject[`${weirdItemName}:${soldPrice}`] = {
-            profit: profit
+            profit: profit,
+            itemTag: tag
         };
 
         this.webhookObject[`${weirdItemName}:${price}`] = {
@@ -367,7 +376,8 @@ class MessageHandler {
             target: target,
             profit: profit,
             bed: bed,
-            finder: finder
+            finder: finder,
+            itemTag: tag
         };
 
         this.relistObject[auctionID] = {

@@ -23,10 +23,13 @@ function formatNumber(num) {
     return `${negative ? '-' : ''}${thingy}`;
 }
 
-async function betterOnce(listener, event, timeframe = 5000) {
+async function betterOnce(listener, event, callback, timeframe = 5000) {
     return new Promise((resolve, reject) => {
 
         const listen = (msg) => {
+            if (callback) {
+                if (!callback(msg)) return;
+            }
             listener.off(event, listen);
             resolve(msg);
         };
@@ -108,31 +111,28 @@ function noColorCodes(text) {
     return text?.replace(/§./g, '')?.replace('§', '')//cofl sometimes sends messages that are cut off so I need the second one aswell
 }
 
-async function sendDiscord(embed, ping = false, attempt = 0) {
+async function sendDiscord(embed, avatar = null, ping = false, attempt = 0) {
     if (webhook) {
         try {
+            const webhookOptions = {
+                username: "TPM",
+                avatar_url: avatar || "https://media.discordapp.net/attachments/1235761441986969681/1263290313246773311/latest.png?ex=6699b249&is=669860c9&hm=87264b7ddf4acece9663ce4940a05735aecd8697adf1335de8e4f2dda3dbbf07&=&format=webp&quality=lossless",
+                content: ping ? DISCORD_PING : "",
+                embeds: [embed]
+            }
+            debug(JSON.stringify(webhookOptions));
             if (Array.isArray(webhook)) {
                 webhook.forEach(async (hook) => {
-                    await axios.post(hook, {
-                        username: "TPM",
-                        avatar_url: "https://media.discordapp.net/attachments/1235761441986969681/1263290313246773311/latest.png?ex=6699b249&is=669860c9&hm=87264b7ddf4acece9663ce4940a05735aecd8697adf1335de8e4f2dda3dbbf07&=&format=webp&quality=lossless",
-                        content: ping ? DISCORD_PING : "",
-                        embeds: [embed]
-                    });
+                    await axios.post(hook, webhookOptions);
                 })
             } else {
-                await axios.post(webhook, {
-                    username: "TPM",
-                    avatar_url: "https://media.discordapp.net/attachments/1235761441986969681/1263290313246773311/latest.png?ex=6699b249&is=669860c9&hm=87264b7ddf4acece9663ce4940a05735aecd8697adf1335de8e4f2dda3dbbf07&=&format=webp&quality=lossless",
-                    content: ping ? DISCORD_PING : "",
-                    embeds: [embed]
-                });
+                await axios.post(webhook, webhookOptions);
             }
         } catch (e) {
-            error(`Webhook error`, e)
+            error(`Webhook error on attempt ${attempt}`, e)
             if (attempt < 3) {
                 await sleep(5000)
-                await sendDiscord(embed, attempt + 1);
+                await sendDiscord(embed, avatar, ping, attempt + 1);
             }
         }
     }
@@ -158,29 +158,6 @@ function nicerFinders(finder) {
             return 'Flipper'
     }
     return finder;
-}
-
-async function betterOnce(listener, uhhh, timeframe = 5000) {
-    return new Promise((resolve) => {
-        let sent = false;
-
-        const listen = () => {
-            if (!sent) {
-                sent = true;
-                listener.off(uhhh, listen);
-                resolve(true);
-            }
-        };
-
-        setTimeout(() => {
-            if (!sent) {
-                listener.off(uhhh, listen);
-                resolve(false);
-            }
-        }, timeframe);
-
-        listener.on(uhhh, listen);
-    });
 }
 
 function getSlotLore(slot) {

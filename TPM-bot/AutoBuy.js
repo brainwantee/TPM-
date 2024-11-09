@@ -1,6 +1,6 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
-const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, sendDiscord, noColorCodes } = require('./Utils.js');
+const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, noColorCodes } = require('./Utils.js');
 const { logmc, debug, removeIgn, error } = require('../logger.js');
 let { delay, waittime, skip: skipSettings, clickDelay, bedSpam, delayBetweenClicks, angryCoopPrevention: coop } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
@@ -142,23 +142,6 @@ class AutoBuy {
                         bot.betterWindowClose();
                         state.set(null);
                         state.setAction(firstGui);
-                        sendDiscord({
-                            title: 'Gold ingot madness',
-                            color: 2615974,
-                            fields: [
-                                {
-                                    name: '',
-                                    value: "send the log of this to icyhenryt please",
-                                }
-                            ],
-                            thumbnail: {
-                                url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
-                            },
-                            footer: {
-                                text: `TPM Rewrite`,
-                                icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
-                            }
-                        })
                         break;
                     case "stained_glass_pane":
                         if (state.get() === 'delisting') this.bot.betterClick(33);
@@ -368,7 +351,7 @@ class AutoBuy {
                     case "listing": {
                         const { profit, finder, itemName, tag, auctionID, price, weirdItemName } = current.action;
                         if (!this.relist.checkRelist(profit, finder, itemName, tag, auctionID, price, weirdItemName, true)) return;
-                        this.relist.listAuction(auctionID, price, profit, weirdItemName);
+                        this.relist.listAuction(auctionID, price, profit, weirdItemName, tag);
                         break;
                     }
                     case "listingNoName": {
@@ -379,13 +362,13 @@ class AutoBuy {
                         };
                         const { relist: relistObject } = this.webhook.getObjects();
                         try {
-                            var { weirdItemName, pricePaid } = relistObject[auctionID]; //ew var
+                            var { weirdItemName, pricePaid, tag } = relistObject[auctionID]; //ew var
                         } catch {
                             var weirdItemName = auctionID; //ew var
                             var pricePaid = 0; //ew var
                         }
                         let profit = IHATETAXES(price) - pricePaid;
-                        this.relist.listAuction(auctionID, price, profit, weirdItemName, true);
+                        this.relist.listAuction(auctionID, price, profit, weirdItemName, tag, true);
                         current.state = 'listing';
                         break;
                     }
@@ -405,6 +388,7 @@ class AutoBuy {
                         this.coflSocket.closeSocket();
                         removeIgn(this.ign);
                         logmc(`§6[§bTPM§6] §c${this.ign} is now dead. May he rest in peace.`)
+                        break;
                     }
                 }
                 this.state.setAction(currentTime);

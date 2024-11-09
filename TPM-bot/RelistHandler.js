@@ -1,7 +1,7 @@
 const { config } = require('../config.js');
 const { sleep, betterOnce, getWindowName, noColorCodes, getSlotLore, sendDiscord, onlyNumbers, addCommasToNumber, normalNumber, isSkinned, formatNumber } = require('./Utils.js');
 const { logmc, error, debug } = require('../logger.js');
-const { useCookie, relist, percentOfTarget, listHours, doNotRelist } = config;
+const { useCookie, relist, percentOfTarget, listHours, doNotRelist, useItemImage } = config;
 let { profitOver, skinned, tags, finders } = doNotRelist;
 profitOver = normalNumber(profitOver);
 
@@ -130,13 +130,13 @@ class RelistHandler {
                                 }
                             ],
                             thumbnail: {
-                                url: `https://mc-heads.net/head/${bot.uuid}.png`,
+                                url: this.bot.head,
                             },
                             footer: {
                                 text: `TPM Rewrite - Purse: ${addCommasToNumber(bot.getPurse(true) + totalCollected)}`,
                                 icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                             }
-                        })
+                        }, useItemImage ? this.bot.head : null)
                     } else {
                         bot.betterWindowClose();
                     }
@@ -161,7 +161,7 @@ class RelistHandler {
         bot.on('spawn', check);
     }
 
-    async listAuction(auctionID, price, profit, weirdItemName, override = false) {
+    async listAuction(auctionID, price, profit, weirdItemName, tag, override = false) {
         if (!this.useRelist && !override) return;
         debug(`Listing ${auctionID} for ${price}`);
         try {
@@ -258,9 +258,11 @@ class RelistHandler {
                     auctionID,
                     purse: formatNumber(bot.getPurse()),
                     username: bot.username,
-                    message: `Listed [\`${weirdItemName}\`](https://sky.coflnet.com/auction/${auctionID}) for \`${addCommasToNumber(price)}\` (\`${formatNumber(profit)}\` profit) [Slots: ${this.currentAuctions}/${this.maxSlots}]`,
+                    message: `Listed [\`${weirdItemName}\`](https://sky.coflnet.com/auction/${auctionID}) for \`${addCommasToNumber(listPrice)}\` (\`${formatNumber(profit)}\` profit) [Slots: ${this.currentAuctions}/${this.maxSlots}]`,
                     uuid: this.bot.uuid,
-                    itemUuid: itemUuid
+                    itemUuid: itemUuid,
+                    itemTag: tag,
+                    useItemImage: useItemImage
                 })
             }), false)
 
@@ -360,13 +362,13 @@ class RelistHandler {
                     }
                 ],
                 thumbnail: {
-                    url: `https://mc-heads.net/head/${bot.uuid}.png`,
+                    url: this.bot.head,
                 },
                 footer: {
                     text: `TPM Rewrite`,
                     icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
                 }
-            });
+            }, useItemImage ? this.bot.head : null);
             this.declineSoldAuction();
 
             bot.betterWindowClose();

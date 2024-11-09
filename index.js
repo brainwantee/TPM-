@@ -53,7 +53,7 @@ testIgn();
     const botNames = Object.keys(bots);
 
     if (botNames.length == 1) {
-        thumbnail = `https://mc-heads.net/head/${bots[botNames[0]].getBot().uuid}.png`;
+        thumbnail = bots[botNames[0]].getBot().head;
     }
 
     sendDiscord({
@@ -94,7 +94,7 @@ async function destroyBot(ign, secondary = true) {
                 }
             ],
             thumbnail: {
-                url: `https://mc-heads.net/head/${bot.uuid}.png`,
+                url: bot.head,
             },
             footer: {
                 text: `The "Perfect" Macro Rewrite`,
@@ -126,7 +126,7 @@ async function startBot(ign, tws, secondary = false) {
                     }
                 ],
                 thumbnail: {
-                    url: `https://mc-heads.net/head/${tempBot.getBot().uuid}.png`,
+                    url: tempBot.getBot().head,
                 },
                 footer: {
                     text: `The "Perfect" Macro Rewrite`,
@@ -155,7 +155,7 @@ function rotate(ign) {
                 }
             ],
             thumbnail: {
-                url: `https://mc-heads.net/head/${bot.uuid}.png`,
+                url: bot.head,
             },
             footer: {
                 text: `The "Perfect" Macro Rewrite`,
@@ -174,7 +174,7 @@ function rotate(ign) {
                     }
                 ],
                 thumbnail: {
-                    url: `https://mc-heads.net/head/${bot.uuid}.png`,
+                    url: bot.head,
                 },
                 footer: {
                     text: `The "Perfect" Macro Rewrite`,

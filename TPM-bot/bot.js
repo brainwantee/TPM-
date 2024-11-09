@@ -77,6 +77,7 @@ async function makeBot(ign) {
 
         bot.once("login", async () => {
             bot.uuid = await getUUID(ign);
+            bot.head = `https://mc-heads.net/head/${bot.uuid}.png`;
             logmc(`${customIGNColor(ign)}${ign} logged in!`);
             resolve(bot);
         });
