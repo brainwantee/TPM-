@@ -1,6 +1,9 @@
 const { createLogger, format, transports } = require('winston');
 const { combine, printf, colorize } = format;
 const fs = require('fs');
+const FormData = require('form-data');
+const path = require('path');
+const axios = require('axios');
 
 let messages = [];
 let tracking = false;
@@ -167,7 +170,11 @@ async function info(...args) {
 }
 
 function getLatestLog() {
-    //stuff
+    const logFilePath = path.join(process.pkg ? path.dirname(process.execPath) : __dirname, 'logs', 'latest.log');
+    const logFile = fs.createReadStream(logFilePath);
+    const form = new FormData();
+    form.append('file', logFile, 'latest.log');
+    return form;
 }
 
 async function startTracker(timer = 10_000) {
@@ -180,4 +187,4 @@ async function startTracker(timer = 10_000) {
     return messages;
 }
 
-module.exports = { logmc, customIGNColor, silly, debug, error, info, getPrefix, updateIgns, removeIgn, getIgns, startTracker };
+module.exports = { logmc, customIGNColor, silly, debug, error, info, getPrefix, updateIgns, removeIgn, getIgns, startTracker, getLatestLog };

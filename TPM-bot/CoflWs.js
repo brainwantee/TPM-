@@ -52,6 +52,8 @@ class CoflWs {
             const msg = this.parseMessage(message);
             if (this.testMessage(msg)) {
                 logmc(msg);
+            } else {
+                debug(`Blocked cofl message: ${msg}`);
             }
         })
 

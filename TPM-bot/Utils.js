@@ -1,5 +1,5 @@
 const { config } = require('../config.js');
-const { debug, error } = require('../logger.js');
+const { debug, error, getLatestLog } = require('../logger.js');
 const { webhook } = config;
 const axios = require('axios');
 
@@ -111,31 +111,36 @@ function noColorCodes(text) {
     return text?.replace(/§./g, '')?.replace('§', '')//cofl sometimes sends messages that are cut off so I need the second one aswell
 }
 
-async function sendDiscord(embed, avatar = null, ping = false, attempt = 0) {
+async function sendDiscord(embed, avatar = null, ping = false, file = null, attempt = 0) {
     if (webhook) {
         try {
-            const webhookOptions = {
+            let webhookOptions = {
                 username: "TPM",
                 avatar_url: avatar || "https://media.discordapp.net/attachments/1235761441986969681/1263290313246773311/latest.png?ex=6699b249&is=669860c9&hm=87264b7ddf4acece9663ce4940a05735aecd8697adf1335de8e4f2dda3dbbf07&=&format=webp&quality=lossless",
                 content: ping ? DISCORD_PING : "",
                 embeds: [embed]
-            }
-            debug(JSON.stringify(webhookOptions));
-            if (Array.isArray(webhook)) {
-                webhook.forEach(async (hook) => {
-                    await axios.post(hook, webhookOptions);
-                })
+            };
+            if (file) {
+                var headers = file.getHeaders();
+                headers['Content-Type'] = 'multipart/form-data';
+                webhookOptions = file;
             } else {
-                await axios.post(webhook, webhookOptions);
+                var headers = { 'Content-Type': 'application/json' };
+            }
+            if (Array.isArray(webhook)) {
+                await Promise.all(webhook.map(hook => axios.post(hook, webhookOptions, { headers })));
+            } else {
+                await axios.post(webhook, webhookOptions, { headers });
             }
         } catch (e) {
-            error(`Webhook error on attempt ${attempt}`, e)
+            error(`Webhook error on attempt ${attempt}`, e);
             if (attempt < 3) {
-                await sleep(5000)
-                await sendDiscord(embed, avatar, ping, attempt + 1);
+                await sleep(5000);
+                await sendDiscord(embed, avatar, ping, file, attempt + 1);
             }
         }
     }
+    return;
 }
 
 function nicerFinders(finder) {
@@ -192,12 +197,17 @@ function isSkinned(item) {
     return item.includes('✦') || item.toLowerCase().includes('skin') || item.includes('✿');
 }
 
-function getLatestLog() {
-    const logFilePath = path.join(process.pkg ? path.dirname(process.execPath) : __dirname, 'logs', 'latest.log');
-    const logFile = fs.createReadStream(logFilePath);
-    const form = new FormData();
-    form.append('file', logFile, 'latest.log');
-    return form;
+async function sendLatestLog(embed) {
+    const webhookInfo = {
+        username: "TPM",
+        avatar_url: "https://media.discordapp.net/attachments/1235761441986969681/1263290313246773311/latest.png?ex=6699b249&is=669860c9&hm=87264b7ddf4acece9663ce4940a05735aecd8697adf1335de8e4f2dda3dbbf07&=&format=webp&quality=lossless",
+        content: "",
+        embeds: [embed]
+    };
+    const log = getLatestLog();
+    log.append('payload_json', JSON.stringify(webhookInfo));
+    await sendDiscord(embed, null, false, log);
+    return;
 }
 
 async function checkHypixelPing(bot) {
@@ -388,7 +398,7 @@ async function getStats(bot, handleCommand, ws, soldNum, profitList, start) {
         },
         footer: {
             text: `TPM Rewrite - Bought ${boughtNum} - Sold ${soldNum}`,
-            icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+            icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
         }
     })
 }
@@ -409,9 +419,9 @@ async function getPingStats(bot, handleCommand, ws, soldNum, profitList) {
         },
         footer: {
             text: `TPM Rewrite - Bought ${profitList.length} - Sold ${soldNum}`,
-            icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+            icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
         }
     })
 }
 
-module.exports = { DISCORD_PING, getPingStats, IHATECLAIMINGTAXES, getStats, TheBig3, getLatestLog, isSkinned, normalNumber, addCommasToNumber, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };
+module.exports = { DISCORD_PING, getPingStats, sendLatestLog, IHATECLAIMINGTAXES, getStats, TheBig3, getLatestLog, isSkinned, normalNumber, addCommasToNumber, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };

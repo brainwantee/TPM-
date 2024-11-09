@@ -1,6 +1,6 @@
 const prompt = require('prompt-sync')();
 const { randomUUID } = require('crypto');
-const { logmc, updateIgns, getIgns } = require('./logger.js');
+const { logmc, updateIgns, getIgns, error } = require('./logger.js');
 const readline = require('readline');
 const rl = readline.createInterface({
     input: process.stdin,
@@ -9,7 +9,7 @@ const rl = readline.createInterface({
 
 const AhBot = require('./TPM-bot/AhBot.js');
 const TpmSocket = require('./TpmSocket.js');
-const { sendDiscord } = require('./TPM-bot/Utils.js');
+const { sendDiscord, sendLatestLog } = require('./TPM-bot/Utils.js');
 const { config, updateConfig } = require('./config.js');
 
 let { igns, autoRotate } = config;
@@ -70,7 +70,7 @@ testIgn();
         },
         footer: {
             text: `The "Perfect" Macro Rewrite`,
-            icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+            icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
         }
     })
 
@@ -98,7 +98,7 @@ async function destroyBot(ign, secondary = true) {
             },
             footer: {
                 text: `The "Perfect" Macro Rewrite`,
-                icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
             }
         })
     }
@@ -130,7 +130,7 @@ async function startBot(ign, tws, secondary = false) {
                 },
                 footer: {
                     text: `The "Perfect" Macro Rewrite`,
-                    icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                    icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                 }
             })
         }
@@ -159,7 +159,7 @@ function rotate(ign) {
             },
             footer: {
                 text: `The "Perfect" Macro Rewrite`,
-                icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
             }
         })
         setTimeout(() => {
@@ -178,11 +178,36 @@ function rotate(ign) {
                 },
                 footer: {
                     text: `The "Perfect" Macro Rewrite`,
-                    icon_url: 'https://media.discordapp.net/attachments/1223361756383154347/1263302280623427604/capybara-square-1.png?ex=6699bd6e&is=66986bee&hm=d18d0749db4fc3199c20ff973c25ac7fd3ecf5263b972cc0bafea38788cef9f3&=&format=webp&quality=lossless&width=437&height=437',
+                    icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                 }
             })
         }, start);
     }, stop);
+}
+
+async function crashReport(e){
+    error('There was an error:', e);
+    await sendLatestLog({
+        title: 'Crash :(',
+        color: 15755110,
+        fields: [
+            {
+                name: '',
+                value: `Error: ${e}\nPlease report to a dev!`,
+            }
+        ],
+        thumbnail: {
+            url: `https://media.discordapp.net/attachments/1261825756615540839/1304911212760530964/983ecb82e285eee55ef25dd2bfbe9d4d.png?ex=67311cc5&is=672fcb45&hm=de4e5dd382d13870fdefa948d295fc5d1ab8de6678f86c36cd61fa1fd0cc5dd2&=&format=webp&quality=lossless&width=888&height=888`,
+        },
+        footer: {
+            text: `TPM Rewrite`,
+            icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+        }
+    });
+
+    setTimeout(() => {
+        process.exit(1);
+    }, 500)
 }
 
 function askUser() {
@@ -215,3 +240,6 @@ function askUser() {
 }
 
 askUser();
+
+process.on('unhandledRejection', crashReport);
+process.on('uncaughtException', crashReport);
