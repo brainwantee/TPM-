@@ -142,7 +142,7 @@ class RelistHandler {
                     }
 
                     state.set(null);
-                    setTimeout(() =>{
+                    setTimeout(() => {
                         this.ready = true;
                     }, 5000)
 
@@ -267,7 +267,7 @@ class RelistHandler {
             }), false)
 
         } catch (e) {
-            if(getWindowName(this.bot.currentWindow).includes('Create')) this.bot.betterClick(13);//remove item from slot
+            if (getWindowName(this.bot.currentWindow)?.includes('Create')) this.bot.betterClick(13);//remove item from slot
             await sleep(250);
             error(`Error listing`, e);
             this.bot.betterWindowClose();
@@ -383,7 +383,7 @@ class RelistHandler {
         }
     }
 
-    calcPriceCut(price){
+    calcPriceCut(price) {
         for (let i = 0; i < percentOfTarget.length; i += 3) {
             let lowerBound = normalNumber(percentOfTarget[i]);
             let upperBound = normalNumber(percentOfTarget[i + 1]);
