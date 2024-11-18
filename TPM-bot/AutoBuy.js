@@ -1,8 +1,8 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
-const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, noColorCodes } = require('./Utils.js');
+const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, noColorCodes, sendDiscord, formatNumber, nicerFinders } = require('./Utils.js');
 const { logmc, debug, removeIgn, error } = require('../logger.js');
-let { delay, waittime, skip: skipSettings, clickDelay, bedSpam, delayBetweenClicks, angryCoopPrevention: coop } = config;
+let { delay, waittime, skip: skipSettings, clickDelay, bedSpam, delayBetweenClicks, angryCoopPrevention: coop, sendAllFlips: flipsWebhook } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
 skipMinProfit = normalNumber(skipMinProfit);
 delayBetweenClicks = delayBetweenClicks || 3;
@@ -222,6 +222,25 @@ class AutoBuy {
             }
             webhook.objectAdd(weirdItemName, startingBid, target, profit, auctionID, bed, finder, itemName, tag);
             debug(`Found flip ${auctionID}`);
+            if (flipsWebhook) {
+                sendDiscord({
+                    title: 'Flip Found',
+                    color: 9929727,
+                    fields: [
+                        {
+                            name: '',
+                            value: `${nicerFinders(finder)}: \`${noColorCodes(itemName)}\` \`${formatNumber(startingBid)}\` ⇨ \`${formatNumber(target)}\` (\`${formatNumber(profit)}\` profit) [${bed}]`,
+                        }
+                    ],
+                    thumbnail: {
+                        url: bot.head,
+                    },
+                    footer: {
+                        text: `TPM Rewrite - Found by ${nicerFinders(finder)}`,
+                        icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+                    }
+                }, bot.head, false, null, true)
+            }
         })
 
     }

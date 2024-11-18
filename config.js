@@ -16,6 +16,9 @@ const defaultConfig = `{
     //{0} is item. {1} is profit. {2} is price. {3} is target. {4} is buyspeed. {5} is BED or NUGGET. {6} is finder. {7} is the auctionID. {8} is the shortened price.
     "webhookFormat": "You bought [\`\`{0}\`\`](https://sky.coflnet.com/auction/{7}) for \`\`{2}\`\` (\`\`{1}\`\` profit) in \`\`{4}ms\`\`",
     
+    //Send every flip seen to this webhook. Good for testing configs
+    "sendAllFlips": "https://discord.com/api/webhooks/1303439810748350626/ksiBCLlKWP1fAj8FgJDB6gGGYbwbXYNzBOp5j0oJvCVgA2FVIs4SZBZbSxx7p-2IEM7s",
+
     //Flip on a friend's island
     "visitFriend": "",
 

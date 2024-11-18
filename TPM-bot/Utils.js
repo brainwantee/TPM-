@@ -1,6 +1,6 @@
 const { config } = require('../config.js');
 const { debug, error, getLatestLog } = require('../logger.js');
-const { webhook } = config;
+const { webhook, sendAllFlips: flipsWebhook } = config;
 const axios = require('axios');
 
 const DISCORD_PING = !config.discordID ? "" : `<@${config.discordID}>`;
@@ -111,7 +111,8 @@ function noColorCodes(text) {
     return text?.replace(/§./g, '')?.replace('§', '')//cofl sometimes sends messages that are cut off so I need the second one aswell
 }
 
-async function sendDiscord(embed, avatar = null, ping = false, file = null, attempt = 0) {
+async function sendDiscord(embed, avatar = null, ping = false, file = null, flips = false, attempt = 0) {
+    let currentWebhook = flips ? flipsWebhook : webhook;
     if (webhook) {
         try {
             let webhookOptions = {
@@ -127,16 +128,16 @@ async function sendDiscord(embed, avatar = null, ping = false, file = null, atte
             } else {
                 var headers = { 'Content-Type': 'application/json' };
             }
-            if (Array.isArray(webhook)) {
-                await Promise.all(webhook.map(hook => axios.post(hook, webhookOptions, { headers })));
+            if (Array.isArray(currentWebhook)) {
+                await Promise.all(currentWebhook.map(hook => axios.post(hook, webhookOptions, { headers })));
             } else {
-                await axios.post(webhook, webhookOptions, { headers });
+                await axios.post(currentWebhook, webhookOptions, { headers });
             }
         } catch (e) {
             error(`Webhook error on attempt ${attempt}`, e);
             if (attempt < 3) {
                 await sleep(5000);
-                await sendDiscord(embed, avatar, ping, file, attempt + 1);
+                await sendDiscord(embed, avatar, ping, file, flips, attempt + 1);
             }
         }
     }
@@ -182,15 +183,15 @@ function normalNumber(num) {
     if (!num) return NaN;
     num = num.toLowerCase();
     if (num.includes('t')) {
-        return parseInt(num.replace('t', '')) * 1_000_000_000_000;
+        return parseFloat(num.replace('t', '')) * 1_000_000_000_000;
     } else if (num.includes('b')) {
-        return parseInt(num.replace('b', '')) * 1_000_000_000;
+        return parseFloat(num.replace('b', '')) * 1_000_000_000;
     } else if (num.includes('m')) {
-        return parseInt(num.replace('m', '')) * 1_000_000;
+        return parseFloat(num.replace('m', '')) * 1_000_000;
     } else if (num.includes('k')) {
-        return parseInt(num.replace('k', '')) * 1_000;
+        return parseFloat(num.replace('k', '')) * 1_000;
     }
-    return parseInt(num);
+    return parseFloat(num);
 }
 
 function isSkinned(item) {

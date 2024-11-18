@@ -53,7 +53,10 @@ class AutoIsland {
                         this.bot.chat(`/visit ${this.otherIsland}`);
                         await betterOnce(this.bot, 'windowOpen');
                         await sleep(150);
-                        const lore = getSlotLore(this.bot.currentWindow?.slots[11]);
+                        let lore = getSlotLore(this.bot.currentWindow?.slots[11]);
+                        if(!lore){
+                            lore = getSlotLore(this.bot.currentWindow?.slots[13]);
+                        }
                         //console.log(lore);
                         if (lore.includes('§cIsland disallows guests!')) {
                             this.otherIsland = false;
