@@ -17,7 +17,7 @@ const defaultConfig = `{
     "webhookFormat": "You bought [\`\`{0}\`\`](https://sky.coflnet.com/auction/{7}) for \`\`{2}\`\` (\`\`{1}\`\` profit) in \`\`{4}ms\`\`",
     
     //Send every flip seen to this webhook. Good for testing configs
-    "sendAllFlips": "https://discord.com/api/webhooks/1303439810748350626/ksiBCLlKWP1fAj8FgJDB6gGGYbwbXYNzBOp5j0oJvCVgA2FVIs4SZBZbSxx7p-2IEM7s",
+    "sendAllFlips": "",
 
     //Flip on a friend's island
     "visitFriend": "",

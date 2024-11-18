@@ -53,7 +53,7 @@ class CoflWs {
             if (this.testMessage(msg)) {
                 logmc(msg);
             } else {
-                debug(`Blocked cofl message: ${msg}`);
+                debug(`Blocked cofl message: ${noColorCodes(msg)}`);
             }
         })
 
