@@ -321,8 +321,8 @@ class TpmSocket {
                 break;
             }
             case "sendWebhook": {
-                let { embed, avatar, ping, file, flips } = data;
-                sendDiscord(embed, avatar, ping, file, flips);
+                let { embed, avatar, ping, name, file, flips } = data;
+                sendDiscord(embed, avatar, ping, name, file, flips);
                 break;
             }
             case "getQueue": {
