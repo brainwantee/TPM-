@@ -2,7 +2,7 @@ const { config } = require('../config.js');
 const { sleep, betterOnce, getWindowName, noColorCodes, getSlotLore, sendDiscord, onlyNumbers, addCommasToNumber, normalNumber, isSkinned, formatNumber } = require('./Utils.js');
 const { logmc, error, debug } = require('../logger.js');
 const { useCookie, relist, percentOfTarget, listHours, doNotRelist, useItemImage } = config;
-let { profitOver, skinned, tags, finders } = doNotRelist;
+let { profitOver, skinned, tags, finders, stacks: stackedListing } = doNotRelist;
 profitOver = normalNumber(profitOver);
 
 const coopRegexPlayers = /Co-op with (\d+) players:/;
@@ -136,7 +136,7 @@ class RelistHandler {
                                 text: `TPM Rewrite - Purse: ${addCommasToNumber(bot.getPurse(true) + totalCollected)}`,
                                 icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                             }
-                        }, useItemImage ? this.bot.head : null)
+                        }, useItemImage ? this.bot.head : null, false, this.bot.username)
                     } else {
                         bot.betterWindowClose();
                     }
@@ -169,9 +169,10 @@ class RelistHandler {
             state.set('listing');
             bot.chat(`/viewauction ${auctionID}`);
             await betterOnce(bot, 'windowOpen');
-            let itemUuid = this.getItemUuid(bot.currentWindow.slots[13]);
+            let itemUuid = this.getItemUuid(bot.currentWindow.slots[13], true);
+            let itemCount = bot.currentWindow.slots[13]?.count;
             if (!itemUuid) {
-                throw new Error(`Failed to get item uuid :( ${itemUuid} ${JSON.stringify(bot.currentWindow.slots[13])}`);
+                debug(`Failed to get item uuid :( ${itemUuid} ${JSON.stringify(bot.currentWindow.slots[13])}`);
             }
             debug(`Item uuid: ${itemUuid}`);
             bot.betterClick(31);
@@ -182,9 +183,15 @@ class RelistHandler {
             const uuids = [];//item not found debugging
             bot.currentWindow.slots.forEach(async slot => {
                 let uuid = this.getItemUuid(slot);
+                let count = slot?.count;
                 uuids.push(`${uuid}:${uuid === itemUuid}`);
                 if (uuid === itemUuid) {
                     debug(`Found item in ${slot.slot}`);
+                    if (count !== itemCount && stackedListing) {
+                        const pricePerItem = price / itemCount;
+                        price = pricePerItem * count;//List for the correct price if multiple in inv
+                        logmc(`§6[§bTPM§6]§c ${weirdItemName} had ${itemCount} in slot but combined with another item so there's now ${count}. Listing price is now ${price}`)
+                    }
                     await sleep(2500);//issue with item not loading
                     bot.betterClick(slot.slot);
                 }
@@ -276,8 +283,24 @@ class RelistHandler {
         }
     }
 
-    getItemUuid(slot) {
-        return slot?.nbt?.value?.ExtraAttributes?.value?.uuid?.value;
+    getItemUuid(slot, message = false) {
+        let uuid = slot?.nbt?.value?.ExtraAttributes?.value?.uuid?.value;
+        if (!uuid) {
+            if (message) logmc(`§6[§bTPM§6]§c Failed to get item uuid :( Resorting to item tag`);
+            uuid = this.getName(slot?.nbt?.value?.ExtraAttributes?.value);
+        }
+        return uuid;
+    }
+
+    getName(ExtraAttributes) {
+        if (!ExtraAttributes) return null;
+        let id = ExtraAttributes.id.value;
+        const split = id?.split('_');
+        const first = split[0];
+        if (first === 'RUNE' || first === "UNIQUE") {//Don't want to list incorrect rune
+            id = `${Object.keys(ExtraAttributes.runes.value)[0]}_RUNE`;
+        }
+        return id;
     }
 
     checkRelist(profit, finder, itemName, tag, auctionID, price, weirdItemName, fromQueue = false) {
@@ -291,6 +314,7 @@ class RelistHandler {
         if (profit > profitOver) reasons.push(`profit is over ${profitOver}`);
         if (isSkinned(itemName) && skinned) reasons.push(`it's skinned`);
         if (finders.includes(finder)) reasons.push(`${finder} is a blocked finder`);
+        if (profit <= 0) reasons.push('proft is under 0');
 
         if (reasons.length > 0) {
             logmc(`§6[§bTPM§6] §c${itemName}§c is not being listing because ${reasons.join(' and ')}!`);
@@ -350,7 +374,7 @@ class RelistHandler {
                 }
             })
 
-            await betterOnce(bot, 'windowOpen');
+            await betterOnce(bot._client, 'open_window');//Faster cause if we use windowOpen then it won't find it sometimes (open_window is used to claim it so yea)
 
             sendDiscord({
                 title: 'Delisted auction',
@@ -368,7 +392,7 @@ class RelistHandler {
                     text: `TPM Rewrite`,
                     icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                 }
-            }, useItemImage ? this.bot.head : null);
+            }, useItemImage ? this.bot.head : null, false, this.bot.username);
             this.declineSoldAuction();
 
             bot.betterWindowClose();

@@ -47,8 +47,8 @@ class AutoIsland {
                     }
                 } else if (this.otherIsland && this.otherIsland.trim() !== "") {
                     let scoreboard = this.bot?.scoreboard?.sidebar?.items?.map(item => item?.displayName?.getText(null)?.replace(item?.name, ''));
-                    let guests = scoreboard.find(line => line.includes('✌'));
-                    let ownIsland = scoreboard.find(line => line.includes('Your Island'));
+                    let guests = scoreboard.find(line => line?.includes('✌'));
+                    let ownIsland = scoreboard.find(line => line?.includes('Your Island'));
                     if (!guests || ownIsland) {
                         this.bot.chat(`/visit ${this.otherIsland}`);
                         await betterOnce(this.bot, 'windowOpen');
@@ -86,7 +86,8 @@ class AutoIsland {
 
                 }
             } catch (e) {
-                debug(e);
+                error(e);
+                this.checkLocraw(confirm);
             };
         }
 

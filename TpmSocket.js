@@ -1,6 +1,7 @@
-const { logmc, debug, error, startTracker } = require('./logger.js');
-const { sleep, normalNumber, sendDiscord, sendLatestLog } = require('./TPM-bot/Utils.js');
+const { logmc, debug, error, startTracker, getIgns } = require('./logger.js');
+const { sleep, normalNumber, sendDiscord, sendLatestLog, formatNumber, nicerFinders } = require('./TPM-bot/Utils.js');
 const { config } = require('./config.js');
+const axios = require('axios');
 let { igns, webhook, discordID, allowedIDs } = config;
 
 if (allowedIDs) {
@@ -149,6 +150,26 @@ class TpmSocket {
             }
             case "startBot": {
                 debug(`Starting ${data.username}`)
+                if (getIgns().includes(data.username)) {
+                    sendDiscord({
+                        title: 'Error!',
+                        color: 13313596,
+                        fields: [
+                            {
+                                name: '',
+                                value: `\`${data.username}\` is already running!!`,
+                            }
+                        ],
+                        thumbnail: {
+                            url: this.bots[data.username].getBot().head,
+                        },
+                        footer: {
+                            text: `TPM Rewrite`,
+                            icon_url: 'https://media.discordapp.net/attachments/1261825756615540839/1304911212760530964/983ecb82e285eee55ef25dd2bfbe9d4d.png?ex=67311cc5&is=672fcb45&hm=de4e5dd382d13870fdefa948d295fc5d1ab8de6678f86c36cd61fa1fd0cc5dd2&=&format=webp&quality=lossless&width=888&height=888',
+                        }
+                    })
+                    break;
+                }
                 this.startBot(data.username, this, true);
                 break;
             }
@@ -158,7 +179,7 @@ class TpmSocket {
                 break;
             }
             case "buyFlip": {
-                let username = data.username;
+                let { auctionId, username } = data;
                 if (!username) {
                     username = Object.keys(this.bots)[0];
                 }
@@ -167,7 +188,18 @@ class TpmSocket {
                     debug(`Didn't find a bot for ${username}`);
                     return;
                 }
-                bot.state.queueAdd({ finder: "EXTERNAL", profit: 0, itemName: data.auctionId, auctionID: data.auctionId }, 'buying', 4);
+                const queueData = { finder: "EXTERNAL", profit: 0, itemName: auctionId, auctionID: auctionId };
+                try {
+                    const data = (await axios.get(`https://sky.coflnet.com/api/auction/${auctionId}`)).data;
+                    debug(JSON.stringify(data));
+                    queueData.itemName = data.itemName;
+                    queueData.startingBid = data.startingBid;
+                    queueData.tag = data.tag;
+                    bot.state.queueAdd(queueData, 'externalBuying', 5)
+                } catch (e) {
+                    debug(e);
+                    bot.state.queueAdd(queueData, 'buying', 5)
+                }
                 break;
             }
             case "sendTerminal": {
@@ -194,7 +226,7 @@ class TpmSocket {
                         }
                     ],
                     thumbnail: {
-                        url: `https://mc-heads.net/head/${bot.getBot().uuid}.png`,
+                        url: bot.getBot().head,
                     },
                     footer: {
                         text: `TPM Rewrite`,
@@ -226,7 +258,7 @@ class TpmSocket {
                         }
                     ],
                     thumbnail: {
-                        url: `https://mc-heads.net/head/${bot.getBot().uuid}.png`,
+                        url: bot.getBot().head,
                     },
                     footer: {
                         text: `TPM Rewrite`,
@@ -245,7 +277,7 @@ class TpmSocket {
                             }
                         ],
                         thumbnail: {
-                            url: `https://mc-heads.net/head/${bot.getBot().uuid}.png`,
+                            url: bot.getBot().head,
                         },
                         footer: {
                             text: `TPM Rewrite`,
@@ -279,13 +311,63 @@ class TpmSocket {
                         }
                     ],
                     thumbnail: {
-                        url: `https://mc-heads.net/head/${bot.uuid}.png`,
+                        url: bot.head,
                     },
                     footer: {
                         text: `TPM Rewrite`,
                         icon_url: 'https://media.discordapp.net/attachments/1261825756615540839/1304911212760530964/983ecb82e285eee55ef25dd2bfbe9d4d.png?ex=67311cc5&is=672fcb45&hm=de4e5dd382d13870fdefa948d295fc5d1ab8de6678f86c36cd61fa1fd0cc5dd2&=&format=webp&quality=lossless&width=888&height=888',
                     }
                 })
+                break;
+            }
+            case "sendWebhook": {
+                let { embed, avatar, ping, file, flips } = data;
+                sendDiscord(embed, avatar, ping, file, flips);
+                break;
+            }
+            case "getQueue": {
+                let { username } = data;
+                if (!username) {
+                    username = Object.keys(this.bots)[0];
+                }
+
+                const bot = this.bots[username];
+                if (!bot) {
+                    debug(`Didn't find a bot for ${username}`);
+                    return;
+                }
+
+                let queue = bot.state.getQueue();
+                queue = queue.map(element => {
+                    const coolNameFunc = coolerQueue[element.state]
+                    if (coolNameFunc) {
+                        return coolNameFunc(element.action);
+                    } else if (typeof element.action == 'object') {
+                        return JSON.stringify(element.action);
+                    }
+                    return element.action;
+                })
+                if (queue.length > 10) {
+                    queue = ["Sorry :( It's too big to show so I reccomend restarting cause there's prob a bug"];
+                }
+                sendDiscord({
+                    title: 'Queue',
+                    color: 7448274,
+                    fields: [
+                        {
+                            name: '',
+                            value: `**Queue:**\n${queue.join('\n')}`,
+                        }
+                    ],
+                    thumbnail: {
+                        url: bot.getBot().head,
+                    },
+                    footer: {
+                        text: `TPM Rewrite`,
+                        icon_url: 'https://media.discordapp.net/attachments/1261825756615540839/1304911212760530964/983ecb82e285eee55ef25dd2bfbe9d4d.png?ex=67311cc5&is=672fcb45&hm=de4e5dd382d13870fdefa948d295fc5d1ab8de6678f86c36cd61fa1fd0cc5dd2&=&format=webp&quality=lossless&width=888&height=888',
+                    }
+                }, bot.getBot().head, false, bot.getBot().username)
+                break;
             }
         }
     }
@@ -313,6 +395,35 @@ class TpmSocket {
             }
             resolve();
         });
+    }
+}
+
+const coolerQueue = {//use state as key to get a cool message
+    buying: function (action) {
+        const { finder, profit, itemName, auctionID } = action;
+        return `Buying [\`${itemName}\`](https://sky.coflnet.com/a/${auctionID}) from ${nicerFinders(finder)} (\`${formatNumber(profit)}\` profit)`
+    },
+    claiming: function (action) {
+        return `Claiming a [sold auction](https://sky.coflnet.com/a/${action})`;
+    },
+    listing: function (action) {
+        const { profit, finder, itemName, auctionID, price } = action;
+        return `Listing [\`${itemName}\`](https://sky.coflnet.com/a/${auctionID}) for \`${formatNumber(price)}\` from ${nicerFinders(finder)} (\`${formatNumber(profit)}\` profit)`
+    },
+    listingNoName: function (action) {
+        const { auctionID, price } = action;
+        return `Listing [an auction](https://sky.coflnet.com/a/${auctionID}) for \`${formatNumber(price)}\``;
+    },
+    delisting: function (action) {
+        const { auctionID, itemUuid } = action;
+        return `Delisting [\`${itemUuid}\`](https://sky.coflnet.com/a/${auctionID})`;
+    },
+    death: function () {
+        return `Dying :(`
+    },
+    externalBuying: function (action) {
+        const { finder, profit, itemName, auctionID, startingBid } = action;
+        return `Buying [\`${itemName}\`](https://sky.coflnet.com/a/${auctionID}) from ${finder} for \`${formatNumber(startingBid)}\` (\`${formatNumber(profit)}\` profit)`
     }
 }
 

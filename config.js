@@ -13,7 +13,7 @@ const defaultConfig = `{
     //Refer to https://discord.com/channels/1261825756615540836/1265035635845234792 for help
     "webhook": "",
 
-    //{0} is item. {1} is profit. {2} is price. {3} is target. {4} is buyspeed. {5} is BED or NUGGET. {6} is finder. {7} is the auctionID. {8} is the shortened price.
+    //{0} is item. {1} is profit. {2} is price. {3} is target. {4} is buyspeed. {5} is BED or NUGGET. {6} is finder. {7} is the auctionID. {8} is the shortened price. {9} is the bot's username
     "webhookFormat": "You bought [\`\`{0}\`\`](https://sky.coflnet.com/auction/{7}) for \`\`{2}\`\` (\`\`{1}\`\` profit) in \`\`{4}ms\`\`",
     
     //Send every flip seen to this webhook. Good for testing configs
@@ -56,16 +56,22 @@ const defaultConfig = `{
     //This is an OR statement btw
     "skip": {
 
-        //skip on every flip
+        //Skip on every flip
         "always": false,
 
         //Skip on flips with a profit over x
         "minProfit": "25m",
 
+        //Skip on flips over this %
+        "profitPercentage": "500",
+
+        //Skip on flips over this price
+        "minPrice": "500m",
+
         //Skip on user finder flips
         "userFinder": true,
 
-        // Skip on cosmetic flips
+        //Skip on cosmetic flips
         "skins": true
 
     },
@@ -76,14 +82,19 @@ const defaultConfig = `{
         //Items over x profit
         "profitOver": "50m",
 
-        //cosmetic items
+        //Cosmetic items
         "skinned": true,
 
         //Don't list certain item tags
         "tags": ["HYPERION"],
 
         //Finders to not list. Options: USER, CraftCost, TFM, AI, SNIPER, STONKS, FLIPPER
-        "finders": ["USER"]
+        "finders": ["USER"],
+
+        //If an item is in a new stack then this controls if it's listed
+        //For example, if you have 1 spooky fragment in your inventory and then buy 4 you will now obviously have 5 in a stack.
+        //If this is set to true, it will list the 5 fragments for the price of 1 fragment multiplied by 5.
+        "stacks": false
 
     },
 

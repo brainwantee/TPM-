@@ -110,7 +110,7 @@ class MessageHandler {
                     target = formatNumber(target);
                     let formattedProfit = formatNumber(profit);
                     let formattedPrice = formatNumber(priceNoCommas);
-                    let formattedString = this.formatString(webhookFormat, item, formattedProfit, price, target, buyspeed, bed, finder, auctionID, formattedPrice)
+                    let formattedString = this.formatString(webhookFormat, item, formattedProfit, price, target, buyspeed, bed, finder, auctionID, formattedPrice, this.bot.username)
                     this.updateBought(profit);
                     let thumbnail = this.bot.head;
                     if (useItemImage && itemTag) {
@@ -133,7 +133,7 @@ class MessageHandler {
                                 text: `TPM Rewrite - Found by ${finder} - Purse ${formatNumber(this.bot.getPurse(true) - parseInt(priceNoCommas, 10))}`,
                                 icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                             }
-                        }, useItemImage ? this.bot.head : null)
+                        }, useItemImage ? this.bot.head : null, false, this.bot.username)
                     } else {
                         sendDiscord({
                             title: 'LEGENDARY FLIP WOOOOO!!!',
@@ -151,7 +151,7 @@ class MessageHandler {
                                 text: `TPM Rewrite - Found by ${finder} - Purse ${formatNumber(this.bot.getPurse(true) - parseInt(priceNoCommas, 10))}`,
                                 icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                             }
-                        }, useItemImage ? this.bot.head : null, true)
+                        }, useItemImage ? this.bot.head : null, true, this.bot.username)
                     }
 
                     this.tpm.send(JSON.stringify({
@@ -200,7 +200,7 @@ class MessageHandler {
                 const auctionID = clickEvent.replace('/viewauction ', '').replace(/-/g, '');
                 if (!object) {
                     this.soldObject[`${stripItemName(item)}:${IHATECLAIMINGTAXES(price)}`] = { auctionID };//allows for cofl link in webhook
-                    debug(`added sold obbject ${stripItemName(item)}:${Math.round(IHATECLAIMINGTAXES(price))}`);
+                    debug(`added sold obbject ${stripItemName(item)}:${Math.round(IHATECLAIMINGTAXES(price))} ${auctionID}`);
                 }
                 this.state.setAction();
 
@@ -221,10 +221,10 @@ class MessageHandler {
                 const priceNoCommas = onlyNumbers(price);
                 debug(`${stripItemName(item)}:${priceNoCommas}`);
                 const object = this.soldObject[`${stripItemName(item)}:${priceNoCommas}`];
-                debug(object);
+                debug(JSON.stringify(object));
                 let profitMessage = '';
                 if (object?.profit) profitMessage = ` (\`${formatNumber(object.profit)}\` profit)`
-                debug(object);
+                debug(JSON.stringify(object));
                 let thumbnail = this.bot.head;
                 if (object?.itemTag) {
                     thumbnail = `https://sky.coflnet.com/static/icon/${object.itemTag}`;
@@ -246,7 +246,7 @@ class MessageHandler {
                             text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse(true) + priceNoCommas)}`,
                             icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                         }
-                    }, useItemImage ? this.bot.head : null)
+                    }, useItemImage ? this.bot.head : null, false, this.bot.username)
                     setTimeout(() => {
                         this.bot.getPurse();//fix incorrect purse after claiming
                     }, 4000)

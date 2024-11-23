@@ -12,7 +12,7 @@ const TpmSocket = require('./TpmSocket.js');
 const { sendDiscord, sendLatestLog } = require('./TPM-bot/Utils.js');
 const { config, updateConfig } = require('./config.js');
 
-let { igns, autoRotate } = config;
+let { igns, autoRotate, useItemImage } = config;
 let bots = {};
 let askPrefixes = {};
 let tws;
@@ -49,11 +49,18 @@ testIgn();
     }
 
     let thumbnail = 'https://images-ext-1.discordapp.net/external/7YiWo1jf2r78hL_2HpVRGNDcx_Nov0aDjtrG7AZ4Hxc/%3Fsize%3D4096/https/cdn.discordapp.com/icons/1261825756615540836/983ecb82e285eee55ef25dd2bfbe9d4d.png?format=webp&quality=lossless&width=889&height=889';
+    let avatar = null;
+    let webhookName = "TPM";
 
     const botNames = Object.keys(bots);
 
     if (botNames.length == 1) {
-        thumbnail = bots[botNames[0]].getBot().head;
+        const bot = bots[botNames[0]].getBot()
+        thumbnail = bot.head;
+        if (useItemImage) {
+            avatar = thumbnail;
+            webhookName = bot.username;
+        }
     }
 
     sendDiscord({
@@ -72,7 +79,7 @@ testIgn();
             text: `The "Perfect" Macro Rewrite`,
             icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
         }
-    })
+    }, avatar, false, webhookName)
 
 })();
 
@@ -100,14 +107,14 @@ async function destroyBot(ign, secondary = true) {
                 text: `The "Perfect" Macro Rewrite`,
                 icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
             }
-        })
+        }, useItemImage ? bot.head : null, false, bot.username)
     }
 
 }
 
 async function startBot(ign, tws, secondary = false) {
     return new Promise(async (resolve) => {
-        const tempBot = new AhBot(ign, tws);
+        const tempBot = new AhBot(ign, tws, destroyBot);
         await tempBot.createBot();
         bots[ign] = tempBot;
         askPrefixes[bots[ign].initAskPrefix(igns)?.toLowerCase()] = ign;
@@ -132,7 +139,7 @@ async function startBot(ign, tws, secondary = false) {
                     text: `The "Perfect" Macro Rewrite`,
                     icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                 }
-            })
+            }, useItemImage ? tempBot.getBot().head : null, false, ign)
         }
         resolve();
     })
@@ -161,7 +168,7 @@ function rotate(ign) {
                 text: `The "Perfect" Macro Rewrite`,
                 icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
             }
-        })
+        }, useItemImage ? bot.head : null, false, bot.username)
         setTimeout(() => {
             startBot(ign, tws);
             sendDiscord({
@@ -180,12 +187,12 @@ function rotate(ign) {
                     text: `The "Perfect" Macro Rewrite`,
                     icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                 }
-            })
+            }, useItemImage ? bot.head : null, false, bot.username)
         }, start);
     }, stop);
 }
 
-async function crashReport(e){
+async function crashReport(e) {
     error('There was an error:', e);
     await sendLatestLog({
         title: 'Crash :(',
@@ -242,4 +249,4 @@ function askUser() {
 askUser();
 
 process.on('unhandledRejection', crashReport);
-process.on('uncaughtException', crashReport);
+process.on('uncaughtException',crashReport);

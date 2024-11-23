@@ -171,6 +171,9 @@ async function info(...args) {
 
 function getLatestLog() {
     const logFilePath = path.join(process.pkg ? path.dirname(process.execPath) : __dirname, 'logs', 'latest.log');
+    if (!fs.existsSync(logFilePath)) {
+        throw new Error(`Log file not found at ${logFilePath}`);
+    }
     const logFile = fs.createReadStream(logFilePath);
     const form = new FormData();
     form.append('file', logFile, 'latest.log');

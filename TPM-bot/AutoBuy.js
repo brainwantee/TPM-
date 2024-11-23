@@ -3,9 +3,12 @@ const { config } = require('../config.js');
 const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, noColorCodes, sendDiscord, formatNumber, nicerFinders } = require('./Utils.js');
 const { logmc, debug, removeIgn, error } = require('../logger.js');
 let { delay, waittime, skip: skipSettings, clickDelay, bedSpam, delayBetweenClicks, angryCoopPrevention: coop, sendAllFlips: flipsWebhook } = config;
-let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins } = skipSettings;
+let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins, profitPercentage: skipMinPercent, minPrice: skipMinPrice } = skipSettings;
 skipMinProfit = normalNumber(skipMinProfit);
+skipMinPercent = normalNumber(skipMinPercent);
+skipMinPrice = normalNumber(skipMinPrice);
 delayBetweenClicks = delayBetweenClicks || 3;
+if (useSkip && delay < 150) delay = 150;
 
 class AutoBuy {
 
@@ -18,7 +21,9 @@ class AutoBuy {
         this.state = state;
         this.relist = relist;
         this.recentProfit = 0;
+        this.recentPercent = 0;
         this.recentFinder = 0;
+        this.recentPrice = 0;
         this.recentlySkipped = false;
         this.recentName = null;
         this.bedFailed = false;
@@ -44,7 +49,9 @@ class AutoBuy {
                 const finderCheck = this.recentFinder === "USER" && skipUser;
                 const skinCheck = isSkin(this.recentName) && skipSkins;
                 const profitCheck = this.recentProfit > skipMinProfit;
-                let useSkipOnFlip = profitCheck || skinCheck || finderCheck || useSkip;
+                const percentCheck = this.recentPercent > skipMinPercent;
+                const priceCheck = this.recentPrice > skipMinPrice;
+                let useSkipOnFlip = profitCheck || skinCheck || finderCheck || percentCheck || priceCheck || useSkip;
                 firstGui = Date.now();
                 webhook.setBuySpeed(firstGui);
                 let item = (await this.itemLoad(31))?.name;
@@ -62,6 +69,8 @@ class AutoBuy {
                         if (finderCheck) skipReasons.push('it was a user flip');
                         if (profitCheck) skipReasons.push('it was over skip min profit');
                         if (skinCheck) skipReasons.push('it was a skin');
+                        if (percentCheck) skipReasons.push('it was over skip min percentage');
+                        if (priceCheck) skipReasons.push('it was over min price');
                         logmc(`§6[§bTPM§6] §8Used skip because ${skipReasons.join(' and ')}. You can change this in your config`);
                         return;
                     }
@@ -203,6 +212,8 @@ class AutoBuy {
                 this.recentProfit = profit;
                 this.recentFinder = finder;
                 this.recentName = itemName;
+                this.recentPercent = profit / startingBid * 100;
+                this.recentPrice = startingBid;
                 this.bedFailed = false;
                 state.set('buying');
                 state.setAction(currentTime);
@@ -239,7 +250,7 @@ class AutoBuy {
                         text: `TPM Rewrite - Found by ${nicerFinders(finder)}`,
                         icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                     }
-                }, bot.head, false, null, true)
+                }, bot.head, false, "TPM", null, true)
             }
         })
 
@@ -280,14 +291,14 @@ class AutoBuy {
         });
     }
 
-    openExternalFlip(ahid, profit, finder, itemname, price = null) {//queue and buy from discord (maybe webpage in future?) ONLY CALL IF READY!!!
+    openExternalFlip(ahid, profit, finder, itemname, tag, price = null) {//queue and buy from discord (maybe webpage in future?) ONLY CALL IF READY!!!
         this.packets.sendMessage(`/viewauction ${ahid}`);
         this.recentFinder = finder;
         this.recentProfit = profit;
         this.currentOpen = ahid;
         this.bedFailed = true;
         if (price) {//For queue flips, don't include price
-            this.webhook.objectAdd(stripItemName(itemname), price, null, null, ahid, 'EXTERNAL', finder);
+            this.webhook.objectAdd(stripItemName(itemname), price, null, null, ahid, 'EXTERNAL', finder, itemname, tag);
         }
     }
 
@@ -407,6 +418,12 @@ class AutoBuy {
                         this.coflSocket.closeSocket();
                         removeIgn(this.ign);
                         logmc(`§6[§bTPM§6] §c${this.ign} is now dead. May he rest in peace.`)
+                        break;
+                    }
+                    case "externalBuying": {
+                        const { finder, profit, itemName, auctionID, startingBid, tag } = current.action;
+                        this.openExternalFlip(auctionID, profit, finder, itemName, tag, startingBid);
+                        current.state = 'buying';
                         break;
                     }
                 }

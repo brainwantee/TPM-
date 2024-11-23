@@ -14,7 +14,7 @@ const { webhookFormat, useItemImage } = config;
 
 class AhBot {
 
-    constructor(ign, TPMSocket) {
+    constructor(ign, TPMSocket, destroyBot) {
         this.ign = ign;
         this.bot = null;
         this.autoBuy = null;
@@ -28,6 +28,7 @@ class AhBot {
         this.bought = [];
         this.tpm = TPMSocket;
         this.start = Date.now();
+        this.destroyBot = destroyBot;
 
         this.updateBought = this.updateBought.bind(this);
         this.updateSold = this.updateSold.bind(this);//this whole binding thing is getting annoying
@@ -63,8 +64,8 @@ class AhBot {
             coflSocket.closeSocket();
             state.set(null);
             try {
-                reason = JSON.parse(reason).extra[0].text
-            } catch {}
+                reason = JSON.parse(reason).extra.map((element) => { return element.text });
+            } catch { }
             logmc(`§6[§bTPM§6] §c${ign} kicked because ${reason} :(`);
             sendDiscord({
                 title: 'Bot kicked!',
@@ -83,6 +84,7 @@ class AhBot {
                     icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                 }
             }, bot.head, true)
+            this.destroyBot(ign, true);
         })
 
     }
@@ -125,7 +127,7 @@ class AhBot {
                     fields: [
                         {
                             name: '',
-                            value: this.webhook.formatString(webhookFormat, 'Hyperion', '1.7B', '100,000', '1.7B', '50', "NUGGET", "Craft Cost", "000000000000000000", "100K"),
+                            value: this.webhook.formatString(webhookFormat, 'Hyperion', '1.7B', '100,000', '1.7B', '50', "NUGGET", "Craft Cost", "000000000000000000", "100K", this.bot.username),
                         }
                     ],
                     thumbnail: {
@@ -135,14 +137,14 @@ class AhBot {
                         text: `TPM Rewrite - Found by Craft Cost - Purse ${formatNumber(this.bot.getPurse(true))}`,
                         icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                     }
-                }, this.bot.head, true)
+                }, this.bot.head, true, this.bot.username)
                 sendDiscord({
                     title: 'Item purchased',
                     color: 2615974,
                     fields: [
                         {
                             name: '',
-                            value: this.webhook.formatString(webhookFormat, 'Hyperion', '1.7B', '100,000', '1.7B', '50', "NUGGET", "Craft Cost", ""),
+                            value: this.webhook.formatString(webhookFormat, 'Hyperion', '1.7B', '100,000', '1.7B', '50', "NUGGET", "Craft Cost", "000000000000000000", "100K", this.bot.username),
                         }
                     ],
                     thumbnail: {
@@ -152,7 +154,7 @@ class AhBot {
                         text: `TPM Rewrite - Found by Craft Cost - Purse ${formatNumber(this.bot.getPurse(true))}`,
                         icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                     }
-                }, this.bot.head)
+                }, this.bot.head, false, this.bot.username)
         }
     }
 

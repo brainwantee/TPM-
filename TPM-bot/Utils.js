@@ -1,6 +1,6 @@
 const { config } = require('../config.js');
 const { debug, error, getLatestLog } = require('../logger.js');
-const { webhook, sendAllFlips: flipsWebhook } = config;
+const { webhook, sendAllFlips: flipsWebhook, useItemImage } = config;
 const axios = require('axios');
 
 const DISCORD_PING = !config.discordID ? "" : `<@${config.discordID}>`;
@@ -102,7 +102,7 @@ function getWindowName(window) {
         return null;
     }
 }
-
+ 
 function isSkin(item) {
     return item?.includes('✦') || item?.toLowerCase()?.includes('skin') || item?.includes('✿');
 }
@@ -111,12 +111,13 @@ function noColorCodes(text) {
     return text?.replace(/§./g, '')?.replace('§', '')//cofl sometimes sends messages that are cut off so I need the second one aswell
 }
 
-async function sendDiscord(embed, avatar = null, ping = false, file = null, flips = false, attempt = 0) {
+async function sendDiscord(embed, avatar = null, ping = false, username = null, file = null, flips = false, attempt = 0) {
     let currentWebhook = flips ? flipsWebhook : webhook;
+    username = useItemImage && username ? `TPM - ${username}` : "TPM";
     if (webhook) {
         try {
             let webhookOptions = {
-                username: "TPM",
+                username: username,
                 avatar_url: avatar || "https://media.discordapp.net/attachments/1235761441986969681/1263290313246773311/latest.png?ex=6699b249&is=669860c9&hm=87264b7ddf4acece9663ce4940a05735aecd8697adf1335de8e4f2dda3dbbf07&=&format=webp&quality=lossless",
                 content: ping ? DISCORD_PING : "",
                 embeds: [embed]
@@ -137,7 +138,7 @@ async function sendDiscord(embed, avatar = null, ping = false, file = null, flip
             error(`Webhook error on attempt ${attempt}`, e);
             if (attempt < 3) {
                 await sleep(5000);
-                await sendDiscord(embed, avatar, ping, file, flips, attempt + 1);
+                await sendDiscord(embed, avatar, ping, username, file, flips, attempt + 1);
             }
         }
     }
@@ -207,7 +208,7 @@ async function sendLatestLog(embed) {
     };
     const log = getLatestLog();
     log.append('payload_json', JSON.stringify(webhookInfo));
-    await sendDiscord(embed, null, false, log);
+    await sendDiscord(embed, null, true, "TPM", log);
     return;
 }
 
