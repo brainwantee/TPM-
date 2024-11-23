@@ -75,6 +75,8 @@ class RelistHandler {
 
                     bot.chat('/ah');
                     await betterOnce(bot, 'windowOpen');
+                    await sleep(250);
+                    debug(`Got AH, opening bids menu`);
                     bot.betterClick(15);
                     await betterOnce(bot, 'windowOpen');
                     let claimAll = null;
@@ -176,7 +178,7 @@ class RelistHandler {
             }
             debug(`Item uuid: ${itemUuid}`);
             bot.betterClick(31);
-            await sleep(250);
+            await sleep(500);
             bot.chat('/ah');
             await betterOnce(bot, 'windowOpen');
             await sleep(500);
@@ -348,6 +350,7 @@ class RelistHandler {
     }
 
     turnOffRelist() {//For when cookie runs out mid session
+        debug(`Turning off relist`)
         this.useRelist = false;
         this.hasCookie = false;
     }
