@@ -153,8 +153,10 @@ class AutoBuy {
                         state.setAction(firstGui);
                         break;
                     case "stained_glass_pane":
-                        if (state.get() === 'delisting') this.bot.betterClick(33);
-                        else {
+                        if (state.get() === 'delisting') {
+                            this.bot.betterClick(33);
+                            debug(`clicked delist`);
+                        } else {
                             bot.betterWindowClose();
                             state.set(null);
                             state.setAction(firstGui);

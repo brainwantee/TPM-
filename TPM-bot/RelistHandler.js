@@ -398,7 +398,8 @@ class RelistHandler {
             }, useItemImage ? this.bot.head : null, false, this.bot.username);
             this.declineSoldAuction();
 
-            bot.betterWindowClose();
+            await sleep(500);
+            bot.betterWindowClose();//ensure window closes just in case it didn't delist
             this.state.set(null);
             this.state.setAction();
         } catch (e) {
