@@ -1,8 +1,8 @@
 const { logmc, debug, error, startTracker, getIgns } = require('./logger.js');
-const { sleep, normalNumber, sendDiscord, sendLatestLog, formatNumber, nicerFinders } = require('./TPM-bot/Utils.js');
+const { sleep, normalNumber, sendDiscord, sendLatestLog, formatNumber, nicerFinders, normalTime } = require('./TPM-bot/Utils.js');
 const { config } = require('./config.js');
 const axios = require('axios');
-let { igns, webhook, discordID, allowedIDs } = config;
+let { igns, webhook, discordID, allowedIDs, pingOnUpdate } = config;
 
 if (allowedIDs) {
     if (!allowedIDs.includes(discordID)) allowedIDs.push(discordID);
@@ -100,6 +100,7 @@ class TpmSocket {
             case "list": {
                 const bot = this.bots[data.username];
                 data.price = normalNumber(data.price);
+                data.time = normalTime(data.time) / 3.6e+6;//convert to hours
                 debug(JSON.stringify(data));
                 if (!bot) {
                     debug(`Didn't find a bot for ${data.username}`);
@@ -170,7 +171,7 @@ class TpmSocket {
                     })
                     break;
                 }
-                this.startBot(data.username, this, true);
+                this.startBot(data.username, this, true, true);
                 break;
             }
             case "killBot": {
@@ -321,8 +322,8 @@ class TpmSocket {
                 break;
             }
             case "sendWebhook": {
-                let { embed, avatar, ping, name, file, flips } = data;
-                sendDiscord(embed, avatar, ping, name, file, flips);
+                let { embed, avatar, name, file, flips } = data;
+                sendDiscord(embed, avatar, pingOnUpdate, name, file, flips);
                 break;
             }
             case "getQueue": {
@@ -356,7 +357,7 @@ class TpmSocket {
                     fields: [
                         {
                             name: '',
-                            value: `**Queue:**\n${queue.join('\n')}`,
+                            value: `${queue.length == 0 ? `Nothing in queue!`: queue.join('\n')}\n\n**State: ** ${bot.state.get()}`,
                         }
                     ],
                     thumbnail: {

@@ -23,6 +23,23 @@ function formatNumber(num) {
     return `${negative ? '-' : ''}${thingy}`;
 }
 
+function normalTime(str) {
+    if(typeof str !== "string") return null;
+    str = noColorCodes(str.toLowerCase());
+    let yearsMatch = str.match(/(\d+)y/);
+    let daysMatch = str.match(/(\d+)d/);
+    let hoursMatch = str.match(/(\d+)h/);
+    let minutesMatch = str.match(/(\d+)m/);
+    let secondsMatch = str.match(/(\d+)s/);
+    let years = yearsMatch ? parseInt(yearsMatch[1], 10) : 0;
+    let days = daysMatch ? parseInt(daysMatch[1], 10) : 0;
+    let hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
+    let minutes = minutesMatch ? parseInt(minutesMatch[1], 10) : 0;
+    let seconds = secondsMatch ? parseInt(secondsMatch[1], 10) : 0;
+    debug(str, years, days, hours, minutes, seconds);
+    return years * 3.154e+10 + days * 8.64e+7 + hours * 3.6e+6 + minutes * 60000 + seconds * 1000;
+}
+
 async function betterOnce(listener, event, callback, timeframe = 5000) {
     return new Promise((resolve, reject) => {
 
@@ -102,7 +119,7 @@ function getWindowName(window) {
         return null;
     }
 }
- 
+
 function isSkin(item) {
     return item?.includes('✦') || item?.toLowerCase()?.includes('skin') || item?.includes('✿');
 }
@@ -172,7 +189,7 @@ function getSlotLore(slot) {
 }
 
 function onlyNumbers(text) {
-    return parseInt(text.replace(/[^\d,]/g, '').replace(/,/g, ''), 10);
+    return parseFloat(text.replace(/[^\d,]/g, '').replace(/,/g, ''), 10);
 }
 
 function addCommasToNumber(number) {
@@ -426,4 +443,4 @@ async function getPingStats(bot, handleCommand, ws, soldNum, profitList) {
     })
 }
 
-module.exports = { DISCORD_PING, getPingStats, sendLatestLog, IHATECLAIMINGTAXES, getStats, TheBig3, getLatestLog, isSkinned, normalNumber, addCommasToNumber, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };
+module.exports = { DISCORD_PING, getPingStats, sendLatestLog, normalTime, IHATECLAIMINGTAXES, getStats, TheBig3, getLatestLog, isSkinned, normalNumber, addCommasToNumber, onlyNumbers, getSlotLore, formatNumber, sleep, betterOnce, stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, noColorCodes, sendDiscord, nicerFinders, betterOnce };

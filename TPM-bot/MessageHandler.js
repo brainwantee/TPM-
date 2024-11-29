@@ -7,7 +7,7 @@ const soldRegex = /^\[Auction\] (.+?) bought (.+?) for ([\d,]+) coins CLICK$/;
 const boughtRegex = /^You purchased (.+?) for ([\d,]+) coins!$/;
 const claimedRegex = /^You collected ([\d,]+) coins from selling (.+?) to (.+?) in an auction!$/
 const partyRegex = /^-+\s*(.+?) has invited you to join their party!\s*You have 60 seconds to accept\. Click here to join!\s*-+$/m;
-
+ 
 const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
 
 class MessageHandler {
@@ -185,14 +185,14 @@ class MessageHandler {
                     }, 10000)//delay to allow for other flips to get bought
 
                 }
-                this.sendScoreboard();
+                this.coflSocket.sendScoreboard();
             }
 
             const soldMatch = text.match(soldRegex);
             if (soldMatch) {
                 if (!this.relist.getGottenReady()) return;
                 this.updateSold();
-                this.sendScoreboard();
+                this.coflSocket.sendScoreboard();
                 const item = soldMatch[2];
                 const price = onlyNumbers(soldMatch[3]);
                 const object = this.soldObject[`${stripItemName(item)}:${price}`];
@@ -304,14 +304,14 @@ class MessageHandler {
             const test = async () => {
                 debug(`Checking for scoreboard`)
                 if (this.island.onIslandCheck()) {
-                    this.sendScoreboard();
+                    debug(`Sending inital scoreboard`)
+                    this.coflSocket.sendScoreboard();
                     return;
                 }
                 try {
                     await betterOnce(this.bot, 'spawn', null, 30_000);
-                    await sleep(20_000);
+                    await sleep(20_500);
                 } catch (e) {
-                    console.error(e);
                     test();
                 }
             };
@@ -344,22 +344,6 @@ class MessageHandler {
 
     setBuySpeed(BINView) {//for autobuy
         this.firstGui = BINView;
-    }
-
-    sendScoreboard() {
-        debug(`Sending scoreboard`);
-        setTimeout(() => {
-            if (!this.bot?.scoreboard?.sidebar?.items) return;
-            let scoreboard = this.bot.scoreboard.sidebar.items.map(item => item.displayName.getText(null).replace(item.name, ''));
-            if (scoreboard.find(e => e.includes('Purse:') || e.includes('Piggy:'))) {
-                this.coflSocket.send(
-                    JSON.stringify({
-                        type: 'uploadScoreboard',
-                        data: JSON.stringify(scoreboard)
-                    }), true
-                );
-            }
-        }, 5500);
     }
 
     objectAdd(weirdItemName, price, target, profit, auctionID, bed, finder, itemName, tag) {

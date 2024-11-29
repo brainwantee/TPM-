@@ -44,7 +44,7 @@ class AhBot {
         const coflSocket = new CoflWs(ign, bot);
         const ws = coflSocket.getWs();
 
-        const relist = new RelistHandler(bot, state, tpm, this.updateSold);
+        const relist = new RelistHandler(bot, state, tpm, this.updateSold, coflSocket);
 
         const island = new AutoIsland(ign, state, bot);
 

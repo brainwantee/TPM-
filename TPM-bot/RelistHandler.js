@@ -1,33 +1,55 @@
 const { config } = require('../config.js');
-const { sleep, betterOnce, getWindowName, noColorCodes, getSlotLore, sendDiscord, onlyNumbers, addCommasToNumber, normalNumber, isSkinned, formatNumber } = require('./Utils.js');
+const { sleep, betterOnce, getWindowName, noColorCodes, normalTime, getSlotLore, sendDiscord, onlyNumbers, addCommasToNumber, normalNumber, isSkinned, formatNumber } = require('./Utils.js');
 const { logmc, error, debug } = require('../logger.js');
-const { useCookie, relist, percentOfTarget, listHours, doNotRelist, useItemImage } = config;
+let { useCookie, relist, percentOfTarget, listHours, doNotRelist, useItemImage, autoCookie } = config;
 let { profitOver, skinned, tags, finders, stacks: stackedListing } = doNotRelist;
+autoCookie = normalTime(autoCookie) / 1000;
 profitOver = normalNumber(profitOver);
+const axios = require('axios');
 
 const coopRegexPlayers = /Co-op with (\d+) players:/;
 const coopRegexSinglePlayer = /Co-op with (?:\[.*\]\s*)?([\w]+)/;
 
-let itemDurationVisual = `${listHours.toString()} Hour`;
-if (listHours > 24) {
-    if (listHours > 336) {
-        itemDurationVisual = `14 Days`;
-    } else {
-        itemDurationVisual = `${Math.floor(listHours / 24)} Day`
+function calcDurationVisual(hours) {
+    let itemDurationVisual = `${hours} Hour`;
+    if (hours > 24) {
+        if (hours > 336) {
+            itemDurationVisual = `14 Days`;
+        } else {
+            itemDurationVisual = `${Math.floor(hours / 24).toString()} Day`
+        }
     }
+    return itemDurationVisual;
+}
+
+function calcListHours(price) {
+    if (!Array.isArray(listHours)) return listHours;//Failsafe for people who haven't updated their config
+    for (let i = 0; i < listHours.length; i += 3) {
+        let lowerBound = normalNumber(listHours[i]);
+        let upperBound = normalNumber(listHours[i + 1]);
+        let percent = normalNumber(listHours[i + 2]);//why not use normal number!
+
+        if (price >= lowerBound && price < upperBound) {
+            return percent;
+        }
+    }
+    logmc(`§6[§bTPM§6]§c Failed to find listing time for ${addCommasToNumber(price)}! Please change your config :(`)
+    return listHours[3];
 }
 
 class RelistHandler {
 
-    constructor(bot, state, tpm, updateSold) {
+    constructor(bot, state, tpm, updateSold, coflWs) {
         this.bot = bot;
         this.state = state;
         this.useRelist = relist;
         this.tpm = tpm;
         this.updateSold = updateSold;
+        this.coflWs = coflWs;
         this.currentAuctions = 0;
         this.maxSlots = 14;
         this.hasCookie = true;
+        this.cookieTime = null;
         this.ready = false;
         this.getReady();
     }
@@ -121,6 +143,39 @@ class RelistHandler {
                         webhookMessage += `Collected \`${addCommasToNumber(soldFor)} coins\` for selling \`${itemName}\`\n`;
                     })
 
+
+                    await sleep(5000)//need a very long sleep because if a sold auction is claimed from the claim all then it closes the current GUI open
+                    bot.chat('/sbmenu')//cookie. At this point they are forced to have a cookie because of the AH stuff so we can assume it
+
+                    await betterOnce(bot, 'windowOpen');
+
+                    const cookieLore = getSlotLore(bot.currentWindow.slots[51]);
+                    let duration = cookieLore.find(line => line.includes('Duration'));
+                    const cookieTime = normalTime(duration);
+                    this.cookieTime = cookieTime;
+                    debug(`Cookie time`, cookieTime);
+                    bot.betterWindowClose();
+                    await this.buyCookie(cookieTime / 1000);
+                    const cookieEnd = Math.round((Date.now() + cookieTime) / 1000);
+
+                    sendDiscord({
+                        title: `${this.bot.username} is now ready!`,
+                        color: 8771327,
+                        fields: [
+                            {
+                                name: '',
+                                value: `>>> **Auction Slots:** \`${this.currentAuctions}\`/\`${this.maxSlots}\`\n**Cofl Tier:** ${this.coflWs.getAccountTier()}\n**Cofl expires <t:${this.coflWs.getAccountEndingTime()}:R>**\n**Booster Cookie ends <t:${cookieEnd}:R>**\n**Connection ID:** \`${this.coflWs.getConnectionId()}\``,
+                            }
+                        ],
+                        thumbnail: {
+                            url: this.bot.head,
+                        },
+                        footer: {
+                            text: `TPM Rewrite - Purse: ${addCommasToNumber(bot.getPurse(true) + totalCollected)}`,
+                            icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+                        }
+                    }, useItemImage ? this.bot.head : null, false, this.bot.username);
+
                     if (webhookMessage) {
                         sendDiscord({
                             title: 'Claimed sold items!',
@@ -147,6 +202,7 @@ class RelistHandler {
                     setTimeout(() => {
                         this.ready = true;
                     }, 5000)
+                    this.coflWs.sendScoreboard();
 
                 } else {
                     debug('not getting ready!!!');
@@ -163,9 +219,11 @@ class RelistHandler {
         bot.on('spawn', check);
     }
 
-    async listAuction(auctionID, price, profit, weirdItemName, tag, override = false) {
+    async listAuction(auctionID, price, profit, weirdItemName, tag, listingTime = null, override = false) {
         if (!this.useRelist && !override) return;
         debug(`Listing ${auctionID} for ${price}`);
+        if (!listingTime) listingTime = calcListHours(price);
+        let currentVisual = calcDurationVisual(listingTime);
         try {
             const { state, bot } = this;
             state.set('listing');
@@ -189,7 +247,8 @@ class RelistHandler {
                 uuids.push(`${uuid}:${uuid === itemUuid}`);
                 if (uuid === itemUuid) {
                     debug(`Found item in ${slot.slot}`);
-                    if (count !== itemCount && stackedListing) {
+                    if (count !== itemCount) {
+                        if (!stackedListing) throw new Error('It was a stacked item that was changed :(');
                         const pricePerItem = price / itemCount;
                         price = pricePerItem * count;//List for the correct price if multiple in inv
                         logmc(`§6[§bTPM§6]§c ${weirdItemName} had ${itemCount} in slot but combined with another item so there's now ${count}. Listing price is now ${price}`)
@@ -242,14 +301,14 @@ class RelistHandler {
             await betterOnce(bot, 'windowOpen');
             bot.betterClick(16);//set price
             await sleep(350);
-            bot.editSign(listHours.toString());
+            bot.editSign(listingTime.toString());
             await betterOnce(bot, 'windowOpen');
 
             const priceSlot = bot.currentWindow.slots[31]?.nbt?.value?.display?.value?.Name?.value;
             const timeSlot = bot.currentWindow.slots[33]?.nbt?.value?.display?.value?.Name?.value;
 
-            if (!priceSlot.includes(addCommasToNumber(listPrice)) || !timeSlot.includes(itemDurationVisual)) {//acts as a window dectector too!
-                throw new Error(`Incorrect pricing or time ${priceSlot} ${timeSlot} not having ${addCommasToNumber(listPrice)} or ${itemDurationVisual}`);
+            if (!priceSlot.includes(addCommasToNumber(listPrice)) || !timeSlot.includes(currentVisual)) {//acts as a window dectector too!
+                throw new Error(`Incorrect pricing or time ${priceSlot} ${timeSlot} not having ${addCommasToNumber(listPrice)} or ${currentVisual}`);
             }
 
             bot.betterClick(29);
@@ -422,6 +481,86 @@ class RelistHandler {
             }
         }
     }
+
+    async buyCookie(time = null) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const { bot } = this;
+                if (time && time > autoCookie) {
+                    logmc(`§6[§bTPM§6]§3 Not buying a cookie because you have ${Math.round(time / 3600)}h`);
+                    resolve(`Enough time`);
+                } else {
+
+                    const price = await this.getCookiePrice();
+
+                    if (price > 20_000_000 || bot.getPurse() < price * 2) {
+                        logmc(`§6[§bTPM§6]§c Cookie costs ${price} so not buying :(`);
+                        resolve(`Cookie expensive :(`);
+                    } else {
+                        bot.chat(`/bz booster cookie`);
+                        await betterOnce(bot, 'windowOpen');
+                        bot.betterClick(11);
+                        await betterOnce(bot, 'windowOpen');
+                        await sleep(250);
+                        bot.betterClick(10);
+                        await betterOnce(bot, 'windowOpen');
+                        await sleep(250);
+                        bot.betterClick(10);//This click buys the cookie
+                        try {//check for full inv
+                            await betterOnce(bot, "message", (message, type) => {
+                                let text = message.getText(null);
+                                debug("cookie text", text);
+                                return text == `One or more items didn't fit in your inventory and were added to your item stash! Click here to pick them up!`
+                            })
+                            logmc(`§6[§bTPM§6]§c Your inv is full so I can't eat this cookie. You have one in your stash now`);
+                            resolve(`Full inv :(`);
+                            bot.betterWindowClose();
+                        } catch (e) {//if no message for full inv then yay we don't have one
+                            debug(`cookie error (probably not an actual error)`, e);
+                            bot.betterWindowClose();
+                            let cookieSlot = (bot.inventory.slots.find(slot => slot?.name === 'cookie'))?.slot;
+                            debug(`Got cookie slot ${cookieSlot}`);
+                            if (!cookieSlot) {
+                                resolve(`no cookie found`);
+                                debug(JSON.stringify(bot.inventory.slots));
+                            } else {
+                                if (cookieSlot < 36) {//not in hotbar. It would auto go to hotbar so that mean it's full
+                                    bot.clickWindow(cookieSlot, 0, 2);//can't use betterclick because it has failsafe for no window open and we don't want one open!
+                                    await sleep(500);
+                                    cookieSlot = (bot.inventory.slots.find(slot => slot?.name === 'cookie'))?.slot;
+                                    debug(`Moved it maybe?`, cookieSlot);
+                                }
+                            }
+                            await sleep(500);
+                            bot.setQuickBarSlot(cookieSlot - 36);
+                            await sleep(100);
+                            bot.activateItem();
+                            await betterOnce(bot, 'windowOpen')
+                            bot.betterClick(11)
+                            debug("activated cookie");
+                            bot.betterWindowClose();//just to be safe
+                            logmc(`§6[§bTPM§6]§3 Automaticlly ate a booster cookie cause you had ${Math.round(time / 3600)} hours left. Now you have ${Math.round((time + 4 * 86400) / 3600)} hours`);
+                            this.cookieTime += 4 * 8.64e+7;
+                            resolve();
+                        }
+
+                    }
+
+                }
+            } catch (e) {
+                error(`Error buying cookie: `, e);
+                this.bot.betterWindowClose();
+                //no need to change state because it'll safely go back to getting ready
+                resolve(`Failed to buy cookie`);
+            }
+
+        });
+    }
+
+    async getCookiePrice() {
+        try { return Math.round((await axios.get('https://api.hypixel.net/v2/skyblock/bazaar')).data.products.BOOSTER_COOKIE.quick_status.buyPrice) } catch (e) { error(e) };
+    }
+
 
 }
 

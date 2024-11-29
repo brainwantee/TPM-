@@ -1,6 +1,6 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
-const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, noColorCodes, sendDiscord, formatNumber, nicerFinders } = require('./Utils.js');
+const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, noColorCodes, sendDiscord, formatNumber, nicerFinders, betterOnce } = require('./Utils.js');
 const { logmc, debug, removeIgn, error } = require('../logger.js');
 let { delay, waittime, skip: skipSettings, clickDelay, bedSpam, delayBetweenClicks, angryCoopPrevention: coop, sendAllFlips: flipsWebhook } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins, profitPercentage: skipMinPercent, minPrice: skipMinPrice } = skipSettings;
@@ -366,7 +366,7 @@ class AutoBuy {
     }
 
     initQueue() {
-        setInterval(() => {
+        setInterval(async () => {
             const current = this.state.getHighest();
             if (!current) return;
             const currentTime = Date.now();
@@ -387,7 +387,7 @@ class AutoBuy {
                         break;
                     }
                     case "listingNoName": {
-                        const { auctionID, price } = current.action;
+                        const { auctionID, price, time } = current.action;
                         if (!this.relist.externalListCheck()) {
                             debug(`Didn't pass relist check`);
                             return;
@@ -400,7 +400,7 @@ class AutoBuy {
                             var pricePaid = 0; //ew var
                         }
                         let profit = IHATETAXES(price) - pricePaid;
-                        this.relist.listAuction(auctionID, price, profit, weirdItemName, tag, true);
+                        this.relist.listAuction(auctionID, price, profit, weirdItemName, tag, time || null, true);
                         current.state = 'listing';
                         break;
                     }
@@ -419,6 +419,12 @@ class AutoBuy {
                         this.bot.quit();
                         this.coflSocket.closeSocket();
                         removeIgn(this.ign);
+                        try {
+                            await betterOnce(this.bot, "end");
+                        } catch (e) {
+                            debug(`Error disconnecting`, e);
+                            this.bot.end();
+                        }
                         logmc(`§6[§bTPM§6] §c${this.ign} is now dead. May he rest in peace.`)
                         break;
                     }

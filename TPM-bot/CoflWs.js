@@ -9,6 +9,7 @@ const { getPackets } = require('./packets.js');
 const { blockUselessMessages, session } = config;
 
 const connectionRegex = /\[Coflnet\]:  Your connection id is ([a-f0-9]{32}), copy that if you encounter an error/;
+const startedRegex = /You have (.+?) until (.+?)$/
 
 class CoflWs {
 
@@ -19,6 +20,7 @@ class CoflWs {
         this.ign = ign;
         this.bot = bot;
         this.reconnect = true;
+        this.connectionID = null;
         this.handleCommand = this.handleCommand.bind(this);//Can call in other places now!!!
 
         this.startWs();
@@ -59,11 +61,17 @@ class CoflWs {
 
     }
 
-    getWs() { return this.ws };//This is the one that will prob always get used. It's an event emitter so that you can easily sort through the messaages
+    getWs() { return this.ws }//This is the one that will prob always get used. It's an event emitter so that you can easily sort through the messaages
 
-    getCoflWs() { return this.websocket };//Tbh will prob never get used but
+    getCoflWs() { return this.websocket }//Tbh will prob never get used but
 
-    getCurrentLink() { return this.link };//Might be used for utils or smth idrk
+    getCurrentLink() { return this.link }//Might be used for utils or smth idrk
+
+    getConnectionId() { return this.connectionID }//Used in relistHandler
+
+    getAccountTier() { return this.accountTier }//Used in relistHandler
+
+    getAccountEndingTime() { return this.accountEndTime }//Used in relistHandler
 
     parseMessage(message) {
         const msg = JSON.parse(message);
@@ -147,7 +155,28 @@ class CoflWs {
         const connectionMatch = msg.match(connectionRegex);
         if (connectionMatch) {
             debug(`Got connection ID ${connectionMatch[1]}`);
+            this.connectionID = connectionMatch[1];
             this.handleCommand('/cofl get json');
+        }
+
+        const startMatch = msg.match(startedRegex);
+        if (startMatch) {
+            debug(`Got start stuff ${JSON.stringify(startMatch)}`);
+            switch(startMatch[1]){
+                case "PREMIUM PLUS":
+                    this.accountTier = "Premium Plus";
+                    break;
+                case "PREMIUM":
+                    this.accountTier = "Premium";
+                    break;
+                case "FREE":
+                    this.accountTier = "Free";
+                    break;
+                default:
+                    this.accountTier = startMatch[1];
+                    break;
+            }
+            this.accountEndTime = Math.round(new Date(startMatch[2]).getTime() / 1000);//convert to milliseconds!!!
         }
 
         if (msg.includes(`Until you do you are using the free version which will make less profit and your settings won't be saved`)) {//logged out
@@ -166,6 +195,22 @@ class CoflWs {
         debug(`Intentional socket close`);
         this.reconnect = false;
         this.websocket.close();
+    }
+
+    sendScoreboard() {
+        debug(`Sending scoreboard`);
+        setTimeout(() => {
+            if (!this.bot?.scoreboard?.sidebar?.items) return;
+            let scoreboard = this.bot.scoreboard.sidebar.items.map(item => item.displayName.getText(null).replace(item.name, ''));
+            if (scoreboard.find(e => e.includes('Purse:') || e.includes('Piggy:'))) {
+                this.send(
+                    JSON.stringify({
+                        type: 'uploadScoreboard',
+                        data: JSON.stringify(scoreboard)
+                    }), true
+                );
+            }
+        }, 5500);
     }
 
 }

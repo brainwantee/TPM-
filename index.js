@@ -1,6 +1,6 @@
 const prompt = require('prompt-sync')();
 const { randomUUID } = require('crypto');
-const { logmc, updateIgns, getIgns, error } = require('./logger.js');
+const { logmc, updateIgns, getIgns, error, debug } = require('./logger.js');
 const readline = require('readline');
 const rl = readline.createInterface({
     input: process.stdin,
@@ -9,7 +9,7 @@ const rl = readline.createInterface({
 
 const AhBot = require('./TPM-bot/AhBot.js');
 const TpmSocket = require('./TpmSocket.js');
-const { sendDiscord, sendLatestLog } = require('./TPM-bot/Utils.js');
+const { sendDiscord, sendLatestLog, onlyNumbers, sleep } = require('./TPM-bot/Utils.js');
 const { config, updateConfig } = require('./config.js');
 
 let { igns, autoRotate, useItemImage } = config;
@@ -44,13 +44,13 @@ testIgn();
     tws = new TpmSocket(bots, destroyBot, startBot);
 
     for (const ign of igns) {
-        await startBot(ign, tws);
-        message += `Logged in as \`\`${ign}\`\`\n`;
+        const started = await startBot(ign, tws);
+        if (started) message += `Logged in as \`\`${ign}\`\`\n`;
     }
 
     let thumbnail = 'https://images-ext-1.discordapp.net/external/7YiWo1jf2r78hL_2HpVRGNDcx_Nov0aDjtrG7AZ4Hxc/%3Fsize%3D4096/https/cdn.discordapp.com/icons/1261825756615540836/983ecb82e285eee55ef25dd2bfbe9d4d.png?format=webp&quality=lossless&width=889&height=889';
     let avatar = null;
-    let webhookName = "TPM";
+    let webhookName = null;
 
     const botNames = Object.keys(bots);
 
@@ -64,7 +64,7 @@ testIgn();
     }
 
     sendDiscord({
-        title: 'Started flipping',
+        title: 'Started TPM',
         color: 16629250,
         fields: [
             {
@@ -112,84 +112,125 @@ async function destroyBot(ign, secondary = true) {
 
 }
 
-async function startBot(ign, tws, secondary = false) {
+async function startBot(ign, tws, secondary = false, fromRotate = false) {
     return new Promise(async (resolve) => {
-        const tempBot = new AhBot(ign, tws, destroyBot);
-        await tempBot.createBot();
-        bots[ign] = tempBot;
-        askPrefixes[bots[ign].initAskPrefix(igns)?.toLowerCase()] = ign;
-        updateIgns(ign);
-        if (autoRotate[ign]) {
-            rotate(ign);
-        }
-        if (secondary) {
-            sendDiscord({
-                title: 'Started flipping',
-                color: 16629250,
-                fields: [
-                    {
-                        name: '',
-                        value: `Logged in as \`\`${ign}\`\`\n`,
+        if (!fromRotate && autoRotate[ign] && autoRotate[ign].split(':')[0].includes('r')) {
+            rotate(ign, true);
+            resolve(false);//Don't start the bot if it rests first
+            debug(`Not starting ${ign} cause of autorotate`);
+        } else {
+            const tempBot = new AhBot(ign, tws, destroyBot);
+            await tempBot.createBot();
+            bots[ign] = tempBot;
+            askPrefixes[bots[ign].initAskPrefix(igns)?.toLowerCase()] = ign;
+            updateIgns(ign);
+            if (autoRotate[ign] && !fromRotate && !secondary) {
+                rotate(ign);
+            }
+            if (secondary) {
+                sendDiscord({
+                    title: 'Started flipping',
+                    color: 16629250,
+                    fields: [
+                        {
+                            name: '',
+                            value: `Logged in as \`\`${ign}\`\`\n`,
+                        }
+                    ],
+                    thumbnail: {
+                        url: tempBot.getBot().head,
+                    },
+                    footer: {
+                        text: `The "Perfect" Macro Rewrite`,
+                        icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                     }
-                ],
-                thumbnail: {
-                    url: tempBot.getBot().head,
-                },
-                footer: {
-                    text: `The "Perfect" Macro Rewrite`,
-                    icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
-                }
-            }, useItemImage ? tempBot.getBot().head : null, false, ign)
+                }, useItemImage ? tempBot.getBot().head : null, false, ign)
+            }
+            resolve(true);
         }
-        resolve();
     })
 }
 
-function rotate(ign) {
+async function rotate(ign, first = false) {//first means it was called at the start of the program
     const timings = autoRotate[ign].split(':');
-    const stop = timings[0] * 3_600_000;
-    const start = timings[1] * 3_600_000;
-    const bot = bots[ign].getBot();
-    setTimeout(() => {
-        destroyBot(ign, false);
-        sendDiscord({
-            title: 'Killed bot',
-            color: 13320532,
-            fields: [
-                {
-                    name: '',
-                    value: `Rip \`\`${ign}\`\`\n Will log on in <t:${Math.round((Date.now() + start) / 1000)}:R>`,
-                }
-            ],
-            thumbnail: {
-                url: bot.head,
-            },
-            footer: {
-                text: `The "Perfect" Macro Rewrite`,
-                icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
-            }
-        }, useItemImage ? bot.head : null, false, bot.username)
+    const firstTime = parseFloat(timings[0].replace(/r|f/g, '')) * 3_600_000;
+    const secondTime = parseFloat(timings[0].replace(/r|f/g, '')) * 3_600_000;
+    const bot = bots[ign]?.getBot();
+    let firstFunc = timings[0].toLowerCase().includes('r') ?
+        () => rotateStart(ign, tws, bot, secondTime) :
+        () => rotateStop(ign, bot, secondTime);
+    let secondFunc = timings[0].toLowerCase().includes('r') ?
+        () => rotateStop(ign, bot, firstTime) :
+        () => rotateStart(ign, tws, bot, firstTime);
+    if (first) {
         setTimeout(() => {
-            startBot(ign, tws);
             sendDiscord({
-                title: 'Started flipping',
-                color: 16629250,
+                title: 'Waiting',
+                color: 13320532,
                 fields: [
                     {
                         name: '',
-                        value: `Logged in as \`\`${ign}\`\`\n Will log off in <t:${Math.round((Date.now() + stop) / 1000)}:R>`,
+                        value: `\`${ign}\` rests first so it wasn't started. It will log on in <t:${Math.round((Date.now() + secondTime) / 1000)}:R>`,
                     }
                 ],
                 thumbnail: {
-                    url: bot.head,
+                    url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                 },
                 footer: {
                     text: `The "Perfect" Macro Rewrite`,
                     icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                 }
-            }, useItemImage ? bot.head : null, false, bot.username)
-        }, start);
-    }, stop);
+            });
+        }, 500)
+    }
+
+    await sleep(secondTime);
+    firstFunc();
+    await sleep(firstTime);
+    secondFunc();
+    rotate(ign);
+}
+
+async function rotateStart(ign, tws, bot, stop) {
+    startBot(ign, tws, false, true);
+    sendDiscord({
+        title: 'Started flipping',
+        color: 16629250,
+        fields: [
+            {
+                name: '',
+                value: `Logged in as \`\`${ign}\`\`\n Will log off in <t:${Math.round((Date.now() + stop) / 1000)}:R>`,
+            }
+        ],
+        thumbnail: {
+            url: bot ? bot.head : 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+        },
+        footer: {
+            text: `The "Perfect" Macro Rewrite`,
+            icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+        }
+    }, null, false, ign)
+}
+
+async function rotateStop(ign, bot, start) {
+    destroyBot(ign, false);
+    sendDiscord({
+        title: 'Killed bot',
+        color: 13320532,
+        fields: [
+            {
+                name: '',
+                value: `Rip \`\`${ign}\`\`\n Will log on in <t:${Math.round((Date.now() + start) / 1000)}:R>`,
+            }
+        ],
+        thumbnail: {
+            url: bot ? bot.head : 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+        },
+        footer: {
+            text: `The "Perfect" Macro Rewrite`,
+            icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+        }
+    }, bot ? bot.head : 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888', false, ign)
 }
 
 async function crashReport(e) {
@@ -249,4 +290,4 @@ function askUser() {
 askUser();
 
 process.on('unhandledRejection', crashReport);
-process.on('uncaughtException',crashReport);
+process.on('uncaughtException', crashReport);

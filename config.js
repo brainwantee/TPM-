@@ -25,11 +25,18 @@ const defaultConfig = `{
     //Required to use relist!! Will flip in if you don't have a cookie
     "useCookie": true,
 
+    //If cookie is under this time then buy a new one. Leave blank to never auto buy a cookie.
+    //Use y, d, or h to set time
+    "autoCookie": "48h",
+
     //Don't claim coop's auctions
     "angryCoopPrevention": false,
 
     //Automatically list auctions
     "relist": true,
+
+    //Pings you when TPM updates (webhook required)
+    "pingOnUpdate": false,
 
     //Delay between actions. For example, opening flips
     "delay": 250,
@@ -40,14 +47,15 @@ const defaultConfig = `{
     //Set up different list price ranges and their corresponding percent off of target price. (The lower value of the range is inclusive, the higher value is exclusive)
     "percentOfTarget": ["0", "10b", 97],
 
+    //Amount of time (hours) to list an auction.
+    //Works the same as percentOfTarget but for time auctions are listed!
+    "listHours": ["0", "10b", 48],
+
     //Delay between clicks for bed spam (ideally use 100-125)
     "clickDelay": 125,
 
     //Decides the way to  
     "bedSpam": false,
-
-    //Amount of time (hours) to list an auction.
-    "listHours": 48,
 
     //Won't show spam messages
     "blockUselessMessages": true,
