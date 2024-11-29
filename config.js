@@ -111,8 +111,8 @@ const defaultConfig = `{
 
         //Put your IGN (CAPS MATTER).
         //If you run multiple accounts, put a , after the value (second quote), press enter, and follow the same format as the first.
-        //First time is how long to flip for, second is resting time
-        "ign": "12:12"
+        //Add an r after the number that you want it to rest for and an F for how long you want it to flip for.
+        "ign": "12r:12f"
 
     },
     
