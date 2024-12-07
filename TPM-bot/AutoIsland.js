@@ -54,7 +54,7 @@ class AutoIsland {
                         await betterOnce(this.bot, 'windowOpen');
                         await sleep(150);
                         let lore = getSlotLore(this.bot.currentWindow?.slots[11]);
-                        if(!lore){
+                        if (!lore) {
                             lore = getSlotLore(this.bot.currentWindow?.slots[13]);
                         }
                         //console.log(lore);
@@ -108,14 +108,14 @@ class AutoIsland {
         this.checkLocraw(true);//confirm we made it
     }
 
-    setIsland(otherIsland, baseMessage, useCookie){
+    setIsland(otherIsland, baseMessage, useCookie) {
         this.otherIsland = otherIsland;
         this.baseMessage = baseMessage;
         this.useCookie = useCookie;
         this.checkLocraw();
     }
 
-    onIslandCheck(){
+    onIslandCheck() {
         return this.onIsland;
     }
 

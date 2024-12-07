@@ -9,7 +9,7 @@ const rl = readline.createInterface({
 
 const AhBot = require('./TPM-bot/AhBot.js');
 const TpmSocket = require('./TpmSocket.js');
-const { sendDiscord, sendLatestLog, onlyNumbers, sleep } = require('./TPM-bot/Utils.js');
+const { sendDiscord, sendLatestLog, sleep } = require('./TPM-bot/Utils.js');
 const { config, updateConfig } = require('./config.js');
 
 let { igns, autoRotate, useItemImage } = config;

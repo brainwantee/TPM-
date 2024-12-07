@@ -2,7 +2,7 @@ const { config } = require('../config.js');
 const { sleep, betterOnce, getWindowName, noColorCodes, normalTime, getSlotLore, sendDiscord, onlyNumbers, addCommasToNumber, normalNumber, isSkinned, formatNumber } = require('./Utils.js');
 const { logmc, error, debug } = require('../logger.js');
 let { useCookie, relist, percentOfTarget, listHours, doNotRelist, useItemImage, autoCookie } = config;
-let { profitOver, skinned, tags, finders, stacks: stackedListing } = doNotRelist;
+let { profitOver, skinned, tags, finders, stacks: stackedListing, pingOnFailedListing, drillWithParts } = doNotRelist;
 autoCookie = normalTime(autoCookie) / 1000;
 profitOver = normalNumber(profitOver);
 const axios = require('axios');
@@ -51,11 +51,16 @@ class RelistHandler {
         this.hasCookie = true;
         this.cookieTime = null;
         this.ready = false;
+        this.savedData = state.getFile("SavedData", `${bot.uuid}.json`);
+        this.savedItems = [];
         this.getReady();
     }
 
     declineSoldAuction() {//cba to add message listener twice so this will have to do
-        this.currentAuctions--;
+        if (this.ready) {
+            this.currentAuctions--;
+            debug(`Removing 1 sold auction`);
+        }
     }
 
     getReady() {
@@ -149,14 +154,39 @@ class RelistHandler {
 
                     await betterOnce(bot, 'windowOpen');
 
-                    const cookieLore = getSlotLore(bot.currentWindow.slots[51]);
-                    let duration = cookieLore.find(line => line.includes('Duration'));
-                    const cookieTime = normalTime(duration);
-                    this.cookieTime = cookieTime;
-                    debug(`Cookie time`, cookieTime);
+                    try {
+                        var cookieLore = getSlotLore(bot.currentWindow.slots[51]);
+                        let duration = cookieLore.find(line => line.includes('Duration'));
+                        var cookieTime = normalTime(duration);
+                        this.cookieTime = cookieTime;
+                        debug(`Cookie time`, cookieTime);
+                        bot.betterWindowClose();
+                        await this.buyCookie(cookieTime / 1000);
+                        var cookieEnd = Math.round((Date.now() + cookieTime) / 1000);
+                    } catch (e) {
+                        bot.betterWindowClose();
+                        error(`Error checking cookie`, e);
+                    }
+
+                    try {
+                        bot.chat('/ah');
+                        await betterOnce(bot, 'windowOpen');
+                        bot.betterClick(13);//Open bids
+                        await betterOnce(bot, 'windowOpen');
+                        const uuids = new Set(bot.currentWindow.slots.map(slot => {
+                            if (slot?.slot < bot.currentWindow.slots.length - 36) return this.getItemUuid(slot); else return null;
+                        }));//haha set
+                        for (const uuid in this.savedData.bidData) {
+                            debug(`Checking ${uuid}`);
+                            if (uuids.has(uuid)) continue;
+                            debug(`Deleting UUID`);
+                            delete this.savedData.bidData[uuid];//Remove old data
+                        }
+                        state.saveQueue(this.savedData.bidData);
+                    } catch (e) {
+                        error(`Error checking bids`, e);
+                    }
                     bot.betterWindowClose();
-                    await this.buyCookie(cookieTime / 1000);
-                    const cookieEnd = Math.round((Date.now() + cookieTime) / 1000);
 
                     sendDiscord({
                         title: `${this.bot.username} is now ready!`,
@@ -198,6 +228,8 @@ class RelistHandler {
                         bot.betterWindowClose();
                     }
 
+                    // await this.removeDrillParts(0, 0, 0, 81);
+
                     state.set(null);
                     setTimeout(() => {
                         this.ready = true;
@@ -219,45 +251,53 @@ class RelistHandler {
         bot.on('spawn', check);
     }
 
-    async listAuction(auctionID, price, profit, weirdItemName, tag, listingTime = null, override = false) {
+    //Set inventory to the itemUUID if using it
+    async listAuction(auctionID, price, profit, weirdItemName, tag, listingTime = null, override = false, inventory = false) {
         if (!this.useRelist && !override) return;
-        debug(`Listing ${auctionID} for ${price}`);
+        debug(`Listing ${auctionID} for ${price}. From inventory : ${inventory}`);
         if (!listingTime) listingTime = calcListHours(price);
         let currentVisual = calcDurationVisual(listingTime);
         try {
             const { state, bot } = this;
             state.set('listing');
-            bot.chat(`/viewauction ${auctionID}`);
-            await betterOnce(bot, 'windowOpen');
-            let itemUuid = this.getItemUuid(bot.currentWindow.slots[13], true);
-            let itemCount = bot.currentWindow.slots[13]?.count;
-            if (!itemUuid) {
-                debug(`Failed to get item uuid :( ${itemUuid} ${JSON.stringify(bot.currentWindow.slots[13])}`);
+            if (!inventory) {
+                var { uuid: itemUuid, count: itemCount, nbt } = await this.claimItem(auctionID);
+            } else {
+                let item = bot.inventory.slots.find(slot => this.getItemUuid(slot) === inventory);
+                debug("inv listing item", JSON.stringify(item));
+                var itemUuid = inventory;
+                var itemCount = item.count;
+                var nbt = item.nbt.value;
             }
-            debug(`Item uuid: ${itemUuid}`);
-            bot.betterClick(31);
-            await sleep(500);
+
             bot.chat('/ah');
             await betterOnce(bot, 'windowOpen');
             await sleep(500);
             const uuids = [];//item not found debugging
-            bot.currentWindow.slots.forEach(async slot => {
-                let uuid = this.getItemUuid(slot);
-                let count = slot?.count;
-                uuids.push(`${uuid}:${uuid === itemUuid}`);
+            for (const slot of bot.currentWindow.slots) {
+                if (!slot || !slot.nbt) continue; // Skip empty or invalid slots
+                const uuid = this.getItemUuid(slot);
+                const count = slot.count;
                 if (uuid === itemUuid) {
-                    debug(`Found item in ${slot.slot}`);
+                    debug(`Found item in slot ${slot.slot}`);
                     if (count !== itemCount) {
                         if (!stackedListing) throw new Error('It was a stacked item that was changed :(');
                         const pricePerItem = price / itemCount;
-                        price = pricePerItem * count;//List for the correct price if multiple in inv
-                        logmc(`§6[§bTPM§6]§c ${weirdItemName} had ${itemCount} in slot but combined with another item so there's now ${count}. Listing price is now ${price}`)
+                        price = pricePerItem * count; // Adjust price for stacked items
+                        logmc(`§6[§bTPM§6]§c ${weirdItemName} had ${itemCount} in slot but combined with another item so there's now ${count}. Listing price is now ${price}`);
                     }
-                    await sleep(2500);//issue with item not loading
+                    if (this.checkDrillParts(slot.nbt.value) && drillWithParts) {
+                        bot.betterWindowClose();
+                        this.removeDrillParts(auctionID, uuid, slot.nbt.value);
+                        logmc(`§6[§bTPM§6]§c ${weirdItemName} has drill parts! Removing them!!!`);
+                        return;
+                    }
+                    await sleep(2500);
                     bot.betterClick(slot.slot);
+                    break;
                 }
-            });
-            await betterOnce(bot, 'windowOpen');
+            }
+            try { await betterOnce(bot, 'windowOpen') } catch { };
             debug(getWindowName(bot.currentWindow));
             if (getWindowName(bot.currentWindow) === 'Create Auction') {
                 bot.betterClick(48);
@@ -355,16 +395,35 @@ class RelistHandler {
 
     getName(ExtraAttributes) {
         if (!ExtraAttributes) return null;
-        let id = ExtraAttributes.id.value;
+        let id = ExtraAttributes.id?.value;
         const split = id?.split('_');
         const first = split[0];
         if (first === 'RUNE' || first === "UNIQUE") {//Don't want to list incorrect rune
-            id = `${Object.keys(ExtraAttributes.runes.value)[0]}_RUNE`;
+            id = `${Object.keys(ExtraAttributes?.runes?.value)[0]}_RUNE`;
         }
         return id;
     }
 
+    async addSavedData(auctionID, target, finder) {
+        if (this.savedItems.includes(auctionID)) return;
+        try {
+            const data = (await axios.get(`https://sky.coflnet.com/api/auction/${auctionID}`)).data;
+            if (!data.uuid) throw new Error(`No itemUUID for ${auctionID}`);
+            const toSave = {};
+            toSave.time = Date.now();
+            if (finder !== "USER") toSave.target = target;
+            else toSave.target = "It was user finder";
+            toSave.auctionID = auctionID;
+            this.savedData.bidData[data.flatNbt.uuid] = toSave;
+            this.savedItems.push(auctionID);
+            this.state.saveQueue(this.savedData.bidData);
+        } catch (e) {
+            error(e);
+        }
+    }
+
     checkRelist(profit, finder, itemName, tag, auctionID, price, weirdItemName, fromQueue = false) {
+        this.addSavedData(auctionID, price + profit, finder);
         if (!this.hasCookie) return false;
         if (!this.useRelist) {
             this.sendTPMSocket(auctionID, `relist is off`, itemName);
@@ -384,7 +443,7 @@ class RelistHandler {
         }
 
         if (this.currentAuctions == this.maxSlots || this.state.get() || this.bot.currentWindow) {
-            if (!fromQueue) this.state.queueAdd({ profit, finder, itemName, tag, auctionID, price, weirdItemName }, 'listing', 2);
+            if (!fromQueue) this.state.queueAdd({ profit, finder, itemName, tag, auctionID, price, weirdItemName }, 'listing', 10);
             return false;
         }
 
@@ -403,7 +462,8 @@ class RelistHandler {
                 reasons: reasons,
                 itemName: itemName,
                 username: this.bot.username,
-                uuid: this.bot.uuid
+                uuid: this.bot.uuid,
+                ping: pingOnFailedListing,
             })
         }), false)
     }
@@ -416,6 +476,20 @@ class RelistHandler {
 
     getGottenReady() {//freaky ahh name
         return this.ready;
+    }
+
+    checkDrillParts(nbt) {
+        if (!nbt) return false;
+        try {
+            const ExtraAttributes = nbt.ExtraAttributes?.value;
+            if (ExtraAttributes.drill_part_fuel_tank) return true;//"Hey man why don't you use an OR state ment!!!" cause it would be so long
+            if (ExtraAttributes.drill_part_engine) return true;
+            if (ExtraAttributes.drill_part_upgrade_module) return true;
+            return false;
+        } catch (e) {
+            debug(`Error checking parts: `, e);
+            return false;
+        }
     }
 
     async delistAuction(itemUuid, auctionID, weirdItemName) {
@@ -518,23 +592,7 @@ class RelistHandler {
                         } catch (e) {//if no message for full inv then yay we don't have one
                             debug(`cookie error (probably not an actual error)`, e);
                             bot.betterWindowClose();
-                            let cookieSlot = (bot.inventory.slots.find(slot => slot?.name === 'cookie'))?.slot;
-                            debug(`Got cookie slot ${cookieSlot}`);
-                            if (!cookieSlot) {
-                                resolve(`no cookie found`);
-                                debug(JSON.stringify(bot.inventory.slots));
-                            } else {
-                                if (cookieSlot < 36) {//not in hotbar. It would auto go to hotbar so that mean it's full
-                                    bot.clickWindow(cookieSlot, 0, 2);//can't use betterclick because it has failsafe for no window open and we don't want one open!
-                                    await sleep(500);
-                                    cookieSlot = (bot.inventory.slots.find(slot => slot?.name === 'cookie'))?.slot;
-                                    debug(`Moved it maybe?`, cookieSlot);
-                                }
-                            }
-                            await sleep(500);
-                            bot.setQuickBarSlot(cookieSlot - 36);
-                            await sleep(100);
-                            bot.activateItem();
+                            await this.getItemAndMove('COOKIE');
                             await betterOnce(bot, 'windowOpen')
                             bot.betterClick(11)
                             debug("activated cookie");
@@ -557,8 +615,239 @@ class RelistHandler {
         });
     }
 
+    getExtraAttribute(slotNum) {
+        return this.bot.currentWindow?.slots?.[slotNum]?.nbt?.value?.ExtraAttributes?.value;
+    }
+
+    async removeDrillParts(auctionID, uuid) {
+        return new Promise(async (resolve, reject) => {//resolve true/false
+            const { bot } = this;
+            this.state.set('listing');
+            try {
+                await this.getItemAndMove("ABIPHONE");
+                await betterOnce(bot, "windowOpen");
+                let Jotraeline = (bot.currentWindow?.slots?.find(slot => slot?.nbt?.value?.display?.value?.Name?.value?.includes("Jotraeline Greatforge")))?.slot;
+                if (!Jotraeline) throw new Error(`No slot found for clicking Jotraeline`);
+                bot.betterClick(Jotraeline);
+                await betterOnce(bot, "windowOpen", null, 20_000);//Give big timespan so that window can open
+                let drillSlot = (bot.currentWindow.slots.find(slot => this.getItemUuid(slot) == uuid)).slot;
+                debug("Drill nbt", this.getExtraAttribute(drillSlot));
+                const drillName = drillSlot?.nbt?.value?.display?.value?.Name?.value;
+                bot.betterClick(drillSlot, 0, 1);//Shift click!
+                debug(`Put drill into menu`);
+                debug('Drill slot', bot.currentWindow?.slots?.[29]);
+                let removedIds = [];
+                await sleep(500);
+                if (this.getName(this.getExtraAttribute(9)) !== null) removedIds.push(this.getName(this.getExtraAttribute(9)));
+                bot.betterClick(9);//Feul tank
+                await sleep(500);
+                if (this.getName(this.getExtraAttribute(18)) !== null) removedIds.push(this.getName(this.getExtraAttribute(18)));
+                bot.betterClick(18);//drill engine
+                await sleep(500);
+                if (this.getName(this.getExtraAttribute(27)) !== null) removedIds.push(this.getName(this.getExtraAttribute(27)));
+                bot.betterClick(27);//Upgrade module?
+                await sleep(100);
+                bot.betterWindowClose();
+                await sleep(230);
+                debug(`Parts removed`, JSON.stringify(removedIds));
+                let prices = {};
+                this.state.set(null);
+                const pricePromises = removedIds.map(async id => {
+                    const price = await this.getItemPrice(id);
+                    prices[id] = price;
+                    debug(`Added ${id} to prices. ${price}`);
+                });
+
+                await Promise.all(pricePromises);//I love Promise.all!!!
+                let message = "";
+                for (const item in prices) {
+                    message += `Removed ${item}. Selling it for ${prices[item]}\n`
+                    debug(`Adding ${item} ${prices[item]}`);
+                    this.state.queueAdd(
+                        {
+                            price: prices[item],
+                            inv: item,
+                            auctionID: item,
+                            time: null
+                        },
+                        'listingNoName',
+                        10
+                    );
+                }
+
+                sendDiscord({
+                    title: 'Removed Drill parts!',
+                    color: 13320532,
+                    fields: [
+                        {
+                            name: '',
+                            value: message + `\nRemoved from ${drillName}`,
+                        }
+                    ],
+                    thumbnail: {
+                        url: bot.head,
+                    },
+                    footer: {
+                        text: `TPM Rewrite`,
+                        icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+                    }
+                })
+
+                this.sendTPMSocket(auctionID, "it's a drill with removed parts", drillName)
+
+            } catch (e) {
+                error(`Error removing parts`, e);
+                bot.betterWindowClose();
+                this.state.set(null);
+                resolve(false);
+                await sleep(200);
+            }
+        })
+    }
+
+    async claimItem(auctionID) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const { bot } = this;
+                bot.chat(`/viewauction ${auctionID}`);
+                await betterOnce(bot, 'windowOpen');
+                let itemUuid = this.getItemUuid(bot.currentWindow.slots[13], true);
+                let itemCount = bot.currentWindow.slots[13]?.count;
+                let nbt = bot.currentWindow.slots[13].nbt.value;
+                if (!itemUuid) {
+                    debug(`Failed to get item uuid :( ${itemUuid} ${JSON.stringify(bot.currentWindow.slots[13])}`);
+                }
+                debug(`Item uuid: ${itemUuid}`);
+                debug(`Item count: ${itemCount}`);
+                bot.betterClick(31);
+                await sleep(250);
+                bot.betterWindowClose();//safety
+                await sleep(250);
+                resolve({ count: itemCount, uuid: itemUuid, nbt: nbt });
+            } catch (e) {
+                debug(e);
+                this.bot.betterWindowClose();//safety
+                reject(e);
+            }
+        })
+    }
+
+    async getItemAndMove(itemName) {
+        return new Promise(async (resolve, reject) => {
+            const { bot } = this;
+            try {
+                let slot = (bot.inventory.slots.find(slot => this.getName(slot?.nbt?.value?.ExtraAttributes?.value)?.includes(itemName)))?.slot;
+                debug(`Got ${itemName} slot ${slot}`);
+                if (!slot) {
+                    reject(`No ${itemName} found`);
+                    debug(JSON.stringify(bot.inventory.slots));
+                } else {
+                    if (slot < 36) {//not in hotbar. It would auto go to hotbar so that mean it's full
+                        bot.clickWindow(slot, 0, 2);//can't use betterclick because it has failsafe for no window open and we don't want one open!
+                        await sleep(500);
+                        slot = (bot.inventory.slots.find(slot => this.getName(slot?.nbt?.value?.ExtraAttributes?.value)?.includes(itemName)))?.slot;
+                        debug(`Moved it maybe?`, slot);
+                    }
+                }
+                await sleep(500);
+                bot.setQuickBarSlot(slot - 36);
+                await sleep(100);
+                bot.activateItem();
+                resolve(true);
+            } catch (e) {
+                debug(e);
+                this.bot.betterWindowClose();//safety
+                reject(e);
+            }
+        })
+    }
+
     async getCookiePrice() {
         try { return Math.round((await axios.get('https://api.hypixel.net/v2/skyblock/bazaar')).data.products.BOOSTER_COOKIE.quick_status.buyPrice) } catch (e) { error(e) };
+    }
+
+    async getItemPrice(id) {
+        return new Promise(async (resolve, reject) => {
+            try {
+                let { median, volume } = (await axios.get(`https://sky.coflnet.com/api/item/price/${id}`)).data;
+                const { lowest: lbin } = (await axios.get(`https://sky.coflnet.com/api/item/price/${id}/bin`)).data;
+                debug(`Got median ${median} volume ${volume} and lbin ${lbin}`);
+                if (median < lbin) {
+                    volume = volume / 5;//yes!
+                    if (volume < 7) resolve(median);
+                    const difference = lbin - median;
+                    volume = volume / (volume - 2);
+                    volume = 2 - volume;
+                    resolve(median + (difference * volume));//idk what I'm doing
+                    //hey nevo don't steal this please!!!
+                    //It's now legal to but you have to make CF open source
+                } else {
+                    resolve(lbin - 1);//undercut!!
+                }
+            } catch (e) {
+                error(e)
+                resolve(null);
+            };
+        })
+
+    }
+
+    async checkBids() {
+        const { state, bot } = this;
+        try {
+            state.set('bids');
+            bot.chat('/ah');
+            await betterOnce(bot, 'windowOpen');
+            bot.betterClick(13);//Open bids
+            await betterOnce(bot, 'windowOpen');
+            const slots = {}
+            const uuids = new Set(bot.currentWindow.slots.map(slot => {
+                if (slot?.slot < bot.currentWindow.slots.length - 36) {
+                    slots[this.getItemUuid(slot)] = slot;
+                    return this.getItemUuid(slot);
+                }
+                return null;
+            }));//haha set
+            for (const uuid in this.savedData.bidData) {
+                debug(`Checking ${uuid}`);
+                if (uuids.has(uuid)) continue;
+                debug(`Deleting UUID`);
+                delete this.savedData.bidData[uuid];//Remove old data
+            }
+            state.saveQueue(this.savedData.bidData);
+            const data = {
+                username: bot.username,
+                bids: []
+            };
+            uuids.forEach(uuid => {
+                if (!uuid) return;
+                const bidData = this.savedData.bidData[uuid];
+                const slot = slots[uuid];
+                const lore = getSlotLore(slot);
+                const itemName = slot?.nbt?.value?.display?.value?.Name?.value;
+                if (!bidData) {
+                    data.bids.push({
+                        time: "Unknown",
+                        target: "Unknown",
+                        auctionID: "Unknown",
+                        lore,
+                        uuid,
+                        itemName
+                    })
+                    return;
+                }
+                data.bids.push({ ...bidData, ...{ lore, uuid, itemName } });//Combine it all into 1
+            })
+            this.tpm.send(JSON.stringify({
+                type: "bids",
+                data: JSON.stringify({ ...data, ...{ uuid: bot.uuid } })
+            }))
+        } catch (e) {
+            error(`Error checking bids ${e}`);
+            state.setAction();
+        }
+        bot.betterWindowClose();
+        state.set(null);
     }
 
 

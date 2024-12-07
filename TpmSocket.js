@@ -106,7 +106,7 @@ class TpmSocket {
                     debug(`Didn't find a bot for ${data.username}`);
                     return;
                 }
-                bot.state.queueAdd(data, 'listingNoName', 2);
+                bot.state.queueAdd(data, 'listingNoName', 4);
                 break;
             }
             case "log":
@@ -357,7 +357,7 @@ class TpmSocket {
                     fields: [
                         {
                             name: '',
-                            value: `${queue.length == 0 ? `Nothing in queue!`: queue.join('\n')}\n\n**State: ** ${bot.state.get()}`,
+                            value: `${queue.length == 0 ? `Nothing in queue!` : queue.join('\n')}\n\n**State: ** ${bot.state.get()}`,
                         }
                     ],
                     thumbnail: {
@@ -368,6 +368,21 @@ class TpmSocket {
                         icon_url: 'https://media.discordapp.net/attachments/1261825756615540839/1304911212760530964/983ecb82e285eee55ef25dd2bfbe9d4d.png?ex=67311cc5&is=672fcb45&hm=de4e5dd382d13870fdefa948d295fc5d1ab8de6678f86c36cd61fa1fd0cc5dd2&=&format=webp&quality=lossless&width=888&height=888',
                     }
                 }, bot.getBot().head, false, bot.getBot().username)
+                break;
+            }
+            case "bids": {
+                let { username } = data;
+                if (!username) {
+                    username = Object.keys(this.bots)[0];
+                }
+
+                const bot = this.bots[username];
+                if (!bot) {
+                    debug(`Didn't find a bot for ${username}`);
+                    return;
+                }
+
+                bot.state.queueAdd({}, "bids", 5);
                 break;
             }
         }

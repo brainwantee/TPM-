@@ -24,6 +24,7 @@ class AhBot {
         this.island = null;
         this.state = null;
         this.packets = null;
+        this.relist = null;
         this.sold = 0;
         this.bought = [];
         this.tpm = TPMSocket;
@@ -40,6 +41,7 @@ class AhBot {
         let packets = getPackets(ign);
 
         const state = new StateManager(bot);
+        state.saveQueue()//This just makes the file if it doesn't exist
 
         const coflSocket = new CoflWs(ign, bot);
         const ws = coflSocket.getWs();
@@ -55,6 +57,7 @@ class AhBot {
         this.autoBuy = autoBuy;
         this.webhook = webhook;
         this.ws = ws;
+        this.relist = relist;
         this.coflSocket = coflSocket;
         this.island = island;
         this.state = state;
@@ -155,6 +158,10 @@ class AhBot {
                         icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                     }
                 }, this.bot.head, false, this.bot.username)
+                break;
+            case "checkBids": {
+                this.relist.checkBids();
+            }
         }
     }
 

@@ -3,7 +3,7 @@ const EventEmitter = require('events');
 
 const { config } = require('../config.js');
 const { logmc, customIGNColor, debug, error } = require('../logger.js');
-const { formatNumber, noColorCodes, sleep } = require('./Utils.js');
+const { formatNumber, noColorCodes, sleep, sendDiscord } = require('./Utils.js');
 const { getPackets } = require('./packets.js');
 
 const { blockUselessMessages, session } = config;
@@ -162,7 +162,7 @@ class CoflWs {
         const startMatch = msg.match(startedRegex);
         if (startMatch) {
             debug(`Got start stuff ${JSON.stringify(startMatch)}`);
-            switch(startMatch[1]){
+            switch (startMatch[1]) {
                 case "PREMIUM PLUS":
                     this.accountTier = "Premium Plus";
                     break;
@@ -182,6 +182,33 @@ class CoflWs {
         if (msg.includes(`Until you do you are using the free version which will make less profit and your settings won't be saved`)) {//logged out
             this.handleCommand('/cofl s maxItemsInInventory 1');
             //TODO add webhook here
+        }
+
+        if (msg.includes("Your premium tier is about to expire in 1 minutes.")) {
+            let message = `Your ${this.getAccountTier()} is expiring in a minute!!!`
+            if (this.getCurrentLink().includes("sky-us") && this.getAccountTier() == "Premium Plus") {
+                this.handleCommand('/cofl switchregion EU');
+                message += "\nYou're now on the EU socket so that it doesn't spam :)"
+            }
+
+            sendDiscord({
+                title: 'Premium expiring!',
+                color: 7448274,
+                fields: [
+                    {
+                        name: '',
+                        value: message,
+                    }
+                ],
+                thumbnail: {
+                    url: this.bot.head,
+                },
+                footer: {
+                    text: `TPM Rewrite`,
+                    icon_url: 'https://media.discordapp.net/attachments/1261825756615540839/1304911212760530964/983ecb82e285eee55ef25dd2bfbe9d4d.png?ex=67311cc5&is=672fcb45&hm=de4e5dd382d13870fdefa948d295fc5d1ab8de6678f86c36cd61fa1fd0cc5dd2&=&format=webp&quality=lossless&width=888&height=888',
+                }
+            }, this.bot.head, true, this.bot.username);
+
         }
 
         if (blockUselessMessages) {

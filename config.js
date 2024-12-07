@@ -27,7 +27,7 @@ const defaultConfig = `{
 
     //If cookie is under this time then buy a new one. Leave blank to never auto buy a cookie.
     //Use y, d, or h to set time
-    "autoCookie": "48h",
+    "autoCookie": "1h",
 
     //Don't claim coop's auctions
     "angryCoopPrevention": false,
@@ -102,7 +102,13 @@ const defaultConfig = `{
         //If an item is in a new stack then this controls if it's listed
         //For example, if you have 1 spooky fragment in your inventory and then buy 4 you will now obviously have 5 in a stack.
         //If this is set to true, it will list the 5 fragments for the price of 1 fragment multiplied by 5.
-        "stacks": false
+        "stacks": false,
+
+        //Pings you when an item doesn't list
+        "pingOnFailedListing": false,
+
+        //Doesn't list a drill if it has any parts (It will then automatically remove and sell the parts)
+        "drillWithParts": true,
 
     },
 

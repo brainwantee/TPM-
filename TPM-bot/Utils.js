@@ -53,7 +53,7 @@ async function betterOnce(listener, event, callback, timeframe = 5000) {
 
         setTimeout(() => {
             listener.off(event, listen);
-            reject(`Didn't find in time!`);
+            reject(`Didn't find in time! ${event}`);
         }, timeframe);
 
         listener.on(event, listen);

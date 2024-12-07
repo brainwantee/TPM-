@@ -41,7 +41,7 @@ class AutoBuy {
 
         bot._client.on('open_window', async (window) => {
             const windowID = window.windowId;
-            const nextWindowID = windowID === 100 ? 1 : windowID + 1
+            const nextWindowID = windowID === 100 ? 1 : windowID + 1;
             const windowName = window.windowTitle;
             debug(`Got new window ${windowName}, ${windowID}`);
             packets.confirmClick(windowID);
@@ -242,7 +242,7 @@ class AutoBuy {
                     fields: [
                         {
                             name: '',
-                            value: `${nicerFinders(finder)}: \`${noColorCodes(itemName)}\` \`${formatNumber(startingBid)}\` ⇨ \`${formatNumber(target)}\` (\`${formatNumber(profit)}\` profit) [${bed}]`,
+                            value: `${nicerFinders(finder)}: [\`${noColorCodes(itemName)}\`](https://sky.coflnet.com/a/${auctionID}) \`${formatNumber(startingBid)}\` ⇨ \`${formatNumber(target)}\` (\`${formatNumber(profit)}\` profit) [${bed}]`,
                         }
                     ],
                     thumbnail: {
@@ -387,7 +387,7 @@ class AutoBuy {
                         break;
                     }
                     case "listingNoName": {
-                        const { auctionID, price, time } = current.action;
+                        const { auctionID, price, time, inv } = current.action;
                         if (!this.relist.externalListCheck()) {
                             debug(`Didn't pass relist check`);
                             return;
@@ -400,7 +400,7 @@ class AutoBuy {
                             var pricePaid = 0; //ew var
                         }
                         let profit = IHATETAXES(price) - pricePaid;
-                        this.relist.listAuction(auctionID, price, profit, weirdItemName, tag, time || null, true);
+                        this.relist.listAuction(auctionID, price, profit, weirdItemName, tag, time || null, true, inv);
                         current.state = 'listing';
                         break;
                     }
@@ -432,6 +432,10 @@ class AutoBuy {
                         const { finder, profit, itemName, auctionID, startingBid, tag } = current.action;
                         this.openExternalFlip(auctionID, profit, finder, itemName, tag, startingBid);
                         current.state = 'buying';
+                        break;
+                    }
+                    case "bids": {
+                        this.relist.checkBids();
                         break;
                     }
                 }
