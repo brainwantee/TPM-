@@ -15,6 +15,7 @@ class CoflWs {
 
     constructor(ign, bot) {
         this.ws = new EventEmitter();
+        this.ws.setMaxListeners(20);
         this.websocket = null;
         this.link = null;
         this.ign = ign;
@@ -48,6 +49,14 @@ class CoflWs {
                 this.startWs(link);
                 logmc(`§6[§bTPM§6] §cCofl connection stopped. Auto reconnecting`);
             }
+        })
+
+        websocket.on('error', (e) => {
+            error(`Error with cofl socket! `, e);
+            this.closeSocket();
+            setTimeout(() => {//Make sure there's no overlapping
+                this.startWs(link);
+            }, 500);
         })
 
         websocket.on('message', (message) => {

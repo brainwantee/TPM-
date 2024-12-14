@@ -75,6 +75,8 @@ async function makeBot(ign) {
 
         makePackets(ign, bot._client);
 
+        bot.setMaxListeners(20);
+
         bot.once("login", async () => {
             bot.uuid = await getUUID(ign);
             bot.head = `https://mc-heads.net/head/${bot.uuid}.png`;

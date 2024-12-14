@@ -235,6 +235,7 @@ async function rotateStop(ign, bot, start) {
 
 async function crashReport(e) {
     error('There was an error:', e);
+    error(`Stack trace`, e.stack);
     await sendLatestLog({
         title: 'Crash :(',
         color: 15755110,

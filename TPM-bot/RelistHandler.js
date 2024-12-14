@@ -108,13 +108,26 @@ class RelistHandler {
                     await betterOnce(bot, 'windowOpen');
                     let claimAll = null;
                     let soldAuctions = [];//if there's no cauldron we click this
+                    let expiredAuctons = [];
                     bot.currentWindow.slots.forEach(slot => {
                         const lore = getSlotLore(slot);
                         if (!lore) return;
+                        const endsInTime = lore.find(line => line.includes('Ends in:'));
+                        if (endsInTime) {
+                            const endTime = normalTime(endsInTime);
+                            setTimeout(() => {//Remove auctions when they expire
+                                state.queueAdd(this.getItemUuid(slot), "expired", 4);
+                            }, endTime)
+                        }
                         const hasBuyer = lore.find(line => line.includes('Buyer:'));
                         if (hasBuyer) {
                             soldAuctions.push(slot);
                             this.updateSold();
+                            return;
+                        }
+                        const expired = lore.find(line => line.includes('Expired'));
+                        if (expired) {
+                            expiredAuctons.push(slot);
                             return;
                         }
                         const hasSeller = lore.find(line => line.includes('Seller:'));
@@ -129,23 +142,33 @@ class RelistHandler {
                         bot.betterClick(claimAll);
                     } else if (soldAuctions.length == 1) {
                         bot.betterClick(soldAuctions[0].slot);
+                    } else if (expiredAuctons.length == 1) {
+                        bot.betterClick(expiredAuctons[0].slot);
                     }
 
                     debug(`Currently has ${this.currentAuctions} auctions`);
 
                     let webhookMessage = "";
 
-                    let totalCollected = 0;
+                    let totalSold = 0;
 
                     soldAuctions.forEach(auction => {
                         const lore = getSlotLore(auction);
                         const itemName = noColorCodes(auction.nbt.value.display.value.Name.value);
                         const soldLine = noColorCodes(lore.find(line => line.includes('Sold for:')));
                         const soldFor = onlyNumbers(soldLine);
-                        totalCollected += soldFor;
+                        totalSold += soldFor;
                         debug(soldLine);
                         debug(soldFor);
                         webhookMessage += `Collected \`${addCommasToNumber(soldFor)} coins\` for selling \`${itemName}\`\n`;
+                    })
+
+                    expiredAuctons.forEach(auction => {
+                        const lore = getSlotLore(auction);
+                        const itemName = noColorCodes(auction.nbt.value.display.value.Name.value);
+                        const priceLine = noColorCodes(lore.find(line => line.includes('Buy it now') || line.includes('Starting bid')));
+                        const price = onlyNumbers(priceLine);
+                        webhookMessage += `Claimed \`${itemName}\` because it expired (It cost \`${formatNumber(price)}\` coins)`
                     })
 
 
@@ -168,17 +191,32 @@ class RelistHandler {
                         error(`Error checking cookie`, e);
                     }
 
+                    let bids = 0;
+
                     try {
                         bot.chat('/ah');
                         await betterOnce(bot, 'windowOpen');
                         bot.betterClick(13);//Open bids
-                        await betterOnce(bot, 'windowOpen');
-                        const uuids = new Set(bot.currentWindow.slots.map(slot => {
-                            if (slot?.slot < bot.currentWindow.slots.length - 36) return this.getItemUuid(slot); else return null;
-                        }));//haha set
+                        try {
+                            await betterOnce(bot, 'windowOpen');
+                        } catch (e) {
+                            debug(`Error opening bids, prob not a real error`, e);
+                            throw new Error(`No bids so like I can't check them yk! Dw this isn't a real error`);
+                        }
+
+                        let uuids =
+                            bot.currentWindow.slots
+                                .map(slot => {
+                                    if (slot?.slot < bot.currentWindow.slots.length - 36) {
+                                        return this.getItemUuid(slot);
+                                    }
+                                    return null;
+                                })
+                                .filter(uuid => uuid !== null)
+                        bids = uuids.length;
                         for (const uuid in this.savedData.bidData) {
                             debug(`Checking ${uuid}`);
-                            if (uuids.has(uuid)) continue;
+                            if (uuids.includes(uuid)) continue;
                             debug(`Deleting UUID`);
                             delete this.savedData.bidData[uuid];//Remove old data
                         }
@@ -194,14 +232,14 @@ class RelistHandler {
                         fields: [
                             {
                                 name: '',
-                                value: `>>> **Auction Slots:** \`${this.currentAuctions}\`/\`${this.maxSlots}\`\n**Cofl Tier:** ${this.coflWs.getAccountTier()}\n**Cofl expires <t:${this.coflWs.getAccountEndingTime()}:R>**\n**Booster Cookie ends <t:${cookieEnd}:R>**\n**Connection ID:** \`${this.coflWs.getConnectionId()}\``,
+                                value: `>>> **Auction Slots:** \`${this.currentAuctions}\`/\`${this.maxSlots}\`\n**Cofl Tier:** ${this.coflWs.getAccountTier()}\n**Cofl expires <t:${this.coflWs.getAccountEndingTime()}:R>**\n**Booster Cookie ends <t:${cookieEnd}:R>**\n**Bids:** \`${bids}\`\n**Connection ID:** \`${this.coflWs.getConnectionId()}\``,
                             }
                         ],
                         thumbnail: {
                             url: this.bot.head,
                         },
                         footer: {
-                            text: `TPM Rewrite - Purse: ${addCommasToNumber(bot.getPurse(true) + totalCollected)}`,
+                            text: `TPM Rewrite - Purse: ${addCommasToNumber(bot.getPurse(true) + totalSold)}`,
                             icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                         }
                     }, useItemImage ? this.bot.head : null, false, this.bot.username);
@@ -213,22 +251,20 @@ class RelistHandler {
                             fields: [
                                 {
                                     name: '',
-                                    value: `${webhookMessage}${soldAuctions.length == 1 ? '' : `\nCollected \`${addCommasToNumber(totalCollected)}\` coins in total!`}`,
+                                    value: `${webhookMessage}${soldAuctions.length == 1 ? '' : `\nCollected \`${addCommasToNumber(totalSold)}\` coins in total!\nClaimed \`${expiredAuctons.length}\` expired auctions!`}`,
                                 }
                             ],
                             thumbnail: {
                                 url: this.bot.head,
                             },
                             footer: {
-                                text: `TPM Rewrite - Purse: ${addCommasToNumber(bot.getPurse(true) + totalCollected)}`,
+                                text: `TPM Rewrite - Purse: ${addCommasToNumber(bot.getPurse(true) + totalSold)}`,
                                 icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                             }
                         }, useItemImage ? this.bot.head : null, false, this.bot.username)
                     } else {
                         bot.betterWindowClose();
                     }
-
-                    // await this.removeDrillParts(0, 0, 0, 81);
 
                     state.set(null);
                     setTimeout(() => {
@@ -373,6 +409,10 @@ class RelistHandler {
                     useItemImage: useItemImage
                 })
             }), false)
+
+            setTimeout(() => {
+                state.queueAdd(itemUuid, "expired", 4);
+            }, listingTime * 3.6e+6)
 
         } catch (e) {
             if (getWindowName(this.bot.currentWindow)?.includes('Create')) this.bot.betterClick(13);//remove item from slot
@@ -630,9 +670,10 @@ class RelistHandler {
                 if (!Jotraeline) throw new Error(`No slot found for clicking Jotraeline`);
                 bot.betterClick(Jotraeline);
                 await betterOnce(bot, "windowOpen", null, 20_000);//Give big timespan so that window can open
-                let drillSlot = (bot.currentWindow.slots.find(slot => this.getItemUuid(slot) == uuid)).slot;
-                debug("Drill nbt", this.getExtraAttribute(drillSlot));
-                const drillName = drillSlot?.nbt?.value?.display?.value?.Name?.value;
+                let drillNbt = (bot.currentWindow.slots.find(slot => this.getItemUuid(slot) == uuid))
+                let drillSlot = drillNbt.slot;
+                debug("Drill nbt", JSON.stringify(drillSlot));
+                const drillName = drillNbt?.nbt?.value?.display?.value?.Name?.value;
                 bot.betterClick(drillSlot, 0, 1);//Shift click!
                 debug(`Put drill into menu`);
                 debug('Drill slot', bot.currentWindow?.slots?.[29]);
@@ -790,6 +831,58 @@ class RelistHandler {
             };
         })
 
+    }
+
+    async removeExpiredAuction(itemUuid) {
+        const { state, bot } = this;
+        try {
+            if (!itemUuid) throw new Error(`No itemUuid given for ${itemUuid}`);
+            debug(`Removing expired auction ${itemUuid}`);
+            state.set('expired');
+            bot.chat('/ah');
+            await betterOnce(bot, 'windowOpen');
+            bot.betterClick(15);//Open auctions
+            await betterOnce(bot, 'windowOpen');
+            for (const slot of bot.currentWindow.slots) {
+                const uuid = this.getItemUuid(slot, false);
+                if (uuid == itemUuid) {
+                    const tag = this.getName(this.getExtraAttribute(slot.slot));
+                    const name = noColorCodes(slot?.nbt?.value?.display?.value?.Name?.value);
+                    const lore = getSlotLore(slot);
+                    const priceLine = noColorCodes(lore.find(line => line.includes('Buy it now') || line.includes('Starting bid')));
+                    const price = onlyNumbers(priceLine);
+                    debug(`Got item to remove! ${slot.slot}`);
+                    bot.betterClick(slot.slot);
+                    console.log(`Removed ${itemUuid}`);
+                    sendDiscord({
+                        title: 'Removed Expired Auction',
+                        color: 13320532,
+                        fields: [
+                            {
+                                name: "",
+                                value: `Removed auction \`${name}\` because it expired! It was listed at \`${addCommasToNumber(price)}\``,
+                            }
+                        ],
+                        thumbnail: {
+                            url: useItemImage ? `https://sky.coflnet.com/static/icon/${tag}` : bot.head,
+                        },
+                        footer: {
+                            text: `TPM Rewrite`,
+                            icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+                        }
+                    }, bot.head, false)
+                    this.currentAuctions--;
+                    return;//Early return!!!
+                }
+            }
+            const slotData = bot.currentWindow.slots.map(slot => this.getItemUuid(slot, false));
+            throw new Error(`No item found to remove ${JSON.stringify(slotData)}! Was removing ${itemUuid}`);
+        } catch (e) {
+            error(`Error removing expired auction ${itemUuid}`, e);
+            bot.betterWindowClose();
+            state.set(null);
+            state.setAction();
+        }
     }
 
     async checkBids() {

@@ -1,5 +1,5 @@
 const { logmc, debug, error, startTracker, getIgns } = require('./logger.js');
-const { sleep, normalNumber, sendDiscord, sendLatestLog, formatNumber, nicerFinders, normalTime } = require('./TPM-bot/Utils.js');
+const { sleep, normalNumber, sendDiscord, sendLatestLog, formatNumber, nicerFinders, normalTime, noColorCodes } = require('./TPM-bot/Utils.js');
 const { config } = require('./config.js');
 const axios = require('axios');
 let { igns, webhook, discordID, allowedIDs, pingOnUpdate } = config;
@@ -33,13 +33,17 @@ class TpmSocket {
             this.ws.on('open', async () => {
                 this.sentFailureMessage = false;
                 logmc('§6[§bTPM§6] §3Connected to the TPM websocket!');
-                await this.botsReady();
-                if (this.settings.length === 0) await this.getSettings();
-                if (this.storedMessages.length > 0) {
-                    this.send(JSON.stringify({
-                        type: "batch",
-                        data: JSON.stringify(this.storedMessages)
-                    }))
+                if (getIgns()?.length !== 0) {
+                    await this.botsReady();
+                    if (this.settings.length === 0) await this.getSettings();
+                    if (this.storedMessages.length > 0) {
+                        this.send(JSON.stringify({
+                            type: "batch",
+                            data: JSON.stringify(this.storedMessages)
+                        }))
+                    }
+                } else {
+                    this.settings = {};
                 }
                 this.send(JSON.stringify({
                     type: "loggedIn",
@@ -237,7 +241,7 @@ class TpmSocket {
                 break;
             }
             case "timeout": {
-                const time = data.timeout;
+                const time = normalNumber(data.timeout);
                 let username = data.username;
                 if (!username) {
                     username = Object.keys(this.bots)[0];
@@ -289,7 +293,7 @@ class TpmSocket {
                 break;
             }
             case "block": {
-                let { username, command, blockee } = data;
+                let { username, command, blockee, message } = data;
                 if (!username) {
                     username = Object.keys(this.bots)[0];
                 }
@@ -303,12 +307,12 @@ class TpmSocket {
                 bot.chat(command);
 
                 sendDiscord({
-                    title: 'Blocked',
+                    title: message,
                     color: 15755110,
                     fields: [
                         {
                             name: '',
-                            value: `${username} blocked ${blockee}!`,
+                            value: `${username} ${message.toLowerCase()} ${blockee}!`,
                         }
                     ],
                     thumbnail: {
@@ -338,8 +342,15 @@ class TpmSocket {
                     return;
                 }
 
+                let soldPrice = 0;
+                let totalListing = 0;
+
                 let queue = bot.state.getQueue();
                 queue = queue.map(element => {
+                    if (element.state == 'listingNoName' || element.state == 'listing') {
+                        totalListing++;
+                        soldPrice += element.action.price;
+                    }
                     const coolNameFunc = coolerQueue[element.state]
                     if (coolNameFunc) {
                         return coolNameFunc(element.action);
@@ -349,15 +360,24 @@ class TpmSocket {
                     return element.action;
                 })
                 if (queue.length > 10) {
-                    queue = ["Sorry :( It's too big to show so I reccomend restarting cause there's prob a bug"];
+                    queue = ["Sorry :( It's too big to show so I reccomend restarting cause there's prob a bug unless you're listing a lot"];
                 }
+
+                let message = `${queue.length == 0 ? `Nothing in queue!` : queue.join('\n')}\n`
+
+                if (totalListing !== 0) {
+                    message += `\nListing \`${totalListing}\` auctions for \`${formatNumber(soldPrice)}\``;
+                }
+
+                message += `\n**State: ** ${bot.state.get()}`;
+
                 sendDiscord({
                     title: 'Queue',
                     color: 7448274,
                     fields: [
                         {
                             name: '',
-                            value: `${queue.length == 0 ? `Nothing in queue!` : queue.join('\n')}\n\n**State: ** ${bot.state.get()}`,
+                            value: message,
                         }
                     ],
                     thumbnail: {
@@ -383,6 +403,49 @@ class TpmSocket {
                 }
 
                 bot.state.queueAdd({}, "bids", 5);
+                break;
+            }
+            case "timeIn": {
+                const time = normalTime(data.time);
+                let username = data.username;
+
+                sendDiscord({
+                    title: 'Set time in!',
+                    color: 8634367,
+                    fields: [
+                        {
+                            name: '',
+                            value: `Your macro will start <t:${Math.round((Date.now() + time) / 1000)}:R>`,
+                        }
+                    ],
+                    thumbnail: {
+                        url: 'https://media.discordapp.net/attachments/1261825756615540839/1304911212760530964/983ecb82e285eee55ef25dd2bfbe9d4d.png?ex=67311cc5&is=672fcb45&hm=de4e5dd382d13870fdefa948d295fc5d1ab8de6678f86c36cd61fa1fd0cc5dd2&=&format=webp&quality=lossless&width=888&height=888',
+                    },
+                    footer: {
+                        text: `TPM Rewrite`,
+                        icon_url: 'https://media.discordapp.net/attachments/1261825756615540839/1304911212760530964/983ecb82e285eee55ef25dd2bfbe9d4d.png?ex=67311cc5&is=672fcb45&hm=de4e5dd382d13870fdefa948d295fc5d1ab8de6678f86c36cd61fa1fd0cc5dd2&=&format=webp&quality=lossless&width=888&height=888',
+                    }
+                })
+                setTimeout(() => {
+                    this.startBot(data.username, this, true, true);
+                    sendDiscord({
+                        title: 'Starting account!',
+                        color: 5294200,
+                        fields: [
+                            {
+                                name: '',
+                                value: `Let's go \`${username}\` is now flipping!!`,
+                            }
+                        ],
+                        thumbnail: {
+                            url: 'https://media.discordapp.net/attachments/1261825756615540839/1304911212760530964/983ecb82e285eee55ef25dd2bfbe9d4d.png?ex=67311cc5&is=672fcb45&hm=de4e5dd382d13870fdefa948d295fc5d1ab8de6678f86c36cd61fa1fd0cc5dd2&=&format=webp&quality=lossless&width=888&height=888',
+                        },
+                        footer: {
+                            text: `TPM Rewrite`,
+                            icon_url: 'https://media.discordapp.net/attachments/1261825756615540839/1304911212760530964/983ecb82e285eee55ef25dd2bfbe9d4d.png?ex=67311cc5&is=672fcb45&hm=de4e5dd382d13870fdefa948d295fc5d1ab8de6678f86c36cd61fa1fd0cc5dd2&=&format=webp&quality=lossless&width=888&height=888',
+                        }
+                    })
+                }, time);
                 break;
             }
         }
@@ -417,14 +480,14 @@ class TpmSocket {
 const coolerQueue = {//use state as key to get a cool message
     buying: function (action) {
         const { finder, profit, itemName, auctionID } = action;
-        return `Buying [\`${itemName}\`](https://sky.coflnet.com/a/${auctionID}) from ${nicerFinders(finder)} (\`${formatNumber(profit)}\` profit)`
+        return `Buying [\`${noColorCodes(itemName)}\`](https://sky.coflnet.com/a/${auctionID}) from ${nicerFinders(finder)} (\`${formatNumber(profit)}\` profit)`
     },
     claiming: function (action) {
         return `Claiming a [sold auction](https://sky.coflnet.com/a/${action})`;
     },
     listing: function (action) {
         const { profit, finder, itemName, auctionID, price } = action;
-        return `Listing [\`${itemName}\`](https://sky.coflnet.com/a/${auctionID}) for \`${formatNumber(price)}\` from ${nicerFinders(finder)} (\`${formatNumber(profit)}\` profit)`
+        return `Listing [\`${noColorCodes(itemName)}\`](https://sky.coflnet.com/a/${auctionID}) for \`${formatNumber(price)}\` from ${nicerFinders(finder)} (\`${formatNumber(profit)}\` profit)`
     },
     listingNoName: function (action) {
         const { auctionID, price } = action;

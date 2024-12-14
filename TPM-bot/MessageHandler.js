@@ -1,5 +1,5 @@
 const { logmc, getPrefix, debug } = require("../logger.js");
-const { sendDiscord, stripItemName, nicerFinders, formatNumber, addCommasToNumber, onlyNumbers, betterOnce, sleep, IHATECLAIMINGTAXES } = require('./Utils.js');
+const { sendDiscord, stripItemName, nicerFinders, formatNumber, addCommasToNumber, onlyNumbers, betterOnce, sleep, IHATECLAIMINGTAXES, noColorCodes } = require('./Utils.js');
 const { config } = require('../config.js');
 const { webhookFormat, blockUselessMessages, useItemImage } = config;
 
@@ -7,7 +7,8 @@ const soldRegex = /^\[Auction\] (.+?) bought (.+?) for ([\d,]+) coins CLICK$/;
 const boughtRegex = /^You purchased (.+?) for ([\d,]+) coins!$/;
 const claimedRegex = /^You collected ([\d,]+) coins from selling (.+?) to (.+?) in an auction!$/
 const partyRegex = /^-+\s*(.+?) has invited you to join their party!\s*You have 60 seconds to accept\. Click here to join!\s*-+$/m;
- 
+const visitRegex = /^\[SkyBlock\] (.+?) is visiting Your Island!$/
+
 const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
 
 class MessageHandler {
@@ -264,23 +265,40 @@ class MessageHandler {
                         uuid: this.bot.uuid
                     })
                 }))
+            }
+
+            const visitMatch = text.match(visitRegex);
+            if (visitMatch) {
+                let name = visitMatch[1];
+                if(name.includes(' ')) name = name.split(' ')[1];//remove rank
+                name = noColorCodes(name);
+                console.log(`Got visit ${name}`);
+                this.tpm.send(JSON.stringify({
+                    type: "visit",
+                    data: JSON.stringify({
+                        username: this.ign,
+                        inviteUser: name,
+                        botPurse: formatNumber(this.bot.getPurse()),
+                        uuid: this.bot.uuid
+                    })
+                }))
                 /*sendDiscord({
-                    title: 'Party invite!',
-                    color: 8703743,
+                    title: 'Visitor!',
+                    color: 11329967,
                     fields: [
                         {
                             name: '',
-                            value: `Party invite from ${partyMatch[1]}`,
+                            value: `\`${name}\` is visting you!!!`,
                         }
                     ],
                     thumbnail: {
-                        url: `https://mc-heads.net/head/${this.bot.uuid}.png`,
+                        url: this.bot.head,
                     },
                     footer: {
                         text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse())}`,
                         icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                     }
-                })*/
+                }, useItemImage ? this.bot.head : null, false, this.bot.username)*/
             }
 
             if (blockUselessMessages) {

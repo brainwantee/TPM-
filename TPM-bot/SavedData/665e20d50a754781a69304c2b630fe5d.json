@@ -1,39 +1,59 @@
 {
   "bidData": {
-    "17512d86-337f-4291-b89c-7cae2aa6841a": {
-      "time": 1733533210603,
-      "target": 36665000,
-      "auctionID": "963ebb51d3074e2290372b4f47386d7a"
+    "5baa2b12-d4ff-487e-a53d-17a9c6f7ee18": {
+      "time": 1734129322443,
+      "target": 15913000,
+      "auctionID": "2cfd637dbcf6470dbef331554a0c87a1"
     },
-    "79954f28-c41e-45bb-9453-6deffd8ec685": {
-      "time": 1733585191658,
-      "target": 23400000,
-      "auctionID": "c4d5ee52b0c84cd4ab25963e3740cb36"
+    "c82ab761-5821-472a-81bc-558235d96848": {
+      "time": 1734130393433,
+      "target": 8462020,
+      "auctionID": "c270b09971744154b18f4f97d92100fd"
     },
-    "ec21ff33-af35-46de-aac1-c73a3f630d99": {
-      "time": 1733585470255,
-      "target": 16476570,
-      "auctionID": "d64d17ab5d8f4f1eb7256d0b99cd4eb6"
+    "dadead49-c56c-423a-913a-e9f1ec6d8a07": {
+      "time": 1734145348656,
+      "target": 20681518.75,
+      "auctionID": "47899f1495bf4c89a5722177053792c6"
     },
-    "59a4a77f-5539-4c55-bb82-c2abab8a352c": {
-      "time": 1733585471314,
-      "target": 26785628.5,
-      "auctionID": "c0c5befb0772452fb4f4624d15a5734f"
+    "e234b0b3-4269-4871-9d24-d7d7af299d9c": {
+      "time": 1734145948178,
+      "target": 7581020,
+      "auctionID": "c869b2187e904e47b36031b8764af287"
     },
-    "b66967d2-e222-4b93-9bbb-c9967bedb34b": {
-      "time": 1733585829884,
-      "target": 20334004.68,
-      "auctionID": "9418686327674ad8932466f985ec44c6"
+    "addd2962-0c48-4710-a54c-ad7982378e0a": {
+      "time": 1734145965582,
+      "target": 15040000,
+      "auctionID": "c5eef54f42cf4abca15418926de720b0"
     },
-    "98a370f0-40d9-4d29-86a8-91e1ec221ec5": {
-      "time": 1733586071102,
-      "target": 8712461.32,
-      "auctionID": "245e522e517d46c8801f7ae746b28f52"
+    "b4ae015b-3a11-4285-a6f6-d36d6e717737": {
+      "time": 1734147449442,
+      "target": 18372556.32,
+      "auctionID": "5bee58a5a34c45d996a530377880e977"
     },
-    "1e9c6453-1e21-4938-bc70-6fd26acb8938": {
-      "time": 1733587426841,
-      "target": 7181000,
-      "auctionID": "0ab17e3a226f4985adc589a39b711db5"
+    "undefined": {
+      "time": 1734204989986,
+      "target": 207996228.86,
+      "auctionID": "816a9374a01244ef9bd918609c05e383"
+    },
+    "353e1dd7-3102-4e4d-88fe-2ebc51a83497": {
+      "time": 1734203555906,
+      "target": 38480000,
+      "auctionID": "a8e5536ad88a48d6bccf8713893a7eea"
+    },
+    "cb7013dc-0325-43de-9863-985b62a5dfd5": {
+      "time": 1734203725933,
+      "target": 38480000,
+      "auctionID": "31b199cd20cd4ce88d5715299ddc37bc"
+    },
+    "43087a16-8a12-42f7-87be-45811facc7ab": {
+      "time": 1734203743823,
+      "target": 23793620,
+      "auctionID": "963769402e9d4a33a32a78bef6f0b1da"
+    },
+    "fcbb4bea-327a-4da8-9997-470b302a03ca": {
+      "time": 1734204261655,
+      "target": 0,
+      "auctionID": "9146b450552c4ed1b30a62eb379ce2d4"
     }
   },
   "queue": []

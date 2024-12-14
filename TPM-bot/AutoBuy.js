@@ -26,6 +26,7 @@ class AutoBuy {
         this.recentPrice = 0;
         this.recentlySkipped = false;
         this.recentName = null;
+        this.fromCoflSocket = false;
         this.bedFailed = false;
         this.currentOpen = null;
         this.packets = getPackets(ign);
@@ -43,7 +44,7 @@ class AutoBuy {
             const windowID = window.windowId;
             const nextWindowID = windowID === 100 ? 1 : windowID + 1;
             const windowName = window.windowTitle;
-            debug(`Got new window ${windowName}, ${windowID}`);
+            debug(`Got new window ${windowName}, ${windowID} ${this.fromCoflSocket}`);
             packets.confirmClick(windowID);
             if (windowName === '{"italic":false,"extra":[{"text":"BIN Auction View"}],"text":""}' && state.get() !== 'listing') {
                 const finderCheck = this.recentFinder === "USER" && skipUser;
@@ -51,7 +52,9 @@ class AutoBuy {
                 const profitCheck = this.recentProfit > skipMinProfit;
                 const percentCheck = this.recentPercent > skipMinPercent;
                 const priceCheck = this.recentPrice > skipMinPrice;
-                let useSkipOnFlip = profitCheck || skinCheck || finderCheck || percentCheck || priceCheck || useSkip;
+                let useSkipOnFlip = (profitCheck || skinCheck || finderCheck || percentCheck || priceCheck || useSkip) && this.fromCoflSocket;
+                this.fromCoflSocket = false;
+                debug(`Set from cofl socket to false`);
                 firstGui = Date.now();
                 webhook.setBuySpeed(firstGui);
                 let item = (await this.itemLoad(31))?.name;
@@ -115,7 +118,7 @@ class AutoBuy {
                             if (!lore) {
                                 logmc(`§6[§bTPM§6] §cNot claiming sold auction because I can't find the lore :( so idk if you sold it or your coop.`);
                                 if (bot.currentWindow) debug(JSON.stringify(bot.currentWindow.slots[13]));
-                                state.set(null);
+                                if (state.get() !== "getting ready") state.set(null);
                                 state.setAction(firstGui);
                                 bot.betterWindowClose();
                                 break;
@@ -136,18 +139,11 @@ class AutoBuy {
                             bot.betterClick(31);
                             this.relist.declineSoldAuction();
                         }
-                        state.set(null);
+                        if (state.get() !== "getting ready") state.set(null);
                         state.setAction(firstGui);
                         break;
                     case "poisonous_potato":
                         logmc(`§6[§bTPM§6]§c Too poor to buy it :(`);
-                        bot.betterWindowClose();
-                        state.set(null);
-                        state.setAction(firstGui);
-                        break;
-                    case "gold_ingot":
-                        debug(`INGOT!!!`);
-                        debug(JSON.stringify(bot.currentWindow?.slots[31]));
                         bot.betterWindowClose();
                         state.set(null);
                         state.setAction(firstGui);
@@ -163,6 +159,10 @@ class AutoBuy {
                         }
                         break;
                     case "gold_nugget":
+                        if (state.get() === "expired") {
+                            state.setAction();
+                            state.set(null);
+                        }
                         break;
                     default:
                         error(`Weird item ${item} found. Idk man`);
@@ -171,7 +171,6 @@ class AutoBuy {
                         state.set(null);
                         state.setAction(firstGui);
                         break;
-
                 }
 
             } else if (windowName === '{"italic":false,"extra":[{"text":"Confirm Purchase"}],"text":""}') {
@@ -179,15 +178,20 @@ class AutoBuy {
                 state.setAction(firstGui);
                 logmc(`§6[§bTPM§6] §3Confirm at ${confirmAt}ms`);
                 if (!this.recentlySkipped) bot.betterClick(11, 0, 0);
-                state.set(null);
                 await bot.waitForTicks(3);
                 while (getWindowName(bot.currentWindow) === 'Confirm Purchase') {//Sometimes click doesn't register
                     bot.betterClick(11, 0, 0);
                     await bot.waitForTicks(5);
                 }
-            } else if (windowName === '{"italic":false,"extra":[{"text":"Auction View"}],"text":""}') {//failsafe if they have normal auctions turned on
-                bot.betterWindowClose();
                 state.set(null);
+            } else if (windowName === '{"italic":false,"extra":[{"text":"Auction View"}],"text":""}') {//failsafe if they have normal auctions turned on
+                let item = (await this.itemLoad(29))?.name;
+                if (item === "gold_nugget") {
+                    bot.betterClick(29);
+                    return;
+                }
+                bot.betterWindowClose();
+                if (state.get() !== "getting ready") state.set(null);
                 logmc(`§6[§bTPM§6] §cPlease turn off normal auctions!`);
             }
             await sleep(500);
@@ -203,13 +207,14 @@ class AutoBuy {
             const ready = windowCheck && lastUpdated && stateCheck;
             let auctionID = data.id;
             if (ready) packets.sendMessage(`/viewauction ${auctionID}`);//Put this earlier so that it doesn't get slowed down (but it's kinda ugly :( )
-            const { finder, purchaseAt, target, startingBid, tag, itemName } = data;//I hate this :(
+            const { finder, vol, purchaseAt, target, startingBid, tag, itemName } = data;//I hate this :(
             let weirdItemName = stripItemName(itemName);
             let profit = IHATETAXES(target) - startingBid;
             let ending = new Date(normalizeDate(purchaseAt)).getTime();
             let bed = 'NUGGET';
             if (ready) {
                 logmc(`§6[§bTPM§6] §6Opening ${itemName}`);
+                this.recentlySkipped = false;
                 this.currentOpen = auctionID;
                 this.recentProfit = profit;
                 this.recentFinder = finder;
@@ -217,6 +222,8 @@ class AutoBuy {
                 this.recentPercent = profit / startingBid * 100;
                 this.recentPrice = startingBid;
                 this.bedFailed = false;
+                this.fromCoflSocket = true;
+                debug(`Set from cofl socket to true`);
                 state.set('buying');
                 state.setAction(currentTime);
                 if (currentTime < ending) {
@@ -228,7 +235,7 @@ class AutoBuy {
                 if (!windowCheck) reasons.push(`${getWindowName(bot.currentWindow)} is open`);
                 if (!stateCheck) reasons.push(`state is ${currentState}`);
                 if (!lastUpdated) reasons.push(`last action was too recent`);
-                state.queueAdd({ finder, profit, tag, itemName, auctionID }, 'buying', 0);
+                state.queueAdd({ finder, profit, tag, itemName, auctionID, startingBid }, 'buying', 0);
                 logmc(`§6[§bTPM§6] §3${itemName}§3 added to pipeline because ${reasons.join(' and ')}!`);
             } else {
                 logmc(`§6[§bTPM§6] §cCan't open flips while ${currentState} :(`);
@@ -242,7 +249,7 @@ class AutoBuy {
                     fields: [
                         {
                             name: '',
-                            value: `${nicerFinders(finder)}: [\`${noColorCodes(itemName)}\`](https://sky.coflnet.com/a/${auctionID}) \`${formatNumber(startingBid)}\` ⇨ \`${formatNumber(target)}\` (\`${formatNumber(profit)}\` profit) [${bed}]`,
+                            value: `${nicerFinders(finder)}: [\`${noColorCodes(itemName)}\`](https://sky.coflnet.com/a/${auctionID}) \`${formatNumber(startingBid)}\` ⇨ \`${formatNumber(target)}\` (\`${formatNumber(profit)}\` profit) [${bed}] \`${vol}\` volume`,
                         }
                     ],
                     thumbnail: {
@@ -293,14 +300,23 @@ class AutoBuy {
         });
     }
 
-    openExternalFlip(ahid, profit, finder, itemname, tag, price = null) {//queue and buy from discord (maybe webpage in future?) ONLY CALL IF READY!!!
+    //ok so the reason we have a fake price is so that I don't have to recode the whole price thing from queue yk yk
+    openExternalFlip(ahid, profit, finder, itemname, tag, price = null, fakePrice = null) {//queue and buy from discord (maybe webpage in future?) ONLY CALL IF READY!!!
         this.packets.sendMessage(`/viewauction ${ahid}`);
         this.recentFinder = finder;
         this.recentProfit = profit;
         this.currentOpen = ahid;
         this.bedFailed = true;
+        this.recentName = itemname;
+        this.recentlySkipped = false;
+
         if (price) {//For queue flips, don't include price
             this.webhook.objectAdd(stripItemName(itemname), price, null, null, ahid, 'EXTERNAL', finder, itemname, tag);
+            this.recentPercent = profit / price * 100;
+            this.recentPrice = price;
+        } else {
+            this.recentPercent = profit / fakePrice * 100;
+            this.recentPrice = fakePrice;
         }
     }
 
@@ -355,6 +371,10 @@ class AutoBuy {
                 this.bot.betterClick(31, 0, 0);
                 undefinedCount++
                 return;
+            } else if (item == "potato") {
+                this.bot.betterWindowClose();
+                this.state.set(null);
+                this.state.setAction();
             }
             if ((!this.bedFailed && !config.bedSpam && this.currentlyTimingBed) || getWindowName(window) !== 'BIN Auction View' || item !== 'bed') {
                 clearInterval(bedSpam);
@@ -373,8 +393,8 @@ class AutoBuy {
             if (!this.bot.currentWindow && currentTime > this.state.getTime() + delay && !this.state.get()) {
                 switch (current.state) {
                     case "buying": {
-                        const { finder, profit, itemName, auctionID } = current.action;
-                        this.openExternalFlip(auctionID, profit, finder, itemName);
+                        const { finder, profit, itemName, auctionID, price } = current.action;
+                        this.openExternalFlip(auctionID, profit, finder, itemName, null, price);
                         break;
                     }
                     case "claiming":
@@ -436,6 +456,11 @@ class AutoBuy {
                     }
                     case "bids": {
                         this.relist.checkBids();
+                        break;
+                    }
+                    case "expired": {
+                        const itemUuid = current.action;
+                        this.relist.removeExpiredAuction(itemUuid);
                         break;
                     }
                 }
