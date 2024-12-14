@@ -272,7 +272,6 @@ class MessageHandler {
                 let name = visitMatch[1];
                 if(name.includes(' ')) name = name.split(' ')[1];//remove rank
                 name = noColorCodes(name);
-                console.log(`Got visit ${name}`);
                 this.tpm.send(JSON.stringify({
                     type: "visit",
                     data: JSON.stringify({
