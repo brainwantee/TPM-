@@ -24,15 +24,20 @@ class AutoIsland {
     async checkLocraw(confirm = false) {
         debug(`Move check: confirming: ${this.currentlyConfirming}. Instance ${confirm}. Evaluate ${this.currentlyConfirming && !confirm}`);
         if (this.currentlyConfirming && !confirm) return;
+        if (this.state.get() !== 'moving') this.state.set('moving')
         await sleep(20_000);
         this.currentlyConfirming = false;
         this.bot.chat('/locraw');
+
+        let foundLocraw = false;
 
         const check = async (message, type) => {
             if (type !== 'chat') return;
 
             try {
                 const locraw = JSON.parse(message);
+                foundLocraw = true;
+                debug(`Found locraw yay ${message}`);
                 this.bot.off('message', check);
                 if (locraw.server === 'limbo') {
                     this.move('/l');
@@ -62,6 +67,7 @@ class AutoIsland {
                             this.otherIsland = false;
                             logmc(`§6[§bTPM§6] §cHey so this person has invites off :(`);
                             this.checkLocraw();
+                            this.move('/hub');//ok we gotta go to hub so that it realizes something changed
                         }
                         this.bot.betterClick(11, 0, 0);
                     } else {
@@ -94,7 +100,10 @@ class AutoIsland {
         this.bot.on('message', check);
 
         setTimeout(() => {
-            this.bot.off('message', check);
+            if (!foundLocraw) {
+                this.checkLocraw(confirm);
+                this.bot.off('message', check);
+            }
         }, 5000)
     }
 

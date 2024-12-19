@@ -10,6 +10,7 @@ const rl = readline.createInterface({
 const AhBot = require('./TPM-bot/AhBot.js');
 const TpmSocket = require('./TpmSocket.js');
 const { sendDiscord, sendLatestLog, sleep } = require('./TPM-bot/Utils.js');
+const { getTokenInfo } = require('./TPM-bot/TokenHandler.js');
 const { config, updateConfig } = require('./config.js');
 
 let { igns, autoRotate, useItemImage } = config;
@@ -45,8 +46,10 @@ testIgn();
 
     for (const ign of igns) {
         const started = await startBot(ign, tws);
-        if (started) message += `Logged in as \`\`${ign}\`\`\n`;
+        if (started) message += `Logged in as \`\`${started}\`\`\n`;
     }
+
+    tws.makeWebsocket();
 
     let thumbnail = 'https://images-ext-1.discordapp.net/external/7YiWo1jf2r78hL_2HpVRGNDcx_Nov0aDjtrG7AZ4Hxc/%3Fsize%3D4096/https/cdn.discordapp.com/icons/1261825756615540836/983ecb82e285eee55ef25dd2bfbe9d4d.png?format=webp&quality=lossless&width=889&height=889';
     let avatar = null;
@@ -119,12 +122,16 @@ async function startBot(ign, tws, secondary = false, fromRotate = false) {
             resolve(false);//Don't start the bot if it rests first
             debug(`Not starting ${ign} cause of autorotate`);
         } else {
-            const tempBot = new AhBot(ign, tws, destroyBot);
+            let safeIgn = ign;
+            if(ign.length > 16) {
+                safeIgn = (await getTokenInfo(ign)).username;
+            }
+            const tempBot = new AhBot(ign, tws, destroyBot, safeIgn);
             await tempBot.createBot();
-            bots[ign] = tempBot;
-            askPrefixes[bots[ign].initAskPrefix(igns)?.toLowerCase()] = ign;
-            updateIgns(ign);
-            if (autoRotate[ign] && !fromRotate && !secondary) {
+            bots[safeIgn] = tempBot;
+            askPrefixes[bots[safeIgn].initAskPrefix(igns)?.toLowerCase()] = safeIgn;
+            updateIgns(safeIgn);
+            if (autoRotate[safeIgn] && !fromRotate && !secondary) {
                 rotate(ign);
             }
             if (secondary) {
@@ -144,9 +151,9 @@ async function startBot(ign, tws, secondary = false, fromRotate = false) {
                         text: `The "Perfect" Macro Rewrite`,
                         icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                     }
-                }, useItemImage ? tempBot.getBot().head : null, false, ign)
+                }, useItemImage ? tempBot.getBot().head : null, false, safeIgn)
             }
-            resolve(true);
+            resolve(safeIgn);
         }
     })
 }

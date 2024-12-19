@@ -1,6 +1,6 @@
 const { getPackets } = require('./packets.js');
 const { config } = require('../config.js');
-const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, getSlotLore, noColorCodes, sendDiscord, formatNumber, nicerFinders, betterOnce } = require('./Utils.js');
+const { stripItemName, IHATETAXES, normalizeDate, getWindowName, isSkin, sleep, normalNumber, normalTime, getSlotLore, noColorCodes, sendDiscord, formatNumber, nicerFinders, betterOnce } = require('./Utils.js');
 const { logmc, debug, removeIgn, error } = require('../logger.js');
 let { delay, waittime, skip: skipSettings, clickDelay, bedSpam, delayBetweenClicks, angryCoopPrevention: coop, sendAllFlips: flipsWebhook } = config;
 let { always: useSkip, minProfit: skipMinProfit, userFinder: skipUser, skins: skipSkins, profitPercentage: skipMinPercent, minPrice: skipMinPrice } = skipSettings;
@@ -12,13 +12,14 @@ if (useSkip && delay < 150) delay = 150;
 
 class AutoBuy {
 
-    constructor(bot, WebhookManager, coflSocket, ign, state, relist) {
+    constructor(bot, WebhookManager, coflSocket, ign, state, relist, bank) {
         this.bot = bot;
         this.webhook = WebhookManager;
         this.coflSocket = coflSocket;
         this.ws = coflSocket.getWs();
         this.ign = ign;
         this.state = state;
+        this.bank = bank;
         this.relist = relist;
         this.recentProfit = 0;
         this.recentPercent = 0;
@@ -130,14 +131,12 @@ class AutoBuy {
                             });
                             if (found) {
                                 bot.betterClick(31);
-                                this.relist.declineSoldAuction();
                             } else {
                                 logmc("§6[§bTPM§6] §cItem was sold by coop! Not claiming.");
                                 bot.betterWindowClose();
                             }
                         } else {
                             bot.betterClick(31);
-                            this.relist.declineSoldAuction();
                         }
                         if (state.get() !== "getting ready") state.set(null);
                         state.setAction(firstGui);
@@ -152,16 +151,41 @@ class AutoBuy {
                         if (state.get() === 'delisting') {
                             this.bot.betterClick(33);
                             debug(`clicked delist`);
-                        } else {
+                        } else if (state.get() == "expired") {//This means that it didn't actually expire but it thinks that it did
+                            const slot = bot.currentWindow.slots[13];
+                            const lore = getSlotLore(slot);
+                            const endsInTime = lore.find(line => line.includes('Ends in:'));
+                            const endTime = normalTime(endsInTime);
+                            setTimeout(() => {//Remove auctions when they expire
+                                state.queueAdd(this.getItemUuid(slot), "expired", 4);
+                            }, endTime)
                             bot.betterWindowClose();
                             state.set(null);
                             state.setAction(firstGui);
+                            sendDiscord({
+                                title: 'Funny story',
+                                color: 13320532,
+                                fields: [
+                                    {
+                                        name: '',
+                                        value: `Ok so like super funny story. Remember that auction that I just told you expired so like it kinda actually didn't expire ikr and like hypixel rounds numbers so like TPM thought it expired cause yk the round numbers make the time not exact and like it didn't actually expire so like yea sorry about that it'll send a new expire thingy when it actually does unless the rounding thing happens again yk ok have a good day and gl flipping man`,
+                                    }
+                                ],
+                                thumbnail: {
+                                    url: bot.head,
+                                },
+                                footer: {
+                                    text: `TPM Rewrite`,
+                                    icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+                                }
+                            }, useItemImage ? bot.head : null, false, bot.username);
                         }
                         break;
                     case "gold_nugget":
                         if (state.get() === "expired") {
                             state.setAction();
                             state.set(null);
+                            this.relist.declineSoldAuction();
                         }
                         break;
                     default:
@@ -188,6 +212,7 @@ class AutoBuy {
                 let item = (await this.itemLoad(29))?.name;
                 if (item === "gold_nugget") {
                     bot.betterClick(29);
+                    this.relist.declineSoldAuction();
                     return;
                 }
                 bot.betterWindowClose();
@@ -227,7 +252,7 @@ class AutoBuy {
                 state.set('buying');
                 state.setAction(currentTime);
                 if (currentTime < ending) {
-                    if (!bedSpam) this.timeBed(ending, auctionID);
+                    this.timeBed(ending, auctionID);
                     bed = 'BED';
                 }
             } else if (currentState !== 'moving' && currentState !== 'getting ready') {
@@ -323,17 +348,18 @@ class AutoBuy {
     async timeBed(ending, currentID) {
         const start = Date.now();
 
-        debug(`Timing bed ${currentID}`);
+        debug(`Timing bed ${currentID} ${ending - start - waittime}`);
         this.currentlyTimingBed = true;
-
-        await sleep(ending - start - waittime);
-        for (let i = 0; i < 5; i++) {
-            if (getWindowName(this.bot.currentWindow)?.includes('BIN Auction View') && this.currentOpen === currentID) {
-                this.bot.betterClick(31, 0, 0);
-                debug(`Clicking ${currentID} bed`);
-                await sleep(delayBetweenClicks);
-            } else {
-                break;
+        if (!bedSpam) {
+            await sleep(ending - start - waittime);
+            for (let i = 0; i < 5; i++) {
+                if (getWindowName(this.bot.currentWindow)?.includes('BIN Auction View') && this.currentOpen === currentID) {
+                    this.bot.betterClick(31, 0, 0);
+                    debug(`Clicking ${currentID} bed`);
+                    await sleep(delayBetweenClicks);
+                } else {
+                    break;
+                }
             }
         }
 
@@ -342,9 +368,9 @@ class AutoBuy {
         if (windowName?.includes('BIN Auction View') && this.currentOpen === currentID) {
             this.bot.closeWindow(this.bot.currentWindow);
             this.state.set(null);
-            logmc(`§6[§bTPM§6] §cBed timing failed and we had to abort the auction :( Please lower your waittime if this continues or turn on bedspam`);
+            if (!bedSpam) logmc(`§6[§bTPM§6] §cBed timing failed and we had to abort the auction :( Please lower your waittime if this continues or turn on bedspam`);
         } else if (!windowName && this.currentOpen === currentID && this.state.get() === 'buying') {
-            logmc(`§6[§bTPM§6] §cWindow somehow closed after bed timing (possibly died)`);
+            logmc(`§6[§bTPM§6] §cWindow somehow closed after bed (possibly died)`);
             this.state.set(null);
         } else {
             debug(`Timed ${currentID} correctly. CurrentOpen: ${this.currentOpen}. Window Name: ${windowName}`);
@@ -408,10 +434,7 @@ class AutoBuy {
                     }
                     case "listingNoName": {
                         const { auctionID, price, time, inv } = current.action;
-                        if (!this.relist.externalListCheck()) {
-                            debug(`Didn't pass relist check`);
-                            return;
-                        };
+                        if (!this.relist.externalListCheck()) return;
                         const { relist: relistObject } = this.webhook.getObjects();
                         try {
                             var { weirdItemName, pricePaid, tag } = relistObject[auctionID]; //ew var
@@ -461,6 +484,11 @@ class AutoBuy {
                     case "expired": {
                         const itemUuid = current.action;
                         this.relist.removeExpiredAuction(itemUuid);
+                        break;
+                    }
+                    case "bank": {
+                        const { amount, withdraw, personal } = current.action;
+                        this.bank.coins(withdraw, personal, amount);
                         break;
                     }
                 }

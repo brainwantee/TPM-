@@ -1,19 +1,44 @@
 const { createBot } = require("mineflayer");
 const { logmc, customIGNColor, debug } = require("../logger.js");
 const { getPackets, makePackets } = require("./packets.js");
+const { getTokenInfo } = require('./TokenHandler.js');
 const axios = require('axios');
 
-async function makeBot(ign) {
-    return new Promise((resolve) => {
+async function makeBot(ign, safeIgn) {
+    return new Promise(async (resolve) => {
 
-        logmc(`${customIGNColor(ign)}Trying to log into ${ign}`);
+        logmc(`${customIGNColor(safeIgn)}Trying to log into ${safeIgn}`);
 
-        const bot = createBot({
-            username: ign,
-            auth: 'microsoft',
-            version: '1.8.9',
-            host: 'play.hypixel.net',
-        });
+        let bot;
+        if (ign.length > 16) {//person used token to log in
+            let { username, uuid } = await getTokenInfo(ign);
+            bot = createBot({
+                host: 'play.hypixel.net',
+                port: 25565,
+                version: '1.8.9',
+                username: username,
+                session: {
+                    accessToken: ign,
+                    clientToken: uuid,
+                    selectedProfile: {
+                        id: uuid,
+                        name: username,
+                        keepAlive: false,
+                    },
+                },
+                auth: 'mojang',
+                skipValidation: true,
+            });
+            bot.username = username;
+            ign = username;
+        } else {
+            bot = createBot({
+                username: ign,
+                auth: 'microsoft',
+                version: '1.8.9',
+                host: 'play.hypixel.net',
+            });
+        }
 
         bot.betterClick = function (slot, mode1 = 0, mode2 = 0) {
             if (!bot.currentWindow) {
@@ -78,7 +103,7 @@ async function makeBot(ign) {
         bot.setMaxListeners(20);
 
         bot.once("login", async () => {
-            bot.uuid = await getUUID(ign);
+            if (!bot.uuid) bot.uuid = await getUUID(ign);
             bot.head = `https://mc-heads.net/head/${bot.uuid}.png`;
             logmc(`${customIGNColor(ign)}${ign} logged in!`);
             resolve(bot);

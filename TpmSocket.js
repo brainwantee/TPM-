@@ -1,5 +1,5 @@
 const { logmc, debug, error, startTracker, getIgns } = require('./logger.js');
-const { sleep, normalNumber, sendDiscord, sendLatestLog, formatNumber, nicerFinders, normalTime, noColorCodes } = require('./TPM-bot/Utils.js');
+const { sleep, normalNumber, sendDiscord, sendLatestLog, formatNumber, nicerFinders, normalTime, noColorCodes, getSlotLore } = require('./TPM-bot/Utils.js');
 const { config } = require('./config.js');
 const axios = require('axios');
 let { igns, webhook, discordID, allowedIDs, pingOnUpdate } = config;
@@ -11,6 +11,7 @@ if (allowedIDs) {
 }
 
 const WebSocket = require('ws');
+const { log } = require('winston');
 
 class TpmSocket {
 
@@ -22,7 +23,6 @@ class TpmSocket {
         this.sentFailureMessage = false;
         this.storedMessages = [];//if socket is down, send all of these at once
         this.settings = [];
-        this.makeWebsocket();
     }
 
     makeWebsocket() {
@@ -50,7 +50,7 @@ class TpmSocket {
                     data: JSON.stringify({
                         discordID: discordID,
                         webhook: webhook,
-                        igns: igns,
+                        igns: getIgns(),
                         settings: this.settings,
                         allowedIDs: allowedIDs
                     })
@@ -241,7 +241,7 @@ class TpmSocket {
                 break;
             }
             case "timeout": {
-                const time = normalNumber(data.timeout);
+                const time = normalTime(data.timeout);
                 let username = data.username;
                 if (!username) {
                     username = Object.keys(this.bots)[0];
@@ -448,6 +448,59 @@ class TpmSocket {
                 }, time);
                 break;
             }
+            case "coins": {
+                let { username } = data;
+                if (!username) {
+                    username = Object.keys(this.bots)[0];
+                }
+
+                data.amount = normalNumber(data.amount);
+
+                const bot = this.bots[username];
+                if (!bot) {
+                    debug(`Didn't find a bot for ${username}`);
+                    return;
+                }
+
+                bot.state.queueAdd(data, 'bank', 5);
+                break;
+            }
+            case "inventory": {
+                let { username } = data;
+                if (!username) {
+                    username = Object.keys(this.bots)[0];
+                }
+
+                const bot = this.bots[username];
+                if (!bot) {
+                    debug(`Didn't find a bot for ${username}`);
+                    return;
+                }
+
+                const slots = bot.getBot().inventory.slots;
+
+                const invData = slots.slice(9, slots.length).map(slot => {
+                    const uuid = bot.relist.getItemUuid(slot);
+                    const lore = getSlotLore(slot);
+                    const itemName = slot?.nbt?.value?.display?.value?.Name?.value;
+                    return {
+                        lore,
+                        uuid,
+                        itemName
+                    }
+                })
+
+                this.send(JSON.stringify({
+                    type: "inventory",
+                    data: JSON.stringify({
+                        invData,
+                        username,
+                        uuid: bot.getBot().uuid
+                    })
+                }))
+                console.log(invData);
+                break;
+            }
         }
     }
 
@@ -456,7 +509,7 @@ class TpmSocket {
             return new Promise((resolve) => {
                 const ws = this.bots[botKey].ws;
                 const coflSocket = this.bots[botKey].coflSocket;
-                coflSocket.handleCommand(`/cofl get json`);
+                coflSocket.handleCommand(`/cofl get json`, false);
                 ws.once('jsonSettings', (msg) => {
                     this.settings.push(msg);
                     resolve();

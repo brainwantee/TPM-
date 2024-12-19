@@ -9,12 +9,13 @@ const AutoIsland = require('./AutoIsland.js');
 const MessageHandler = require('./MessageHandler.js');
 const AutoBuy = require('./AutoBuy.js');
 const RelistHandler = require('./RelistHandler.js');
+const BankHandler = require("./BankHandler.js");
 const { webhookFormat, useItemImage } = config;
 
 
 class AhBot {
 
-    constructor(ign, TPMSocket, destroyBot) {
+    constructor(ign, TPMSocket, destroyBot, safeIgn) {
         this.ign = ign;
         this.bot = null;
         this.autoBuy = null;
@@ -25,18 +26,20 @@ class AhBot {
         this.state = null;
         this.packets = null;
         this.relist = null;
+        this.bank = null;
         this.sold = 0;
         this.bought = [];
         this.tpm = TPMSocket;
         this.start = Date.now();
         this.destroyBot = destroyBot;
+        this.safeIgn = safeIgn;
 
         this.updateBought = this.updateBought.bind(this);
         this.updateSold = this.updateSold.bind(this);//this whole binding thing is getting annoying
     }
 
     async startBot() {
-        const { bot, ign, tpm } = this //screw "this"
+        const { bot, safeIgn: ign, tpm } = this //screw "this"
 
         let packets = getPackets(ign);
 
@@ -52,7 +55,9 @@ class AhBot {
 
         const webhook = new MessageHandler(ign, bot, coflSocket, state, relist, island, this.updateSold, this.updateBought, tpm);
 
-        const autoBuy = new AutoBuy(bot, webhook, coflSocket, ign, state, relist);
+        const bank = new BankHandler(bot, state);
+
+        const autoBuy = new AutoBuy(bot, webhook, coflSocket, ign, state, relist, bank);
 
         this.autoBuy = autoBuy;
         this.webhook = webhook;
@@ -61,6 +66,7 @@ class AhBot {
         this.coflSocket = coflSocket;
         this.island = island;
         this.state = state;
+        this.bank = bank;
         this.packets = packets;
 
         bot.on('kicked', (reason) => {
@@ -94,7 +100,7 @@ class AhBot {
 
     async createBot() {
         return new Promise(async (resolve) => {
-            this.bot = await makeBot(this.ign);
+            this.bot = await makeBot(this.ign, this.safeIgn);
             this.startBot();
             resolve();
         })
@@ -166,14 +172,19 @@ class AhBot {
     }
 
     initAskPrefix(igns, sub = 3) {
+        debug(igns);
         let thisPrefix = this.ign.substring(0, sub);
         debug(`|${thisPrefix}|`)
+        if (sub > 10) return this.safeIgn;//recursive safety
         try {
             igns.forEach(ign => {
-                if (ign.substring(0, sub) == thisPrefix && ign !== this.ign) sex//i forgot how to throw errors and this is faster than looking it up
+                if (ign.substring(0, sub) == thisPrefix && ign !== this.ign) {
+                    debug(`${ign} start was the same as ${thisPrefix}.`)
+                    sex//i forgot how to throw errors and this is faster than looking it up
+                }
             })
-        } catch {
-            debug(`retrying`)
+        } catch (e) {
+            debug(`retrying, ${e}`)
             return this.initAskPrefix(igns, ++sub);
         }
 

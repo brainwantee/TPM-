@@ -54,6 +54,9 @@ class RelistHandler {
         this.savedData = state.getFile("SavedData", `${bot.uuid}.json`);
         this.savedItems = [];
         this.getReady();
+
+        this.removeExpiredAuction = this.removeExpiredAuction.bind(this);
+        this.getNbtPrice = this.getNbtPrice.bind(this);
     }
 
     declineSoldAuction() {//cba to add message listener twice so this will have to do
@@ -113,7 +116,8 @@ class RelistHandler {
                         const lore = getSlotLore(slot);
                         if (!lore) return;
                         const endsInTime = lore.find(line => line.includes('Ends in:'));
-                        if (endsInTime) {
+                        const BIN = lore.find(line => noColorCodes(line).includes('Buy it now'));
+                        if (endsInTime && BIN) {
                             const endTime = normalTime(endsInTime);
                             setTimeout(() => {//Remove auctions when they expire
                                 state.queueAdd(this.getItemUuid(slot), "expired", 4);
@@ -447,6 +451,7 @@ class RelistHandler {
     async addSavedData(auctionID, target, finder) {
         if (this.savedItems.includes(auctionID)) return;
         try {
+            debug(`Saving ${auctionID}, target: ${target}, finder ${finder}`)
             const data = (await axios.get(`https://sky.coflnet.com/api/auction/${auctionID}`)).data;
             if (!data.uuid) throw new Error(`No itemUUID for ${auctionID}`);
             const toSave = {};
@@ -808,7 +813,7 @@ class RelistHandler {
     }
 
     async getItemPrice(id) {
-        return new Promise(async (resolve, reject) => {
+        return new Promise(async (resolve) => {
             try {
                 let { median, volume } = (await axios.get(`https://sky.coflnet.com/api/item/price/${id}`)).data;
                 const { lowest: lbin } = (await axios.get(`https://sky.coflnet.com/api/item/price/${id}/bin`)).data;
@@ -816,10 +821,12 @@ class RelistHandler {
                 if (median < lbin) {
                     volume = volume / 5;//yes!
                     if (volume < 7) resolve(median);
-                    const difference = lbin - median;
-                    volume = volume / (volume - 2);
-                    volume = 2 - volume;
-                    resolve(median + (difference * volume));//idk what I'm doing
+                    else {
+                        const difference = lbin - median;
+                        volume = volume / (volume - 2);
+                        volume = 2 - volume;
+                        resolve(median + (difference * volume));//idk what I'm doing
+                    }
                     //hey nevo don't steal this please!!!
                     //It's now legal to but you have to make CF open source
                 } else {
@@ -831,6 +838,48 @@ class RelistHandler {
             };
         })
 
+    }
+
+    async getNbtPrice(slot) {//nbt needs to be json
+        return new Promise(async (resolve, reject) => {
+            try {
+                slot = {
+                    "_events": {},
+                    "_eventsCount": 0,
+                    "id": 0,
+                    "type": "minecraft:inventory",
+                    "title": "Inventory",
+                    "slots": [slot]
+                }
+                console.log(JSON.stringify(slot));
+                const data = (await axios.post('https://sky.coflnet.com/api/price/nbt', {
+                    jsonNbt: JSON.stringify(slot),
+                }, {
+                    headers: {
+                        'accept': 'text/plain',
+                        'Content-Type': 'application/json-patch+json',
+                    },
+                })).data
+                console.log(data);
+                let { median, volume, lbin } = data[0];
+                if (median < lbin) {
+                    if (volume < 2) {
+                        resolve(median);
+                    } else {
+                        const difference = lbin - median;
+                        volume = volume / (volume - 2);
+                        volume = 2 - volume;
+                        resolve(median + (difference * volume));
+                    }
+                } else {
+                    resolve(lbin - 1);
+                }
+            } catch (e) {
+                error(`Error getting price`, e);
+                debug(JSON.stringify(slot));
+                resolve(null);
+            }
+        })
     }
 
     async removeExpiredAuction(itemUuid) {
@@ -853,25 +902,32 @@ class RelistHandler {
                     const price = onlyNumbers(priceLine);
                     debug(`Got item to remove! ${slot.slot}`);
                     bot.betterClick(slot.slot);
-                    console.log(`Removed ${itemUuid}`);
-                    sendDiscord({
-                        title: 'Removed Expired Auction',
-                        color: 13320532,
-                        fields: [
-                            {
-                                name: "",
-                                value: `Removed auction \`${name}\` because it expired! It was listed at \`${addCommasToNumber(price)}\``,
+                    //sendDiscord(, bot.head, false)
+                    this.tpm.send(JSON.stringify({
+                        type: "expired",
+                        data: JSON.stringify({
+                            username: bot.username,
+                            itemUuid,
+                            lore,
+                            embed: {
+                                title: 'Removed Expired Auction',
+                                color: 13320532,
+                                fields: [
+                                    {
+                                        name: "",
+                                        value: `Removed auction \`${name}\` because it expired! It was listed at \`${addCommasToNumber(price)}\``,
+                                    }
+                                ],
+                                thumbnail: {
+                                    url: useItemImage ? `https://sky.coflnet.com/static/icon/${tag}` : bot.head,
+                                },
+                                footer: {
+                                    text: `TPM Rewrite`,
+                                    icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+                                }
                             }
-                        ],
-                        thumbnail: {
-                            url: useItemImage ? `https://sky.coflnet.com/static/icon/${tag}` : bot.head,
-                        },
-                        footer: {
-                            text: `TPM Rewrite`,
-                            icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
-                        }
-                    }, bot.head, false)
-                    this.currentAuctions--;
+                        })
+                    }))
                     return;//Early return!!!
                 }
             }
@@ -941,6 +997,22 @@ class RelistHandler {
         }
         bot.betterWindowClose();
         state.set(null);
+    }
+
+    simplify(data) {//I stole this straight from prismarine-nbt I can't lie but like I didn't want another dependency cause like exe gets really big so I just did this
+        const transform = (value, type) => {
+            if (type === 'compound') {
+                return Object.keys(value).reduce((acc, key) => {
+                    acc[key] = this.simplify(value[key])
+                    return acc
+                }, {})
+            }
+            if (type === 'list') {
+                return value.value.map(function (v) { return transform(v, value.type) })
+            }
+            return value
+        }
+        return transform(data.value, data.type)
     }
 
 

@@ -134,7 +134,7 @@ class CoflWs {
         return text;
     }
 
-    handleCommand(command) {
+    handleCommand(command, type = false) {
         const args = command.split(' ');
         const first = args[1];
         args.shift();
@@ -144,7 +144,7 @@ class CoflWs {
             type: first,
             data: joined
         })
-        this.send(send);
+        this.send(send, type);
     }
 
     send(msg, type = true) {
@@ -217,11 +217,11 @@ class CoflWs {
                     icon_url: 'https://media.discordapp.net/attachments/1261825756615540839/1304911212760530964/983ecb82e285eee55ef25dd2bfbe9d4d.png?ex=67311cc5&is=672fcb45&hm=de4e5dd382d13870fdefa948d295fc5d1ab8de6678f86c36cd61fa1fd0cc5dd2&=&format=webp&quality=lossless&width=888&height=888',
                 }
             }, this.bot.head, true, this.bot.username);
-
         }
 
         if (blockUselessMessages) {
             if (msg.includes('matched your Whitelist')) return false;
+            if (msg.includes('There was no ah price found for')) return false;
         }
 
         return true;

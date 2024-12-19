@@ -58,6 +58,7 @@ class StateManager {
 
     saveQueue(bidData = null) {
         let toSave = {};
+        debug(`Saving queue`, bidData)
         if (!bidData) {
             const savedData = this.getFile("SavedData", `${this.bot.uuid}.json`);
             if (!savedData) {

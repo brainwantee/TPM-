@@ -31,11 +31,11 @@ function normalTime(str) {
     let hoursMatch = str.match(/(\d+)h/);
     let minutesMatch = str.match(/(\d+)m/);
     let secondsMatch = str.match(/(\d+)s/);
-    let years = yearsMatch ? parseInt(yearsMatch[1], 10) : 0;
-    let days = daysMatch ? parseInt(daysMatch[1], 10) : 0;
-    let hours = hoursMatch ? parseInt(hoursMatch[1], 10) : 0;
-    let minutes = minutesMatch ? parseInt(minutesMatch[1], 10) : 0;
-    let seconds = secondsMatch ? parseInt(secondsMatch[1], 10) : 0;
+    let years = yearsMatch ? parseFloat(yearsMatch[1], 10) : 0;
+    let days = daysMatch ? parseFloat(daysMatch[1], 10) : 0;
+    let hours = hoursMatch ? parseFloat(hoursMatch[1], 10) : 0;
+    let minutes = minutesMatch ? parseFloat(minutesMatch[1], 10) : 0;
+    let seconds = secondsMatch ? parseFloat(secondsMatch[1], 10) : 0;
     debug(str, years, days, hours, minutes, seconds);
     return years * 3.154e+10 + days * 8.64e+7 + hours * 3.6e+6 + minutes * 60000 + seconds * 1000;
 }

@@ -9,7 +9,7 @@ const claimedRegex = /^You collected ([\d,]+) coins from selling (.+?) to (.+?) 
 const partyRegex = /^-+\s*(.+?) has invited you to join their party!\s*You have 60 seconds to accept\. Click here to join!\s*-+$/m;
 const visitRegex = /^\[SkyBlock\] (.+?) is visiting Your Island!$/
 
-const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!'];
+const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!', "materials stashed away!", "types of materials stashed!)"];
 
 class MessageHandler {
 
@@ -86,6 +86,7 @@ class MessageHandler {
                     this.island.setIsland(false, 'Hub', false);
                     logmc(`§6[§bTPM§6] §cCookie gone!!!`);
                 case "The auctioneer has closed this auction!":
+                case "This auction belongs to another profile!":
                 case "You don't have enough coins to afford this bid!":
                 case "You cannot bid this amount!":
                 case "This auction has expired!":
@@ -230,6 +231,7 @@ class MessageHandler {
                 if (object?.itemTag) {
                     thumbnail = `https://sky.coflnet.com/static/icon/${object.itemTag}`;
                 }
+                this.relist.declineSoldAuction();
                 setTimeout(() => {
                     sendDiscord({
                         title: 'Item Sold',
