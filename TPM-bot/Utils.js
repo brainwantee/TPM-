@@ -24,7 +24,7 @@ function formatNumber(num) {
 }
 
 function normalTime(str) {
-    if(typeof str !== "string") return null;
+    if (typeof str !== "string") return null;
     str = noColorCodes(str.toLowerCase());
     let yearsMatch = str.match(/(\d+)y/);
     let daysMatch = str.match(/(\d+)d/);
@@ -147,7 +147,9 @@ async function sendDiscord(embed, avatar = null, ping = false, username = null, 
                 var headers = { 'Content-Type': 'application/json' };
             }
             if (Array.isArray(currentWebhook)) {
-                await Promise.all(currentWebhook.map(hook => axios.post(hook, webhookOptions, { headers })));
+                await Promise.all(currentWebhook.map(hook => {
+                    if (hook) axios.post(hook, webhookOptions, { headers })
+                }));
             } else {
                 await axios.post(currentWebhook, webhookOptions, { headers });
             }

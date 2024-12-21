@@ -23,6 +23,7 @@ class CoflWs {
         this.reconnect = true;
         this.connectionID = null;
         this.handleCommand = this.handleCommand.bind(this);//Can call in other places now!!!
+        this.dead = false;
 
         this.startWs();
     }
@@ -38,6 +39,10 @@ class CoflWs {
         const { websocket, ws } = this;
 
         websocket.on('open', (message) => {
+            if(this.dead) {
+                this.closeSocket();
+                return;
+            }
             this.reconnect = true;
             logmc(`§6[§bTPM§6] §eStarted cofl connection!`);
             ws.emit("open", message);
@@ -81,6 +86,11 @@ class CoflWs {
     getAccountTier() { return this.accountTier }//Used in relistHandler
 
     getAccountEndingTime() { return this.accountEndTime }//Used in relistHandler
+    
+    kill() { 
+        this.closeSocket();
+        this.dead = true;
+    }
 
     parseMessage(message) {
         const msg = JSON.parse(message);

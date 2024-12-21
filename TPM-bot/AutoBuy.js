@@ -459,11 +459,15 @@ class AutoBuy {
                         break;
                     }
                     case "death": {
+                        this.state.set('DEAAAATHHH');
+                        debug('dying', this.bot.username);
                         this.bot.quit();
-                        this.coflSocket.closeSocket();
+                        // this.coflSocket.closeSocket();
+                        this.coflSocket.kill();
                         removeIgn(this.ign);
+                        this.bot.removeAllListeners();
                         try {
-                            await betterOnce(this.bot, "end");
+                            await betterOnce(this.bot, "end");//Ok so the await here like lowkey breaks everyything so I remove the old queue before
                         } catch (e) {
                             debug(`Error disconnecting`, e);
                             this.bot.end();

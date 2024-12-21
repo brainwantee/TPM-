@@ -2,7 +2,7 @@ const { config } = require('../config.js');
 const { sleep, betterOnce, getWindowName, noColorCodes, normalTime, getSlotLore, sendDiscord, onlyNumbers, addCommasToNumber, normalNumber, isSkinned, formatNumber } = require('./Utils.js');
 const { logmc, error, debug } = require('../logger.js');
 let { useCookie, relist, percentOfTarget, listHours, doNotRelist, useItemImage, autoCookie } = config;
-let { profitOver, skinned, tags, finders, stacks: stackedListing, pingOnFailedListing, drillWithParts } = doNotRelist;
+let { profitOver, skinned, tags, finders, stacks: stackedListing, pingOnFailedListing, drillWithParts, expiredAuctions: relistExpired, relistMode } = doNotRelist;
 autoCookie = normalTime(autoCookie) / 1000;
 profitOver = normalNumber(profitOver);
 const axios = require('axios');
@@ -451,18 +451,21 @@ class RelistHandler {
     async addSavedData(auctionID, target, finder) {
         if (this.savedItems.includes(auctionID)) return;
         try {
-            debug(`Saving ${auctionID}, target: ${target}, finder ${finder}`)
-            const data = (await axios.get(`https://sky.coflnet.com/api/auction/${auctionID}`)).data;
-            debug(JSON.stringify(data));
-            if (!data.flatNbt.uuid) throw new Error(`No itemUUID for ${auctionID}. Was adding to saved bids`);
-            const toSave = {};
-            toSave.time = Date.now();
-            if (finder !== "USER") toSave.target = target;
-            else toSave.target = "It was user finder";
-            toSave.auctionID = auctionID;
-            this.savedData.bidData[data.flatNbt.uuid] = toSave;
             this.savedItems.push(auctionID);
-            this.state.saveQueue(this.savedData.bidData);
+            setTimeout(async () => {
+                debug(`Saving ${auctionID}, target: ${target}, finder ${finder}`)
+                const data = (await axios.get(`https://sky.coflnet.com/api/auction/${auctionID}`)).data;
+                debug(JSON.stringify(data));
+                if (!data.flatNbt.uuid) throw new Error(`No itemUUID for ${auctionID}. Was adding to saved bids`);
+                const toSave = {};
+                toSave.time = Date.now();
+                if (finder !== "USER") toSave.target = target;
+                else toSave.target = "It was user finder";
+                toSave.auctionID = auctionID;
+                this.savedData.bidData[data.flatNbt.uuid] = toSave;
+                this.state.saveQueue(this.savedData.bidData);
+            }, 60_000)//wait for nbt to sync
+
         } catch (e) {
             error(e);
         }
@@ -819,20 +822,8 @@ class RelistHandler {
                 let { median, volume } = (await axios.get(`https://sky.coflnet.com/api/item/price/${id}`)).data;
                 const { lowest: lbin } = (await axios.get(`https://sky.coflnet.com/api/item/price/${id}/bin`)).data;
                 debug(`Got median ${median} volume ${volume} and lbin ${lbin}`);
-                if (median < lbin) {
-                    volume = volume / 5;//yes!
-                    if (volume < 7) resolve(median);
-                    else {
-                        const difference = lbin - median;
-                        volume = volume / (volume - 2);
-                        volume = 2 - volume;
-                        resolve(median + (difference * volume));//idk what I'm doing
-                    }
-                    //hey nevo don't steal this please!!!
-                    //It's now legal to but you have to make CF open source
-                } else {
-                    resolve(lbin - 1);//undercut!!
-                }
+                volume = volume / 5;//yes!
+                resolve(this.sillyPriceAlg(median, volume, lbin));
             } catch (e) {
                 error(e)
                 resolve(null);
@@ -863,24 +854,28 @@ class RelistHandler {
                 })).data
                 debug(JSON.stringify(data));
                 let { median, volume, lbin } = data[0];
-                if (median < lbin) {
-                    if (volume < 2) {
-                        resolve(median);
-                    } else {
-                        const difference = lbin - median;
-                        volume = volume / (volume - 2);
-                        volume = 2 - volume;
-                        resolve(median + (difference * volume));
-                    }
-                } else {
-                    resolve(lbin - 1);
-                }
+                resolve(this.sillyPriceAlg(median, volume, lbin));
             } catch (e) {
                 error(`Error getting price`, e);
                 debug(JSON.stringify(slot));
-                resolve(null);
+                reject(e);
             }
         })
+    }
+
+    sillyPriceAlg(median, volume, lbin) {
+        if (median < lbin) {
+            if (volume < 2) {
+                return (median);
+            } else {
+                const difference = lbin - median;
+                volume = volume / (volume - 2);
+                volume = 2 - volume;
+                return (median + (difference * volume));
+            }
+        } else {
+            return (lbin - 1);
+        }
     }
 
     async removeExpiredAuction(itemUuid) {
@@ -904,6 +899,47 @@ class RelistHandler {
                     debug(`Got item to remove! ${slot.slot}`);
                     bot.betterClick(slot.slot);
                     //sendDiscord(, bot.head, false)
+                    if (relistExpired) {
+                        try {
+                            let newPrice;
+                            if (relistMode === '1') {
+                                newPrice = await this.getNbtPrice(slot);
+                            } else {
+                                const percent = parseFloat(relistMode.split(':')[1]) / 100;
+                                console.log(percent);
+                                console.log(relistMode);
+                                newPrice = price * percent;
+                            }
+                            debug(newPrice);
+                            console.log(newPrice);
+                            sendDiscord({
+                                title: 'Removed Expired Auction',
+                                color: 13320532,
+                                fields: [
+                                    {
+                                        name: "",
+                                        value: `Removed auction \`${name}\` because it expired! It was listed at \`${addCommasToNumber(price)}\` Ok relist haha ${formatNumber(newPrice)}`,
+                                    }
+                                ],
+                                thumbnail: {
+                                    url: useItemImage ? `https://sky.coflnet.com/static/icon/${tag}` : bot.head,
+                                },
+                                footer: {
+                                    text: `TPM Rewrite`,
+                                    icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
+                                }
+                            }, useItemImage ? bot.head : null, false, bot.username);
+                            state.queueAdd({
+                                price: newPrice,
+                                auctionID: uuid,
+                                username: bot.username,
+                                inv: uuid
+                            }, 'listingNoName', 4);
+                            return;
+                        } catch (e) {
+                            error(e);//Error and then don't return so that it sends to TPM socket meaning user can manually list :)
+                        }
+                    }
                     this.tpm.send(JSON.stringify({
                         type: "expired",
                         data: JSON.stringify({

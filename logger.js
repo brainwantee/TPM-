@@ -176,6 +176,7 @@ function getLatestLog() {
     }
     const logFile = fs.createReadStream(logFilePath);
     const form = new FormData();
+    form.setMaxListeners(20);//:(
     form.append('file', logFile, 'latest.log');
     return form;
 }

@@ -298,11 +298,13 @@ class TpmSocket {
                     username = Object.keys(this.bots)[0];
                 }
 
-                const bot = this.bots[username].getBot();
+                let bot = this.bots[username];
                 if (!bot) {
                     debug(`Didn't find a bot for ${username}`);
                     return;
                 }
+
+                bot = bot.getBot();
 
                 bot.chat(command);
 
@@ -479,16 +481,38 @@ class TpmSocket {
 
                 const slots = bot.getBot().inventory.slots;
 
-                const invData = slots.slice(9, slots.length).map(slot => {
+                const pricingData = (await axios.post('https://sky.coflnet.com/api/price/nbt', {
+                    jsonNbt: JSON.stringify(bot.getBot().inventory),
+                }, {
+                    headers: {
+                        'accept': 'text/plain',
+                        'Content-Type': 'application/json-patch+json',
+                    },
+                })).data
+
+                let invData = slots.slice(9, slots.length).map(slot => {
+                    if (!slot) return null;
                     const uuid = bot.relist.getItemUuid(slot);
                     const lore = getSlotLore(slot);
                     const itemName = slot?.nbt?.value?.display?.value?.Name?.value;
+                    let priceData = pricingData[slot?.slot];
+                    if (!priceData) {
+                        priceData = {
+                            median: 0,
+                            lbin: 0,
+                            volume: 0
+                        }
+                    }
+                    let goodPrice = bot.relist.sillyPriceAlg(priceData?.median, priceData?.volume, priceData?.lbin);
+                    debug(`Price data for ${uuid}`, JSON.stringify(priceData), goodPrice);
                     return {
                         lore,
                         uuid,
-                        itemName
+                        itemName,
+                        priceData,
+                        goodPrice
                     }
-                })
+                }).filter(slot => slot !== null);
 
                 this.send(JSON.stringify({
                     type: "inventory",
@@ -506,13 +530,20 @@ class TpmSocket {
     async getSettings() {
         const settingsPromises = Object.keys(this.bots).map((botKey) => {
             return new Promise((resolve) => {
+                let sent = false;
                 const ws = this.bots[botKey].ws;
                 const coflSocket = this.bots[botKey].coflSocket;
                 coflSocket.handleCommand(`/cofl get json`, false);
                 ws.once('jsonSettings', (msg) => {
                     this.settings.push(msg);
                     resolve();
+                    sent = true;
                 });
+
+                setTimeout(() => {
+                    if (!sent) resolve();
+                }, 20_000)
+
             });
         });
 
