@@ -157,7 +157,7 @@ class AutoBuy {
                             const endsInTime = lore.find(line => line.includes('Ends in:'));
                             const endTime = normalTime(endsInTime);
                             setTimeout(() => {//Remove auctions when they expire
-                                state.queueAdd(this.getItemUuid(slot), "expired", 4);
+                                state.queueAdd(this.relist.getItemUuid(slot), "expired", 4);
                             }, endTime)
                             bot.betterWindowClose();
                             state.set(null);
