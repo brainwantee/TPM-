@@ -110,6 +110,9 @@ const defaultConfig = `{
         //Doesn't list a drill if it has any parts (It will then automatically remove and sell the parts)
         "drillWithParts": true,
 
+        //Will automatically get a price from the cofl API and relist auctions that are expired with the new price. False = don't list. True = list
+        "expiredAuctions": false,
+
     },
 
     //Choose how long to flip for and rest for in hours.

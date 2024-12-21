@@ -5,4 +5,5 @@ TPM-rewrite-win.exe
 *.exe
 testing
 /logs
+SavedData
 /TPM-bot/SavedData

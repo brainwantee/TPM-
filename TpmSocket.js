@@ -498,7 +498,6 @@ class TpmSocket {
                         uuid: bot.getBot().uuid
                     })
                 }))
-                console.log(invData);
                 break;
             }
         }

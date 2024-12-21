@@ -453,7 +453,8 @@ class RelistHandler {
         try {
             debug(`Saving ${auctionID}, target: ${target}, finder ${finder}`)
             const data = (await axios.get(`https://sky.coflnet.com/api/auction/${auctionID}`)).data;
-            if (!data.uuid) throw new Error(`No itemUUID for ${auctionID}`);
+            debug(JSON.stringify(data));
+            if (!data.flatNbt.uuid) throw new Error(`No itemUUID for ${auctionID}. Was adding to saved bids`);
             const toSave = {};
             toSave.time = Date.now();
             if (finder !== "USER") toSave.target = target;
@@ -860,7 +861,7 @@ class RelistHandler {
                         'Content-Type': 'application/json-patch+json',
                     },
                 })).data
-                console.log(data);
+                debug(JSON.stringify(data));
                 let { median, volume, lbin } = data[0];
                 if (median < lbin) {
                     if (volume < 2) {

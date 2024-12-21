@@ -9,6 +9,7 @@ class StateManager {
         this.lastaction = Date.now();
         this.bot = bot;
         this.queue = [];
+        this.recentBidData = null;
         this.setQueue();
     }
 
@@ -58,19 +59,25 @@ class StateManager {
 
     saveQueue(bidData = null) {
         let toSave = {};
-        debug(`Saving queue`, bidData)
+        debug(`Saving queue`);
+        if (bidData) debug(`bid data saved `, JSON.stringify(bidData));
         if (!bidData) {
-            const savedData = this.getFile("SavedData", `${this.bot.uuid}.json`);
-            if (!savedData) {
-                toSave = {
-                    "bidData": {},
-                }
+            if (this.recentBidData) {
+                toSave.bidData = this.recentBidData;
             } else {
-                toSave = savedData;
+                const savedData = this.getFile("SavedData", `${this.bot.uuid}.json`);
+                if (!savedData) {
+                    toSave = {
+                        "bidData": {},
+                    }
+                } else {
+                    toSave = savedData;
+                }
             }
         } else {
             toSave.bidData = bidData;
         }
+        this.recentBidData = toSave.bidData;
         toSave.queue = this.queue.filter(action => action.state == "listing" || action.state == "listingNoName");
         this.saveData("SavedData", `${this.bot.uuid}.json`, toSave)
     }
