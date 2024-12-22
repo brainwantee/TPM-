@@ -337,7 +337,10 @@ class MessageHandler {
             test();
         });
         const settings = msg => {
-            this.privacySettings = new RegExp(msg.chatRegex);
+            const data = JSON.parse(msg.data);
+            this.privacySettings = new RegExp(data.chatRegex);
+            console.log(this.privacySettings);
+            console.log(msg);
             this.ws.off('settings', settings);
         };
         this.ws.on('settings', settings);
@@ -352,11 +355,12 @@ class MessageHandler {
 
     sendChatBatch(message) {
         if (this.privacySettings.test(message)) {
+            
             this.coflSocket.send(
                 JSON.stringify({
                     type: 'chatBatch',
                     data: JSON.stringify([message]),
-                }), false
+                }), true
             );
         }
     }
