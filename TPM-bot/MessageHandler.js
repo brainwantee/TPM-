@@ -339,8 +339,6 @@ class MessageHandler {
         const settings = msg => {
             const data = JSON.parse(msg.data);
             this.privacySettings = new RegExp(data.chatRegex);
-            console.log(this.privacySettings);
-            console.log(msg);
             this.ws.off('settings', settings);
         };
         this.ws.on('settings', settings);
