@@ -19,8 +19,8 @@ let askPrefixes = {};
 let tws;
 
 function testIgn() {
-    if (igns[0].trim() === "") {
-        const newIgn = (prompt(`What's your minecraft name (caps matter): `)).trim();
+    if (!igns[0] || igns[0].trim() === "") {
+        const newIgn = (prompt(`What's your minecraft name (caps matter): `) || "").trim();
         if (newIgn !== "") {
             igns[0] = newIgn;
             config.igns = igns;
@@ -124,7 +124,7 @@ async function startBot(ign, tws, secondary = false, fromRotate = false) {
         } else {
             let safeIgn = ign;
             if(ign.length > 16) {
-                safeIgn = (await getTokenInfo(ign)).username;
+                safeIgn = (await getTokenInfo(ign))?.username;
             }
             const tempBot = new AhBot(ign, tws, destroyBot, safeIgn);
             await tempBot.createBot();

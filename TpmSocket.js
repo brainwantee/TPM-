@@ -1,5 +1,5 @@
 const { logmc, debug, error, startTracker, getIgns } = require('./logger.js');
-const { sleep, normalNumber, sendDiscord, sendLatestLog, formatNumber, nicerFinders, normalTime, noColorCodes, getSlotLore } = require('./TPM-bot/Utils.js');
+const { sleep, normalNumber, sendDiscord, sendLatestLog, formatNumber, nicerFinders, normalTime, noColorCodes, getSlotLore, addCommasToNumber } = require('./TPM-bot/Utils.js');
 const { config } = require('./config.js');
 const axios = require('axios');
 let { igns, webhook, discordID, allowedIDs, pingOnUpdate } = config;
@@ -503,7 +503,9 @@ class TpmSocket {
                             volume: 0
                         }
                     }
-                    let goodPrice = bot.relist.sillyPriceAlg(priceData?.median, priceData?.volume, priceData?.lbin);
+                    let goodPrice = addCommasToNumber(bot.relist.sillyPriceAlg(priceData?.median, priceData?.volume, priceData?.lbin));
+                    priceData.median = addCommasToNumber(priceData.median);
+                    priceData.lbin = addCommasToNumber(priceData.lbin);
                     debug(`Price data for ${uuid}`, JSON.stringify(priceData), goodPrice);
                     return {
                         lore,

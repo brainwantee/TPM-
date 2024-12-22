@@ -450,9 +450,10 @@ class RelistHandler {
 
     async addSavedData(auctionID, target, finder) {
         if (this.savedItems.includes(auctionID)) return;
-        try {
-            this.savedItems.push(auctionID);
-            setTimeout(async () => {
+
+        this.savedItems.push(auctionID);
+        setTimeout(async () => {
+            try {
                 debug(`Saving ${auctionID}, target: ${target}, finder ${finder}`)
                 const data = (await axios.get(`https://sky.coflnet.com/api/auction/${auctionID}`)).data;
                 debug(JSON.stringify(data));
@@ -464,11 +465,11 @@ class RelistHandler {
                 toSave.auctionID = auctionID;
                 this.savedData.bidData[data.flatNbt.uuid] = toSave;
                 this.state.saveQueue(this.savedData.bidData);
-            }, 60_000)//wait for nbt to sync
+            } catch (e) {
+                error(e);
+            }
+        }, 60_000)//wait for nbt to sync
 
-        } catch (e) {
-            error(e);
-        }
     }
 
     checkRelist(profit, finder, itemName, tag, auctionID, price, weirdItemName, fromQueue = false) {
