@@ -179,6 +179,10 @@ class AutoBuy {
                                     icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                                 }
                             }, useItemImage ? bot.head : null, false, bot.username);
+                        } else {
+                            bot.betterWindowClose();
+                            state.set(null);
+                            state.setAction(firstGui);
                         }
                         break;
                     case "gold_nugget":
@@ -210,7 +214,7 @@ class AutoBuy {
                 state.set(null);
             } else if (windowName === '{"italic":false,"extra":[{"text":"Auction View"}],"text":""}') {//failsafe if they have normal auctions turned on
                 let item = (await this.itemLoad(29))?.name;
-                if (item === "gold_nugget") {
+                if (item === "gold_nugget" && state.get() == 'expired') {
                     bot.betterClick(29);
                     this.relist.declineSoldAuction();
                     return;
@@ -470,7 +474,9 @@ class AutoBuy {
                             await betterOnce(this.bot, "end");//Ok so the await here like lowkey breaks everyything so I remove the old queue before
                         } catch (e) {
                             debug(`Error disconnecting`, e);
-                            this.bot.end();
+                            for (let i = 0; i < 10; i++) {
+                                this.bot.end();//just spam it!
+                            }
                         }
                         logmc(`§6[§bTPM§6] §c${this.ign} is now dead. May he rest in peace.`)
                         break;

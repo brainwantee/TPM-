@@ -930,12 +930,14 @@ class RelistHandler {
                                     icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
                                 }
                             }, useItemImage ? bot.head : null, false, bot.username);
-                            state.queueAdd({
-                                price: newPrice,
-                                auctionID: uuid,
-                                username: bot.username,
-                                inv: uuid
-                            }, 'listingNoName', 4);
+                            setTimeout(() => {
+                                state.queueAdd({
+                                    price: newPrice,
+                                    auctionID: uuid,
+                                    username: bot.username,
+                                    inv: uuid
+                                }, 'listingNoName', 4);
+                            }, 10_000)
                             return;
                         } catch (e) {
                             error(e);//Error and then don't return so that it sends to TPM socket meaning user can manually list :)
