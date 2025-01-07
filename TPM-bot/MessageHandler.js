@@ -8,8 +8,11 @@ const boughtRegex = /^You purchased (.+?) for ([\d,]+) coins!$/;
 const claimedRegex = /^You collected ([\d,]+) coins from selling (.+?) to (.+?) in an auction!$/
 const partyRegex = /^-+\s*(.+?) has invited you to join their party!\s*You have 60 seconds to accept\. Click here to join!\s*-+$/m;
 const visitRegex = /^\[SkyBlock\] (.+?) is visiting Your Island!$/
+const listRegex = /^(.+?) created (.+?) for (.+?) at ([\d,]+) coins!$/
+const cancelRegex = /^(.+?) cancelled an auction for (.+?)!$/
+const collectedRegex = /^(.+?) collected an auction for ([\d,]+) coins!$/
 
-const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!', "materials stashed away!", "types of materials stashed!)"];
+const uselessMessages = ['items stashed away!', 'CLICK HERE to pick them up!', "materials stashed away!", "(This totals"];
 
 class MessageHandler {
 
@@ -91,6 +94,7 @@ class MessageHandler {
                 case "You cannot bid this amount!":
                 case "This auction has expired!":
                 case "Invalid auction ID!":
+                case "You didn't participate in this auction!":
                     this.state.set(null);
                     this.bot.betterWindowClose();
                     this.state.setAction();
@@ -272,7 +276,7 @@ class MessageHandler {
             const visitMatch = text.match(visitRegex);
             if (visitMatch) {
                 let name = visitMatch[1];
-                if(name.includes(' ')) name = name.split(' ')[1];//remove rank
+                if (name.includes(' ')) name = name.split(' ')[1];//remove rank
                 name = noColorCodes(name);
                 this.tpm.send(JSON.stringify({
                     type: "visit",
@@ -283,23 +287,33 @@ class MessageHandler {
                         uuid: this.bot.uuid
                     })
                 }))
-                /*sendDiscord({
-                    title: 'Visitor!',
-                    color: 11329967,
-                    fields: [
-                        {
-                            name: '',
-                            value: `\`${name}\` is visting you!!!`,
-                        }
-                    ],
-                    thumbnail: {
-                        url: this.bot.head,
-                    },
-                    footer: {
-                        text: `TPM Rewrite - Purse ${formatNumber(this.bot.getPurse())}`,
-                        icon_url: 'https://media.discordapp.net/attachments/1303439738283495546/1304912521609871413/3c8b469c8faa328a9118bddddc6164a3.png?ex=67311dfd&is=672fcc7d&hm=8a14479f3801591c5a26dce82dd081bd3a0e5c8f90ed7e43d9140006ff0cb6ab&=&format=webp&quality=lossless&width=888&height=888',
-                    }
-                }, useItemImage ? this.bot.head : null, false, this.bot.username)*/
+            }
+
+            const listMatch = text.match(listRegex)
+            if (listMatch) {
+                let name = listMatch[1];
+                if (name.includes(' ')) name = name.split(' ')[1];//remove rank
+                name = noColorCodes(name);
+                debug("List name", name);
+                if (name !== this.bot.username) this.relist.increaseSlots();
+            }
+
+            const cancelMatch = text.match(cancelRegex);
+            if (cancelMatch) {
+                let name = cancelMatch[1];
+                if (name.includes(' ')) name = name.split(' ')[1];//remove rank
+                name = noColorCodes(name);
+                debug("cancel name", name);
+                if (name !== this.bot.username) this.relist.declineSoldAuction();
+            }
+
+            const collectedMatch = text.match(collectedRegex);
+            if (collectedMatch) {
+                let name = collectedMatch[1];
+                if (name.includes(' ')) name = name.split(' ')[1];//remove rank
+                name = noColorCodes(name);
+                debug("collected name", name);
+                if (name !== this.bot.username) this.relist.declineSoldAuction();
             }
 
             if (blockUselessMessages) {
@@ -353,7 +367,7 @@ class MessageHandler {
 
     sendChatBatch(message) {
         if (this.privacySettings.test(message)) {
-            
+
             this.coflSocket.send(
                 JSON.stringify({
                     type: 'chatBatch',
@@ -368,7 +382,7 @@ class MessageHandler {
     }
 
     objectAdd(weirdItemName, price, target, profit, auctionID, bed, finder, itemName, tag) {
-        const soldPrice = Math.round(IHATECLAIMINGTAXES(Math.round(this.relist.calcPriceCut(target) * target / 100)));//wow this is ugly
+        const soldPrice = Math.round(IHATECLAIMINGTAXES(this.relist.roundNumber(this.relist.calcPriceCut(target) * target / 100)));//wow this is ugly
         debug(`Sold object added: ${weirdItemName}:${soldPrice}`);
 
         this.soldObject[`${weirdItemName}:${soldPrice}`] = {

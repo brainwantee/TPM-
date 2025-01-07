@@ -1,7 +1,7 @@
 const { config } = require('../config.js');
 const { sleep, betterOnce, getWindowName, noColorCodes, normalTime, getSlotLore, sendDiscord, onlyNumbers, addCommasToNumber, normalNumber, isSkinned, formatNumber } = require('./Utils.js');
 const { logmc, error, debug } = require('../logger.js');
-let { useCookie, relist, percentOfTarget, listHours, doNotRelist, useItemImage, autoCookie } = config;
+let { useCookie, relist, percentOfTarget, listHours, doNotRelist, useItemImage, autoCookie, roundTo } = config;
 let { profitOver, skinned, tags, finders, stacks: stackedListing, pingOnFailedListing, drillWithParts, expiredAuctions: relistExpired, relistMode } = doNotRelist;
 autoCookie = normalTime(autoCookie) / 1000;
 profitOver = normalNumber(profitOver);
@@ -39,13 +39,14 @@ function calcListHours(price) {
 
 class RelistHandler {
 
-    constructor(bot, state, tpm, updateSold, coflWs) {
+    constructor(bot, state, tpm, updateSold, coflWs, setCoflSocket) {
         this.bot = bot;
         this.state = state;
         this.useRelist = relist;
         this.tpm = tpm;
         this.updateSold = updateSold;
         this.coflWs = coflWs;
+        this.setFromCoflSocket = setCoflSocket;//So this is a function from AutoBuy and basically yea
         this.currentAuctions = 0;
         this.maxSlots = 14;
         this.hasCookie = true;
@@ -63,6 +64,13 @@ class RelistHandler {
         if (this.ready) {
             this.currentAuctions--;
             debug(`Removing 1 sold auction`);
+        }
+    }
+
+    increaseSlots() {//coop listing stuff
+        if (this.ready) {
+            this.currentAuctions++;
+            debug(`Adding 1 listed auction`);
         }
     }
 
@@ -366,7 +374,7 @@ class RelistHandler {
 
             debug(relistpercent)
 
-            const listPrice = Math.round(relistpercent * price / 100);
+            const listPrice = this.roundNumber(relistpercent * price / 100);
             if (listPrice < 500) {
                 throw new Error(`Most likely incorrect listing price ${listPrice}`);
             }
@@ -606,6 +614,11 @@ class RelistHandler {
         }
     }
 
+    roundNumber(number) {
+        const roundingFactor = Math.pow(10, roundTo - 1);
+        return Math.round(number / roundingFactor) * roundingFactor;
+    }
+
     async buyCookie(time = null) {
         return new Promise(async (resolve, reject) => {
             try {
@@ -830,7 +843,6 @@ class RelistHandler {
                 resolve(null);
             };
         })
-
     }
 
     async getNbtPrice(slot) {//nbt needs to be json
@@ -844,7 +856,6 @@ class RelistHandler {
                     "title": "Inventory",
                     "slots": [slot]
                 }
-                console.log(JSON.stringify(slot));
                 const data = (await axios.post('https://sky.coflnet.com/api/price/nbt', {
                     jsonNbt: JSON.stringify(slot),
                 }, {
@@ -866,14 +877,16 @@ class RelistHandler {
 
     sillyPriceAlg(median, volume, lbin) {
         if (median < lbin) {
-            if (volume < 2) {
+            if (volume <= 3) {
                 return (median);
             } else {
                 const difference = lbin - median;
-                volume = volume / (volume - 2);
+                volume = volume / (volume - 1.5);
                 volume = 2 - volume;
                 return (median + (difference * volume));
             }
+        } else if (lbin * 2 < median) {
+            return (median - 1);
         } else {
             return (lbin - 1);
         }
@@ -884,6 +897,7 @@ class RelistHandler {
         try {
             if (!itemUuid) throw new Error(`No itemUuid given for ${itemUuid}`);
             debug(`Removing expired auction ${itemUuid}`);
+            this.setFromCoflSocket(false);
             state.set('expired');
             bot.chat('/ah');
             await betterOnce(bot, 'windowOpen');

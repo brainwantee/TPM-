@@ -32,6 +32,7 @@ class AutoBuy {
         this.currentOpen = null;
         this.packets = getPackets(ign);
         this.currentlyTimingBed = false;//failsafe
+        this.setFromCoflSocket = this.setFromCoflSocket.bind(this);
 
         this.flipHandler();
         this.initQueue();
@@ -114,7 +115,7 @@ class AutoBuy {
                     case "gold_block":
                         if (coop) {
                             await bot.waitForTicks(15);
-                            const lore = getSlotLore(bot.currentWindow.slots[13]);
+                            const lore = getSlotLore(bot.currentWindow?.slots?.[13]);
                             debug(`lore: ${lore}`);
                             if (!lore) {
                                 logmc(`§6[§bTPM§6] §cNot claiming sold auction because I can't find the lore :( so idk if you sold it or your coop.`);
@@ -425,6 +426,7 @@ class AutoBuy {
                     case "buying": {
                         const { finder, profit, itemName, auctionID, price } = current.action;
                         this.openExternalFlip(auctionID, profit, finder, itemName, null, price);
+                        logmc(`§6[§bTPM§6] Opening ${itemName}§6 from queue (${formatNumber(profit)} profit)!`);
                         break;
                     }
                     case "claiming":
@@ -508,6 +510,10 @@ class AutoBuy {
                 debug(`QUEUE: Running ${current}`);
             }
         }, delay)
+    }
+
+    setFromCoflSocket(newState = false){
+        this.fromCoflSocket = newState;
     }
 
 }

@@ -60,6 +60,9 @@ const defaultConfig = `{
     //Won't show spam messages
     "blockUselessMessages": true,
 
+    //Digit to round relist price to. For example 6 would round 1,234,567 to 1,200,000
+    "roundTo": 6,
+
     //Skip the confirm screen on NUGGET flips (50ms faster but higher ban rate)
     //This is an OR statement btw
     "skip": {
@@ -97,7 +100,7 @@ const defaultConfig = `{
         "tags": ["HYPERION"],
 
         //Finders to not list. Options: USER, CraftCost, TFM, AI, SNIPER, STONKS, FLIPPER
-        "finders": ["USER"],
+        "finders": ["USER", "CraftCost"],
 
         //If an item is in a new stack then this controls if it's listed
         //For example, if you have 1 spooky fragment in your inventory and then buy 4 you will now obviously have 5 in a stack.

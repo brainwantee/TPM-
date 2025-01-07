@@ -20,7 +20,7 @@ class BankHandler {
             bot.chat('/bank');
             await betterOnce(bot, 'windowOpen');
             if (getWindowName(bot.currentWindow) == "Bank") {
-                debug(`Got coop thing ${getWindowName}`);
+                debug(`Got coop thing`);
                 bot.betterClick(personal ? 15 : 11);
                 await betterOnce(bot, 'windowOpen');
             }

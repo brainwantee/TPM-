@@ -107,7 +107,7 @@ class AhBot {
     }
 
     async stop() {
-        this.state.queueAdd('rip', "death", 10);//let everything clear out first
+        this.state.queueAdd('rip', "death", 3);//let everything clear out first
     }
 
     handleTerminal(command, message) {
