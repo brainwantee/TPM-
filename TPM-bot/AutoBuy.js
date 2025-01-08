@@ -33,6 +33,7 @@ class AutoBuy {
         this.packets = getPackets(ign);
         this.currentlyTimingBed = false;//failsafe
         this.setFromCoflSocket = this.setFromCoflSocket.bind(this);
+        relist.giveSetCoflSocket(this.setFromCoflSocket)
 
         this.flipHandler();
         this.initQueue();

@@ -39,14 +39,14 @@ function calcListHours(price) {
 
 class RelistHandler {
 
-    constructor(bot, state, tpm, updateSold, coflWs, setCoflSocket) {
+    constructor(bot, state, tpm, updateSold, coflWs) {
         this.bot = bot;
         this.state = state;
         this.useRelist = relist;
         this.tpm = tpm;
         this.updateSold = updateSold;
         this.coflWs = coflWs;
-        this.setFromCoflSocket = setCoflSocket;//So this is a function from AutoBuy and basically yea
+        this.setFromCoflSocket = null;//So this is a function from AutoBuy and basically yea
         this.currentAuctions = 0;
         this.maxSlots = 14;
         this.hasCookie = true;
@@ -58,6 +58,10 @@ class RelistHandler {
 
         this.removeExpiredAuction = this.removeExpiredAuction.bind(this);
         this.getNbtPrice = this.getNbtPrice.bind(this);
+    }
+
+    giveSetCoflSocket(func) {
+        this.setFromCoflSocket = func;
     }
 
     declineSoldAuction() {//cba to add message listener twice so this will have to do
