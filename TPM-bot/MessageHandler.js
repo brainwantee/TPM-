@@ -95,6 +95,7 @@ class MessageHandler {
                 case "This auction has expired!":
                 case "Invalid auction ID!":
                 case "You didn't participate in this auction!":
+                case "There was an error grabbing this auction!":
                     this.state.set(null);
                     this.bot.betterWindowClose();
                     this.state.setAction();
@@ -111,12 +112,13 @@ class MessageHandler {
                 debug(JSON.stringify(objectIntance));
                 debug(`${weirdBought}:${priceNoCommas}`);
                 if (objectIntance) {
-                    let { profit, auctionID, target, bed, finder, itemTag } = objectIntance;
+                    let { profit, auctionID, target, bed, finder, itemTag, vol, profitPerc } = objectIntance;
                     finder = nicerFinders(finder);
                     target = formatNumber(target);
+                    profitPerc = formatNumber(profitPerc);
                     let formattedProfit = formatNumber(profit);
                     let formattedPrice = formatNumber(priceNoCommas);
-                    let formattedString = this.formatString(webhookFormat, item, formattedProfit, price, target, buyspeed, bed, finder, auctionID, formattedPrice, this.bot.username)
+                    let formattedString = this.formatString(webhookFormat, item, formattedProfit, price, target, buyspeed, bed, finder, auctionID, formattedPrice, this.bot.username, vol, profitPerc);
                     this.updateBought(profit);
                     let thumbnail = this.bot.head;
                     if (useItemImage && itemTag) {
@@ -206,7 +208,7 @@ class MessageHandler {
                 const auctionID = clickEvent.replace('/viewauction ', '').replace(/-/g, '');
                 if (!object) {
                     this.soldObject[`${stripItemName(item)}:${IHATECLAIMINGTAXES(price)}`] = { auctionID };//allows for cofl link in webhook
-                    debug(`added sold obbject ${stripItemName(item)}:${Math.round(IHATECLAIMINGTAXES(price))} ${auctionID}`);
+                    debug(`added sold object ${stripItemName(item)}:${Math.round(IHATECLAIMINGTAXES(price))} ${auctionID}`);
                 }
                 this.state.setAction();
 
@@ -381,7 +383,7 @@ class MessageHandler {
         this.firstGui = BINView;
     }
 
-    objectAdd(weirdItemName, price, target, profit, auctionID, bed, finder, itemName, tag) {
+    objectAdd(weirdItemName, price, target, profit, auctionID, bed, finder, itemName, tag, volume, profitPerc) {
         const soldPrice = Math.round(IHATECLAIMINGTAXES(this.relist.roundNumber(this.relist.calcPriceCut(target) * target / 100)));//wow this is ugly
         debug(`Sold object added: ${weirdItemName}:${soldPrice}`);
 
@@ -396,7 +398,9 @@ class MessageHandler {
             profit: profit,
             bed: bed,
             finder: finder,
-            itemTag: tag
+            itemTag: tag,
+            volume: volume,
+            profitPerc: profitPerc
         };
 
         this.relistObject[auctionID] = {

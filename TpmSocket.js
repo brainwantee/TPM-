@@ -11,7 +11,6 @@ if (allowedIDs) {
 }
 
 const WebSocket = require('ws');
-const { log } = require('winston');
 
 class TpmSocket {
 
@@ -361,7 +360,7 @@ class TpmSocket {
                     }
                     return element.action;
                 })
-                if (queue.length > 10) {
+                if (queue.length > 8) {
                     queue = ["Sorry :( It's too big to show so I reccomend restarting cause there's prob a bug unless you're listing a lot"];
                 }
 

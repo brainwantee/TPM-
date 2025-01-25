@@ -378,7 +378,7 @@ class RelistHandler {
 
             debug(relistpercent)
 
-            const listPrice = this.roundNumber(relistpercent * price / 100);
+            const listPrice = override ? price : this.roundNumber(relistpercent * price / 100, roundTo);
             if (listPrice < 500) {
                 throw new Error(`Most likely incorrect listing price ${listPrice}`);
             }
@@ -618,9 +618,10 @@ class RelistHandler {
         }
     }
 
-    roundNumber(number) {
+    roundNumber(number, roundTo) {
         const roundingFactor = Math.pow(10, roundTo - 1);
-        return Math.round(number / roundingFactor) * roundingFactor;
+        const rounded = Math.round(number / roundingFactor) * roundingFactor;
+        return rounded === 0 ? number : rounded;//Issues with listing items that are like really cheap so they're under the round number
     }
 
     async buyCookie(time = null) {
@@ -648,7 +649,7 @@ class RelistHandler {
                         await sleep(250);
                         bot.betterClick(10);//This click buys the cookie
                         try {//check for full inv
-                            await betterOnce(bot, "message", (message, type) => {
+                            await betterOnce(bot, "message", (message) => {
                                 let text = message.getText(null);
                                 debug("cookie text", text);
                                 return text == `One or more items didn't fit in your inventory and were added to your item stash! Click here to pick them up!`
@@ -664,7 +665,7 @@ class RelistHandler {
                             bot.betterClick(11)
                             debug("activated cookie");
                             bot.betterWindowClose();//just to be safe
-                            logmc(`§6[§bTPM§6]§3 Automaticlly ate a booster cookie cause you had ${Math.round(time / 3600)} hours left. Now you have ${Math.round((time + 4 * 86400) / 3600)} hours`);
+                            logmc(`§6[§bTPM§6]§3 Automatically ate a booster cookie cause you had ${Math.round(time / 3600)} hours left. Now you have ${Math.round((time + 4 * 86400) / 3600)} hours`);
                             this.cookieTime += 4 * 8.64e+7;
                             resolve();
                         }

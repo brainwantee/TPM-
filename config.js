@@ -13,7 +13,7 @@ const defaultConfig = `{
     //Refer to https://discord.com/channels/1261825756615540836/1265035635845234792 for help
     "webhook": "",
 
-    //{0} is item. {1} is profit. {2} is price. {3} is target. {4} is buyspeed. {5} is BED or NUGGET. {6} is finder. {7} is the auctionID. {8} is the shortened price. {9} is the bot's username
+    //{0} is item. {1} is profit. {2} is price. {3} is target. {4} is buyspeed. {5} is BED or NUGGET. {6} is finder. {7} is the auctionID. {8} is the shortened price. {9} is the bot's username. {10} is the flip volume. {11} is the flip profit percentage
     "webhookFormat": "You bought [\`\`{0}\`\`](https://sky.coflnet.com/auction/{7}) for \`\`{2}\`\` (\`\`{1}\`\` profit) in \`\`{4}ms\`\`",
     
     //Send every flip seen to this webhook. Good for testing configs
@@ -117,7 +117,7 @@ const defaultConfig = `{
         "expiredAuctions": false,
 
         //Pricing to use for expired auctions. Set to 1 if you want to use cofl lore pricing stuff, set to 2:x if you want to cut away x percentage from the price
-        "relistMode": "1"
+        "relistMode": "2:97"
 
     },
 

@@ -35,7 +35,7 @@ class AutoIsland {
             if (type !== 'chat') return;
 
             try {
-                const locraw = JSON.parse(message);
+                try { var locraw = JSON.parse(message) } catch { return }
                 foundLocraw = true;
                 debug(`Found locraw yay ${message}`);
                 this.bot.off('message', check);

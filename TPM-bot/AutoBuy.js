@@ -238,7 +238,7 @@ class AutoBuy {
             const ready = windowCheck && lastUpdated && stateCheck;
             let auctionID = data.id;
             if (ready) packets.sendMessage(`/viewauction ${auctionID}`);//Put this earlier so that it doesn't get slowed down (but it's kinda ugly :( )
-            const { finder, vol, purchaseAt, target, startingBid, tag, itemName } = data;//I hate this :(
+            const { finder, vol, purchaseAt, target, startingBid, tag, itemName, profitPerc } = data;//I hate this :(
             let weirdItemName = stripItemName(itemName);
             let profit = IHATETAXES(target) - startingBid;
             let ending = new Date(normalizeDate(purchaseAt)).getTime();
@@ -250,7 +250,7 @@ class AutoBuy {
                 this.recentProfit = profit;
                 this.recentFinder = finder;
                 this.recentName = itemName;
-                this.recentPercent = profit / startingBid * 100;
+                this.recentPercent = profitPerc
                 this.recentPrice = startingBid;
                 this.bedFailed = false;
                 this.fromCoflSocket = true;
@@ -271,7 +271,7 @@ class AutoBuy {
             } else {
                 logmc(`§6[§bTPM§6] §cCan't open flips while ${currentState} :(`);
             }
-            webhook.objectAdd(weirdItemName, startingBid, target, profit, auctionID, bed, finder, itemName, tag);
+            webhook.objectAdd(weirdItemName, startingBid, target, profit, auctionID, bed, finder, itemName, tag, vol, profitPerc);
             debug(`Found flip ${auctionID}`);
             if (flipsWebhook) {
                 sendDiscord({
@@ -371,7 +371,7 @@ class AutoBuy {
 
         await sleep(5000);
         const windowName = getWindowName(this.bot.currentWindow)
-        if (windowName?.includes('BIN Auction View') && this.currentOpen === currentID) {
+        if (windowName?.includes('BIN Auction View') && this.currentOpen === currentID && this.state.get() === 'buying') {
             this.bot.closeWindow(this.bot.currentWindow);
             this.state.set(null);
             if (!bedSpam) logmc(`§6[§bTPM§6] §cBed timing failed and we had to abort the auction :( Please lower your waittime if this continues or turn on bedspam`);
@@ -513,7 +513,7 @@ class AutoBuy {
         }, delay)
     }
 
-    setFromCoflSocket(newState = false){
+    setFromCoflSocket(newState = false) {
         this.fromCoflSocket = newState;
     }
 
