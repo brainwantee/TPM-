@@ -276,7 +276,7 @@ function askUser() {
             return;
         }
         if (getIgns().length !== 1) {
-            let prefix = args[0].toLowerCase().substring(0, 3);
+            let prefix = args[0].toLowerCase().trim();
             let askPrefix = askPrefixes[prefix];
             args.shift();
             if (askPrefix) {

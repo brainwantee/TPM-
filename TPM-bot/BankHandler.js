@@ -54,6 +54,7 @@ class BankHandler {
         bot.betterWindowClose();
         state.setAction();
         state.set(null);
+        bot.getPurse();//Update the purse
     }
 
 }

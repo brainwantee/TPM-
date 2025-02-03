@@ -250,7 +250,7 @@ class AutoBuy {
                 this.recentProfit = profit;
                 this.recentFinder = finder;
                 this.recentName = itemName;
-                this.recentPercent = profitPerc
+                this.recentPercent = profitPerc;
                 this.recentPrice = startingBid;
                 this.bedFailed = false;
                 this.fromCoflSocket = true;
