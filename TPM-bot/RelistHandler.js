@@ -730,7 +730,7 @@ class RelistHandler {
                 await Promise.all(pricePromises);//I love Promise.all!!!
                 let message = "";
                 for (const item in prices) {
-                    message += `Removed ${item}. Selling it for ${prices[item]}\n`
+                    message += `Removed \`${item}\`. Selling it for ${formatNumber(prices[item])}\n`
                     debug(`Adding ${item} ${prices[item]}`);
                     this.state.queueAdd(
                         {
@@ -750,7 +750,7 @@ class RelistHandler {
                     fields: [
                         {
                             name: '',
-                            value: message + `\nRemoved from ${drillName}`,
+                            value: message + `\nRemoved from \`${noColorCodes(drillName)}\``,
                         }
                     ],
                     thumbnail: {
@@ -791,7 +791,7 @@ class RelistHandler {
                 bot.betterClick(31);
                 await sleep(250);
                 bot.betterWindowClose();//safety
-                await sleep(250);
+                await bot.waitForTicks(10);//hey look it's a race condition let's hope we win (When the item is claimed, the current GUI closes so if the next GUI in listing process is open it'll break)
                 resolve({ count: itemCount, uuid: itemUuid, nbt: nbt });
             } catch (e) {
                 debug(e);

@@ -96,7 +96,8 @@ class MessageHandler {
                 case "Invalid auction ID!":
                 case "You didn't participate in this auction!":
                 case "There was an error grabbing this auction!":
-                case "Checking escrow for recent transaction...":
+                case "Putting coins in escrow...":
+                case "The auction house is temporarily unavailable!":
                     this.state.set(null);
                     this.bot.betterWindowClose();
                     this.state.setAction();

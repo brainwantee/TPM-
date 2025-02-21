@@ -435,7 +435,11 @@ class AutoBuy {
                         break;
                     case "listing": {
                         const { profit, finder, itemName, tag, auctionID, price, weirdItemName } = current.action;
-                        if (!this.relist.checkRelist(profit, finder, itemName, tag, auctionID, price, weirdItemName, true)) return;
+                        const shouldList = this.relist.checkRelist(profit, finder, itemName, tag, auctionID, price, weirdItemName, true);
+                        if (!shouldList) {
+                            if (shouldList == 'remove') this.state.queueRemove();
+                            return;
+                        }
                         this.relist.listAuction(auctionID, price, profit, weirdItemName, tag);
                         break;
                     }
