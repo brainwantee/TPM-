@@ -62,6 +62,7 @@ class AutoBuy {
                 webhook.setBuySpeed(firstGui);
                 let item = (await this.itemLoad(31))?.name;
                 if (item === 'gold_nugget') {
+                    await sleep(5000);
                     packets.click(31, windowID, 371);
                     bot.betterClick(31, 0, 0);
                     if (useSkipOnFlip) {
