@@ -1,7 +1,7 @@
 const { config } = require('../config.js');
 const { sleep, betterOnce, getWindowName, noColorCodes, normalTime, getSlotLore, sendDiscord, onlyNumbers, addCommasToNumber, normalNumber, isSkinned, formatNumber } = require('./Utils.js');
 const { logmc, error, debug } = require('../logger.js');
-let { useCookie, relist, percentOfTarget, listHours, doNotRelist, useItemImage, autoCookie, roundTo } = config;
+let { useCookie, relist, percentOfTarget, listHours, doNotRelist, useItemImage, autoCookie, roundTo, angryCoopPrevention } = config;
 let { profitOver, skinned, tags, finders, stacks: stackedListing, pingOnFailedListing, drillWithParts, expiredAuctions: relistExpired, relistMode } = doNotRelist;
 autoCookie = normalTime(autoCookie) / 1000;
 profitOver = normalNumber(profitOver);
@@ -129,14 +129,22 @@ class RelistHandler {
                         if (!lore) return;
                         const endsInTime = lore.find(line => line.includes('Ends in:'));
                         const BIN = lore.find(line => noColorCodes(line).includes('Buy it now'));
+                        let soldByCoop = false;
                         if (endsInTime && BIN) {
                             const endTime = normalTime(endsInTime);
                             setTimeout(() => {//Remove auctions when they expire
                                 state.queueAdd(this.getItemUuid(slot), "expired", 4);
                             }, endTime)
                         }
+                        const hasSeller = lore.find(line => line.includes('Seller:'));
+                        if (hasSeller) {
+                            this.currentAuctions++;
+                            soldByCoop = !hasSeller.includes(bot.username);
+                        }
                         const hasBuyer = lore.find(line => line.includes('Buyer:'));
                         if (hasBuyer) {
+                            if (soldByCoop && angryCoopPrevention) return;
+                            this.currentAuctions--;
                             soldAuctions.push(slot);
                             this.updateSold();
                             return;
@@ -146,16 +154,11 @@ class RelistHandler {
                             expiredAuctons.push(slot);
                             return;
                         }
-                        const hasSeller = lore.find(line => line.includes('Seller:'));
-                        if (hasSeller) {
-                            this.currentAuctions++;
-                            return;
-                        }
                         if (slot?.name === 'cauldron') claimAll = slot.slot;
                     });
 
                     if (claimAll) {
-                        bot.betterClick(claimAll);
+                        bot.betterClick(angryCoopPrevention ? claimAll - 1 : claimAll);
                     } else if (soldAuctions.length == 1) {
                         bot.betterClick(soldAuctions[0].slot);
                     } else if (expiredAuctons.length == 1) {

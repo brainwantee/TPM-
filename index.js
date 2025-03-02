@@ -161,7 +161,7 @@ async function startBot(ign, tws, secondary = false, fromRotate = false) {
 async function rotate(ign, first = false) {//first means it was called at the start of the program
     const timings = autoRotate[ign].split(':');
     const firstTime = parseFloat(timings[0].replace(/r|f/g, '')) * 3_600_000;
-    const secondTime = parseFloat(timings[0].replace(/r|f/g, '')) * 3_600_000;
+    const secondTime = parseFloat(timings[1].replace(/r|f/g, '')) * 3_600_000;
     const bot = bots[ign]?.getBot();
     let firstFunc = timings[0].toLowerCase().includes('r') ?
         () => rotateStart(ign, tws, bot, secondTime) :

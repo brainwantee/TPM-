@@ -77,10 +77,10 @@ function getPrefix(ign) {
     return `${customIGNColor(ign)}${ign}: `
 }
 
-function customIGNColor(ign) {
+function customIGNColor(ign, attempt = 0) {
     if (ignColors[ign]) return ignColors[ign];
     const randomColor = "§" + colorKeys[Math.floor(Math.random() * 11)];
-    if (Object.values(ignColors).includes(randomColor) || badColors.has(randomColor)) return customIGNColor(ign);
+    if ((Object.values(ignColors).includes(randomColor) || badColors.has(randomColor)) && attempt < 8) return customIGNColor(ign, attempt + 1);
     ignColors[ign] = randomColor;
     return randomColor;
 }
